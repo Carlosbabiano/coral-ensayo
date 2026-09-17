@@ -3,22 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Coral · Ensayo por voces</title>
+<title>Coral Villa de Mengíbar</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#b2432d">
+<meta name="theme-color" content="#24407a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Coral">
-<link rel="apple-touch-icon" href="icono-192.png">
+<meta name="apple-mobile-web-app-title" content="Coral Mengíbar">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
   :root {
     --bg: #fafaf7; --fg: #1d1d1b; --muted: #6b6b66; --line: #dcdcd6;
-    --accent: #b2432d; --accent-fg: #fff; --soft: #f0efe9;
+    --accent: #24407a; --accent-fg: #fff; --soft: #f0efe9;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  header h1 { font-size: 16px; margin: 0; font-weight: 600; flex: 1 1 auto; }
+  header h1 { font-size: 16px; margin: 0; font-weight: 600; flex: 1 1 auto; display: flex; align-items: center; gap: 10px; }
+  header h1 img { width: 40px; height: 40px; border-radius: 50%; }
   select, input[type=number] { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--fg); }
   .voces { display: flex; gap: 6px; }
   .voces button { flex: 1; padding: 10px 0; border: 1px solid var(--line); background: #fff; border-radius: 10px; font: inherit; font-weight: 600; color: var(--fg); }
@@ -41,7 +42,7 @@
 </head>
 <body>
 <header>
-  <h1>Coral · Ensayo</h1>
+  <h1><img src="icono-192.png" alt="">Coral Villa de Mengíbar</h1>
   <select id="obra" title="Obra"></select>
 </header>
 
@@ -107,7 +108,7 @@ async function cargarObra(archivo) {
   if (!osmd) {
     osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay('partitura', {
       autoResize: true, drawTitle: true, drawPartNames: true, drawMeasureNumbers: true,
-      followCursor: false, cursorsOptions: [{ type: 0, color: '#b2432d', alpha: 0.5, follow: false }],
+      followCursor: false, cursorsOptions: [{ type: 0, color: '#e39b2c', alpha: 0.55, follow: false }],
     });
   }
   await osmd.load('partituras/' + archivo);
