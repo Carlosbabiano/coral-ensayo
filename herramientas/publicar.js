@@ -2,7 +2,9 @@
 // Uso: node herramientas/publicar.js [nombre-del-repositorio]
 const { execSync } = require('child_process'), path = require('path');
 const RAIZ = path.resolve(__dirname, '..');
-const sh = (c, silencio) => execSync(c, { cwd: RAIZ, stdio: silencio ? 'pipe' : 'inherit', encoding: 'utf8' });
+// GIT_TERMINAL_PROMPT=0: si git no tiene credenciales, falla con mensaje en vez de quedarse esperando
+const ENV = { ...process.env, GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never' };
+const sh = (c, silencio) => execSync(c, { cwd: RAIZ, stdio: silencio ? 'pipe' : 'inherit', encoding: 'utf8', env: ENV });
 const out = c => sh(c, true).trim();
 
 const nombre = process.argv[2] || 'coral-ensayo';
