@@ -1,5 +1,5 @@
 // Service worker: guarda la app, las partituras y los sonidos para funcionar sin conexión.
-const VERSION = 'coral-v1';
+const VERSION = 'coral-v2';
 const BASE = ['./', './index.html', './manifest.json', './icono-192.png', './icono-512.png', './partituras/lista.json'];
 
 self.addEventListener('install', e => {

@@ -1,3 +1,6 @@
 [
-  { "titulo": "Cantares", "archivo": "Cantares.xml" }
+  {
+    "titulo": "Cantares",
+    "archivo": "Cantares.xml"
+  }
 ]
