@@ -56,7 +56,10 @@
 		<measure number="1">
 			<attributes>
 				<divisions>16</divisions>
-				<clef>
+				<time>
+					<beats>5</beats>
+					<beat-type>8</beat-type>
+				</time><clef>
 					<sign>G</sign>
 					<line>2</line>
 				</clef>
@@ -72,7 +75,7 @@
 			</direction>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -84,7 +87,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -96,7 +99,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -108,7 +111,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -120,7 +123,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -132,7 +135,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -144,7 +147,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -156,7 +159,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -168,7 +171,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -2245,14 +2248,17 @@
 		<measure number="1">
 			<attributes>
 				<divisions>16</divisions>
-				<clef>
+				<time>
+					<beats>5</beats>
+					<beat-type>8</beat-type>
+				</time><clef>
 					<sign>G</sign>
 					<line>2</line>
 				</clef>
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -2264,7 +2270,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -2276,7 +2282,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -2288,7 +2294,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -2300,7 +2306,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -2312,7 +2318,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -2324,7 +2330,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -2336,7 +2342,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -2348,7 +2354,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -4333,14 +4339,17 @@
 		<measure number="1">
 			<attributes>
 				<divisions>16</divisions>
-				<clef>
+				<time>
+					<beats>5</beats>
+					<beat-type>8</beat-type>
+				</time><clef>
 					<sign>G</sign>
 					<line>2</line>
 				</clef>
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -4352,7 +4361,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -4364,7 +4373,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -4376,7 +4385,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -4388,7 +4397,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -4400,7 +4409,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -4412,7 +4421,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -4424,7 +4433,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -4436,7 +4445,7 @@
 			</attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>64</duration>
+				<duration>40</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
