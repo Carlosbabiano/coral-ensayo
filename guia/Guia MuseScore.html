@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Corregir una partitura en MuseScore</title>
+<style>
+  :root { --azul: #24407a; --dorado: #e39b2c; --gris: #666; --linea: #ddd; --fondo: #fff; }
+  body { margin: 0; padding: 24px 16px; background: var(--fondo); color: #1d1d1b; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 820px; margin-inline: auto; }
+  h1 { color: var(--azul); font-size: 26px; margin: 0 0 4px; }
+  .sub { color: var(--gris); margin: 0 0 24px; }
+  h2 { font-size: 18px; color: var(--azul); border-bottom: 2px solid var(--dorado); padding-bottom: 4px; margin: 28px 0 10px; }
+  .paso { display: grid; grid-template-columns: 44px 1fr; gap: 12px; margin: 14px 0; align-items: start; }
+  .num { width: 36px; height: 36px; border-radius: 50%; background: var(--azul); color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 18px; }
+  kbd { font: 13px/1 ui-monospace, Consolas, monospace; background: #f3f3f0; border: 1px solid #ccc; border-bottom-width: 2px; border-radius: 5px; padding: 3px 7px; white-space: nowrap; }
+  .ruta { color: var(--azul); font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+  td, th { border: 1px solid var(--linea); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #f5f5f0; }
+  .ojo { background: #fff7e6; border-left: 4px solid var(--dorado); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .dibujo { border: 1px solid var(--linea); border-radius: 8px; padding: 8px; background: #fafaf7; margin: 8px 0; }
+  .dibujo svg { width: 100%; height: auto; display: block; }
+  .pie { color: var(--gris); font-size: 13px; margin-top: 30px; border-top: 1px solid var(--linea); padding-top: 10px; }
+  @media print { body { padding: 0; font-size: 12.5px; } h2 { page-break-after: avoid; } .paso { page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+
+<h1>Corregir una partitura en MuseScore</h1>
+<p class="sub">Del XML del Escáner Musical a la app de la coral, arreglando las notas mal leídas. MuseScore 4, en español.</p>
+
+<h2>1 · Abrir el archivo</h2>
+<div class="paso"><div class="num">1</div><div>
+  Abre MuseScore y ve a <span class="ruta">Archivo → Abrir…</span> (o <kbd>Ctrl</kbd>+<kbd>O</kbd>). Elige el <b>.xml</b> que ha creado el Escáner Musical.
+  <br>También vale arrastrar el archivo sobre la ventana de MuseScore.
+</div></div>
+<div class="paso"><div class="num">2</div><div>
+  Puede salir un aviso del tipo <i>"Este archivo se ha creado con otro programa…"</i>. Pulsa <b>Aceptar</b>; es normal.
+</div></div>
+<div class="paso"><div class="num">3</div><div>
+  Guarda enseguida una copia en formato MuseScore: <span class="ruta">Archivo → Guardar como…</span> → <b>Cantares.mscz</b>.
+  Así tienes un "original" tuyo al que volver, y cada vez que corrijas algo basta con <kbd>Ctrl</kbd>+<kbd>S</kbd>.
+</div></div>
+
+<h2>2 · Encontrar el error</h2>
+<div class="paso"><div class="num">4</div><div>
+  <b>Ir a un compás concreto</b> (por ejemplo, a los que te avisa "Añadir obra"): <kbd>Ctrl</kbd>+<kbd>F</kbd>, escribe el número del compás y <kbd>Intro</kbd>.
+</div></div>
+<div class="paso"><div class="num">5</div><div>
+  <b>Escuchar</b>: pincha en una nota y pulsa <kbd>Espacio</kbd>; suena desde ahí. Otra vez <kbd>Espacio</kbd> para parar.
+  <br>Para oír <b>solo una voz</b>: abre el Mezclador con <kbd>F10</kbd> y pulsa la <b>S</b> (solo) debajo de esa voz, o la <b>M</b> para silenciarla.
+</div></div>
+<div class="ojo">Truco: sigue la partitura mientras suena con la letra en papel. Donde "chirría" el oído suele estar el error de lectura: una nota una línea más arriba o abajo, o un sostenido/bemol que falta o sobra.</div>
+
+<h2>3 · Corregir</h2>
+<p>Primero pincha la nota (se pone azul). Luego:</p>
+<table>
+  <tr><th style="width:42%">Qué quieres hacer</th><th>Cómo</th></tr>
+  <tr><td>Subir o bajar la nota <b>medio tono</b></td><td><kbd>↑</kbd> / <kbd>↓</kbd></td></tr>
+  <tr><td>Subir o bajar la nota <b>una línea o espacio</b> (sin alteraciones)</td><td><kbd>Alt</kbd>+<kbd>Mayús</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd></td></tr>
+  <tr><td>Subir o bajar <b>una octava</b></td><td><kbd>Ctrl</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd></td></tr>
+  <tr><td>Poner o quitar <b>sostenido / bemol / becuadro</b></td><td>Botones ♯ ♭ ♮ de la barra superior (con la nota seleccionada)</td></tr>
+  <tr><td>Cambiar la <b>duración</b></td><td><kbd>3</kbd> semicorchea · <kbd>4</kbd> corchea · <kbd>5</kbd> negra · <kbd>6</kbd> blanca · <kbd>7</kbd> redonda · <kbd>.</kbd> puntillo</td></tr>
+  <tr><td>Convertir una nota en <b>silencio</b></td><td><kbd>Supr</kbd></td></tr>
+  <tr><td>Convertir un silencio en <b>nota</b></td><td>Pincha el silencio, pulsa <kbd>N</kbd> (modo escritura), luego la letra de la nota: <kbd>C</kbd> do · <kbd>D</kbd> re · <kbd>E</kbd> mi · <kbd>F</kbd> fa · <kbd>G</kbd> sol · <kbd>A</kbd> la · <kbd>B</kbd> si. <kbd>Esc</kbd> para salir.</td></tr>
+  <tr><td><b>Ligar</b> una nota con la siguiente (misma altura)</td><td><kbd>+</kbd></td></tr>
+  <tr><td>Hacer un <b>tresillo</b></td><td>Pincha la nota que ocupa el hueco y <kbd>Ctrl</kbd>+<kbd>3</kbd></td></tr>
+  <tr><td>Deshacer lo último</td><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> (tantas veces como haga falta)</td></tr>
+</table>
+
+<div class="dibujo">
+<svg viewBox="0 0 760 150" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="13">
+  <!-- pentagrama -->
+  <g stroke="#333" stroke-width="1">
+    <line x1="40" y1="45" x2="360" y2="45"/><line x1="40" y1="57" x2="360" y2="57"/><line x1="40" y1="69" x2="360" y2="69"/><line x1="40" y1="81" x2="360" y2="81"/><line x1="40" y1="93" x2="360" y2="93"/>
+    <line x1="400" y1="45" x2="720" y2="45"/><line x1="400" y1="57" x2="720" y2="57"/><line x1="400" y1="69" x2="720" y2="69"/><line x1="400" y1="81" x2="720" y2="81"/><line x1="400" y1="93" x2="720" y2="93"/>
+  </g>
+  <!-- notas antes -->
+  <g fill="#333"><ellipse cx="110" cy="75" rx="7" ry="5"/><rect x="116" y="40" width="1.5" height="35"/>
+     <ellipse cx="170" cy="69" rx="7" ry="5"/><rect x="176" y="34" width="1.5" height="35"/>
+     <ellipse cx="290" cy="81" rx="7" ry="5"/><rect x="296" y="46" width="1.5" height="35"/></g>
+  <g fill="#1e6fd9"><ellipse cx="230" cy="51" rx="7" ry="5"/><rect x="236" y="16" width="1.5" height="35"/></g>
+  <text x="230" y="125" text-anchor="middle" fill="#1e6fd9" font-weight="600">nota mal leída (seleccionada)</text>
+  <!-- flecha -->
+  <path d="M370 69 h20" stroke="#e39b2c" stroke-width="3" fill="none"/><path d="M388 62 l10 7 -10 7" fill="#e39b2c"/>
+  <text x="380" y="30" text-anchor="middle" fill="#e39b2c" font-weight="700" font-size="12">↓ ↓</text>
+  <!-- notas después -->
+  <g fill="#333"><ellipse cx="470" cy="75" rx="7" ry="5"/><rect x="476" y="40" width="1.5" height="35"/>
+     <ellipse cx="530" cy="69" rx="7" ry="5"/><rect x="536" y="34" width="1.5" height="35"/>
+     <ellipse cx="650" cy="81" rx="7" ry="5"/><rect x="656" y="46" width="1.5" height="35"/></g>
+  <g fill="#1e6fd9"><ellipse cx="590" cy="63" rx="7" ry="5"/><rect x="596" y="28" width="1.5" height="35"/></g>
+  <text x="590" y="125" text-anchor="middle" fill="#1e6fd9" font-weight="600">tras pulsar ↓ dos veces</text>
+</svg>
+</div>
+
+<h2>4 · Exportar para la app</h2>
+<div class="paso"><div class="num">6</div><div>
+  <span class="ruta">Archivo → Exportar…</span>. En el cuadro que se abre, en <b>Formato</b> elige <b>MusicXML</b> y, debajo, la opción
+  <b>"Sin comprimir (*.musicxml)"</b>. Pulsa <b>Exportar…</b> y guárdalo donde quieras (por ejemplo en la carpeta de la coral).
+</div></div>
+<div class="paso"><div class="num">7</div><div>
+  Arrastra ese <b>.musicxml</b> sobre <b>"Añadir obra.cmd"</b>. Si la obra ya estaba en la app, la sustituye; si no, la añade.
+  Se abre una ventana negra que te dice qué voces ha detectado y si algún compás sigue sin cuadrar.
+</div></div>
+<div class="ojo">Si exportaste sin querer como <b>.mxl</b> (comprimido), "Añadir obra" te avisará. Vuelve a exportar eligiendo "Sin comprimir".</div>
+
+<h2>Resumen en cuatro líneas</h2>
+<ol>
+  <li>Abrir el .xml en MuseScore y guardarlo como .mscz.</li>
+  <li><kbd>Ctrl</kbd>+<kbd>F</kbd> al compás sospechoso; <kbd>Espacio</kbd> para escuchar.</li>
+  <li>Pinchar la nota y <kbd>↑</kbd>/<kbd>↓</kbd>; números para duraciones; <kbd>Ctrl</kbd>+<kbd>Z</kbd> si te pasas.</li>
+  <li>Archivo → Exportar → MusicXML sin comprimir → arrastrar sobre "Añadir obra.cmd".</li>
+</ol>
+
+<p class="pie">Coral Villa de Mengíbar · Guía para MuseScore 4. Para imprimir: Ctrl+P desde el navegador.</p>
+</body>
+</html>
