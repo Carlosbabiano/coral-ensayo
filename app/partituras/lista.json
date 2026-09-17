@@ -1,6 +1,18 @@
 [
   {
+    "titulo": "Brindis",
+    "archivo": "Brindis.xml"
+  },
+  {
     "titulo": "Cantares",
     "archivo": "Cantares.xml"
+  },
+  {
+    "titulo": "Conamoreslamimadre",
+    "archivo": "Conamoreslamimadre.xml"
+  },
+  {
+    "titulo": "Hymne a la nuit les choristes",
+    "archivo": "Hymne_a_la_nuit_les_choristes.xml"
   }
 ]
