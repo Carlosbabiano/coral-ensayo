@@ -3059,7 +3059,7 @@
 				<divisions>1</divisions>
 			</attributes>
 			<note>
-				<rest />
+				<rest measure="yes"/>
 				<duration>4</duration>
 				<voice>1</voice>
 				<type>whole</type>
@@ -3071,7 +3071,7 @@
 				<divisions>1</divisions>
 			</attributes>
 			<note>
-				<rest />
+				<rest measure="yes"/>
 				<duration>4</duration>
 				<voice>1</voice>
 				<type>whole</type>
@@ -6564,7 +6564,7 @@
 				<divisions>1</divisions>
 			</attributes>
 			<note>
-				<rest />
+				<rest measure="yes"/>
 				<duration>4</duration>
 				<voice>1</voice>
 				<type>whole</type>
@@ -6576,7 +6576,7 @@
 				<divisions>1</divisions>
 			</attributes>
 			<note>
-				<rest />
+				<rest measure="yes"/>
 				<duration>4</duration>
 				<voice>1</voice>
 				<type>whole</type>
@@ -11501,7 +11501,7 @@
 				<divisions>1</divisions>
 			</attributes>
 			<note>
-				<rest />
+				<rest measure="yes"/>
 				<duration>4</duration>
 				<voice>1</voice>
 				<type>whole</type>
@@ -12002,7 +12002,7 @@
 				<divisions>1</divisions>
 			</attributes>
 			<note>
-				<rest />
+				<rest measure="yes"/>
 				<duration>4</duration>
 				<voice>1</voice>
 				<type>whole</type>
@@ -12438,7 +12438,7 @@
 				<divisions>1</divisions>
 			</attributes>
 			<note>
-				<rest />
+				<rest measure="yes"/>
 				<duration>4</duration>
 				<voice>1</voice>
 				<type>whole</type>
@@ -12923,7 +12923,7 @@
 				<divisions>1</divisions>
 			</attributes>
 			<note>
-				<rest />
+				<rest measure="yes"/>
 				<duration>4</duration>
 				<voice>1</voice>
 				<type>whole</type>
@@ -14073,7 +14073,7 @@
 				<divisions>1</divisions>
 			</attributes>
 			<note>
-				<rest />
+				<rest measure="yes"/>
 				<duration>4</duration>
 				<voice>1</voice>
 				<type>whole</type>
@@ -14085,7 +14085,7 @@
 				<divisions>1</divisions>
 			</attributes>
 			<note>
-				<rest />
+				<rest measure="yes"/>
 				<duration>4</duration>
 				<voice>1</voice>
 				<type>whole</type>
