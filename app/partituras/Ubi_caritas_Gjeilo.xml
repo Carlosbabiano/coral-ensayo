@@ -6225,10 +6225,13 @@
 		<measure number="4">
 			<attributes>
 				<divisions>16</divisions>
-			</attributes>
+			<time>
+					<beats>4</beats>
+					<beat-type>4</beat-type>
+				</time></attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>48</duration>
+				<duration>64</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
@@ -8951,10 +8954,13 @@
 		<measure number="4">
 			<attributes>
 				<divisions>16</divisions>
-			</attributes>
+			<time>
+					<beats>4</beats>
+					<beat-type>4</beat-type>
+				</time></attributes>
 			<note>
 				<rest measure="yes"/>
-				<duration>48</duration>
+				<duration>64</duration>
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
