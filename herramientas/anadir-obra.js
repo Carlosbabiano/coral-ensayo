@@ -14,6 +14,7 @@ const SW = path.join(RAIZ, 'app', 'sw.js');
 
 const { transplantar } = require('./letra.js');
 const { posiciones } = require('./posiciones.js');
+const { generarPaginas } = require('./paginas.js');
 const AUDIVERIS = 'C:\\Program Files\\Audiveris\\Audiveris.exe';
 const IDIOMA_OCR = process.env.LETRA_IDIOMA || 'spa+eng'; // idiomas para leer la letra (spa, ita, fra, lat, eng)
 
@@ -230,9 +231,9 @@ function procesar(ruta) {
       const pos = posiciones(xml, audXml);
       fs.mkdirSync(DIR_PARTITURAS, { recursive: true });
       fs.writeFileSync(path.join(DIR_PARTITURAS, base + '.pos.json'), JSON.stringify(pos));
-      fs.copyFileSync(pdf, path.join(DIR_PARTITURAS, base + '.pdf'));
-      entrada.pdf = base + '.pdf'; entrada.posiciones = base + '.pos.json';
-      console.log(`  PDF original incorporado (${pos.paginas} página(s)); vista "PDF original" disponible.`);
+      entrada.paginas = generarPaginas(pdf, DIR_PARTITURAS, base);
+      entrada.posiciones = base + '.pos.json';
+      console.log(`  Página original incorporada (${entrada.paginas.length} imagen(es)); vista "PDF original" disponible.`);
     } catch (e) { console.log('  ! No se ha podido sacar la letra del PDF: ' + e.message.split('\n')[0]); }
   } else console.log('  (sin PDF: la obra irá sin letra y sin vista de página original)');
 
@@ -245,7 +246,7 @@ function procesar(ruta) {
   const existia = lista.some(o => o.archivo === archivo);
   const previa = lista.find(o => o.archivo === archivo) || {};
   lista = lista.filter(o => o.archivo !== archivo);
-  if (!entrada.pdf && previa.pdf) { entrada.pdf = previa.pdf; entrada.posiciones = previa.posiciones; } // conserva el PDF anterior si esta vez no se ha dado
+  if (!entrada.paginas && previa.paginas) { entrada.paginas = previa.paginas; entrada.posiciones = previa.posiciones; } // conserva la página original anterior si esta vez no se ha dado el PDF
   lista.push(entrada);
   lista.sort((a, b) => a.titulo.localeCompare(b.titulo, 'es'));
   fs.writeFileSync(LISTA, JSON.stringify(lista, null, 2) + '\n');
