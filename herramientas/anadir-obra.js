@@ -12,8 +12,28 @@ const DIR_PARTITURAS = path.join(RAIZ, 'app', 'partituras');
 const LISTA = path.join(DIR_PARTITURAS, 'lista.json');
 const SW = path.join(RAIZ, 'app', 'sw.js');
 
-const archivos = process.argv.slice(2);
-if (!archivos.length) { console.log('Arrastra uno o varios archivos .xml sobre "Añadir obra.cmd".'); process.exit(1); }
+const { transplantar } = require('./letra.js');
+const { posiciones } = require('./posiciones.js');
+const AUDIVERIS = 'C:\\Program Files\\Audiveris\\Audiveris.exe';
+const IDIOMA_OCR = process.env.LETRA_IDIOMA || 'spa+eng'; // idiomas para leer la letra (spa, ita, fra, lat, eng)
+
+// Argumentos: archivos .xml/.musicxml (notas) y .pdf (letra y página original). Se emparejan por nombre.
+const clave = f => path.basename(f).replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const entradas = process.argv.slice(2);
+const xmls = entradas.filter(f => /\.(xml|musicxml)$/i.test(f));
+const pdfs = entradas.filter(f => /\.pdf$/i.test(f));
+if (!xmls.length && !pdfs.length) { console.log('Arrastra uno o varios archivos .xml del Escáner Musical (y, si lo tienes, el .pdf de la obra) sobre "Añadir obra.cmd".'); process.exit(1); }
+function pdfPara(xml) {
+  const k = clave(xml);
+  const dado = pdfs.find(p => clave(p) === k); if (dado) return dado;
+  // Si no se ha arrastrado, se busca un PDF con el mismo nombre junto al XML o en la carpeta pdf/
+  for (const dir of [path.dirname(xml), path.join(RAIZ, 'pdf')]) {
+    try { const f = fs.readdirSync(dir).find(n => /\.pdf$/i.test(n) && clave(n) === k); if (f) return path.join(dir, f); } catch {}
+  }
+  return null;
+}
+for (const p of pdfs) if (!xmls.some(x => clave(x) === clave(p))) console.log(`Aviso: ${path.basename(p)} no tiene un .xml con el mismo nombre; la letra se saca del PDF pero las notas hacen falta del escáner.`);
+const archivos = xmls;
 
 const NOMBRES_CONOCIDOS = /soprano|alto|contralto|tenor|bajo|bass|mezzo|bar[ií]tono|voz\s*\d|piano|órgano|organo/i;
 const SEMITONOS = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
@@ -136,6 +156,22 @@ function repararCompases(xml, avisos) {
   return xml;
 }
 
+// Pasa el PDF por Audiveris (notas + letra + maquetación) y devuelve su MusicXML
+function leerConAudiveris(pdf) {
+  if (!fs.existsSync(AUDIVERIS)) throw new Error('Audiveris no está instalado (' + AUDIVERIS + ')');
+  const tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'audiveris-'));
+  console.log('  leyendo el PDF con Audiveris (puede tardar un par de minutos)...');
+  execSync(`"${AUDIVERIS}" -batch -export -constant org.audiveris.omr.text.Language.defaultSpecification=${IDIOMA_OCR} -output "${tmp}" -- "${path.resolve(pdf)}"`, { stdio: 'ignore', timeout: 15 * 60 * 1000 });
+  const mxl = fs.readdirSync(tmp).find(f => /\.mxl$/i.test(f));
+  if (!mxl) throw new Error('Audiveris no ha generado ningún archivo');
+  const zip = path.join(tmp, 'salida.zip'); fs.copyFileSync(path.join(tmp, mxl), zip);
+  execSync(`powershell -NoProfile -Command "Expand-Archive -LiteralPath '${zip}' -DestinationPath '${path.join(tmp, 'x')}' -Force"`, { stdio: 'ignore' });
+  const buscar = d => { for (const f of fs.readdirSync(d)) { const p = path.join(d, f); if (fs.statSync(p).isDirectory()) { const r = buscar(p); if (r) return r; } else if (/\.xml$/i.test(f) && f !== 'container.xml') return p; } return null; };
+  const xmlPath = buscar(path.join(tmp, 'x'));
+  if (!xmlPath) throw new Error('No se encuentra el MusicXML dentro del .mxl');
+  return fs.readFileSync(xmlPath, 'utf8');
+}
+
 function limpiarNombreArchivo(titulo) {
   return titulo.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'Obra';
 }
@@ -181,15 +217,36 @@ function procesar(ruta) {
   if (sospechosos.length) console.log(`  ! Compases con duración sospechosa (revísalos en el PDF): ${sospechosos.join(', ')}`);
   else console.log('  OK Todos los compases cuadran.');
 
+  // Letra y página original a partir del PDF (Audiveris)
+  const base = limpiarNombreArchivo(titulo);
+  const entrada = { titulo, archivo: base + '.xml' };
+  const pdf = pdfPara(ruta);
+  if (pdf) {
+    try {
+      const audXml = leerConAudiveris(pdf);
+      const r = transplantar(xml, audXml);
+      xml = r.salida;
+      for (const l of r.informe) console.log('  letra ' + l);
+      const pos = posiciones(xml, audXml);
+      fs.mkdirSync(DIR_PARTITURAS, { recursive: true });
+      fs.writeFileSync(path.join(DIR_PARTITURAS, base + '.pos.json'), JSON.stringify(pos));
+      fs.copyFileSync(pdf, path.join(DIR_PARTITURAS, base + '.pdf'));
+      entrada.pdf = base + '.pdf'; entrada.posiciones = base + '.pos.json';
+      console.log(`  PDF original incorporado (${pos.paginas} página(s)); vista "PDF original" disponible.`);
+    } catch (e) { console.log('  ! No se ha podido sacar la letra del PDF: ' + e.message.split('\n')[0]); }
+  } else console.log('  (sin PDF: la obra irá sin letra y sin vista de página original)');
+
   // Guardar en la app
-  const archivo = limpiarNombreArchivo(titulo) + '.xml';
+  const archivo = entrada.archivo;
   fs.mkdirSync(DIR_PARTITURAS, { recursive: true });
   fs.writeFileSync(path.join(DIR_PARTITURAS, archivo), xml);
   let lista = [];
   try { lista = JSON.parse(fs.readFileSync(LISTA, 'utf8')); } catch {}
   const existia = lista.some(o => o.archivo === archivo);
+  const previa = lista.find(o => o.archivo === archivo) || {};
   lista = lista.filter(o => o.archivo !== archivo);
-  lista.push({ titulo, archivo });
+  if (!entrada.pdf && previa.pdf) { entrada.pdf = previa.pdf; entrada.posiciones = previa.posiciones; } // conserva el PDF anterior si esta vez no se ha dado
+  lista.push(entrada);
   lista.sort((a, b) => a.titulo.localeCompare(b.titulo, 'es'));
   fs.writeFileSync(LISTA, JSON.stringify(lista, null, 2) + '\n');
   console.log(`  ${existia ? 'Actualizada' : 'Añadida'} "${titulo}" -> app/partituras/${archivo}`);
