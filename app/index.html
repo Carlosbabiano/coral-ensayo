@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Coral · Ensayo por voces</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#b2432d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Coral">
+<link rel="apple-touch-icon" href="icono-192.png">
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1d1d1b; --muted: #6b6b66; --line: #dcdcd6;
+    --accent: #b2432d; --accent-fg: #fff; --soft: #f0efe9;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  header h1 { font-size: 16px; margin: 0; font-weight: 600; flex: 1 1 auto; }
+  select, input[type=number] { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--fg); }
+  .voces { display: flex; gap: 6px; }
+  .voces button { flex: 1; padding: 10px 0; border: 1px solid var(--line); background: #fff; border-radius: 10px; font: inherit; font-weight: 600; color: var(--fg); }
+  .voces button.activa { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  #partitura { padding: 8px 4px 220px; min-height: 60vh; }
+  #partitura svg { max-width: 100%; height: auto; }
+  #estado { color: var(--muted); font-size: 13px; padding: 4px 12px; }
+  .controles { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--line); padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); display: grid; gap: 8px; z-index: 5; box-shadow: 0 -4px 16px rgba(0,0,0,.06); }
+  .fila { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .fila label { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .fila input[type=range] { flex: 1; min-width: 80px; }
+  .transporte button { font: inherit; font-size: 18px; padding: 10px 0; border-radius: 12px; border: 1px solid var(--line); background: var(--soft); color: var(--fg); flex: 1; }
+  .transporte button.principal { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); flex: 2; }
+  .transporte button:disabled { opacity: .5; }
+  .chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--soft); border: 1px solid var(--line); }
+  .chip input { vertical-align: middle; }
+  #compas { font-variant-numeric: tabular-nums; font-weight: 600; }
+  #cargando { position: fixed; inset: 0; background: rgba(250,250,247,.9); display: grid; place-items: center; z-index: 10; font-size: 16px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Coral · Ensayo</h1>
+  <select id="obra" title="Obra"></select>
+</header>
+
+<div style="padding: 8px 12px 0">
+  <div class="voces" id="voces"></div>
+</div>
+<div id="estado">Toca un compás de la partitura para empezar desde ahí.</div>
+<div id="partitura"></div>
+
+<div class="controles">
+  <div class="fila transporte">
+    <button id="inicio" title="Al principio">⏮</button>
+    <button id="play" class="principal">▶ Reproducir</button>
+    <button id="stop" title="Parar">■</button>
+    <span class="chip">Compás <span id="compas">–</span></span>
+  </div>
+  <div class="fila">
+    <label>Tempo <input type="range" id="tempo" min="40" max="130" value="100"> <span id="tempoVal">100%</span></label>
+    <label>Otras voces <input type="range" id="mezcla" min="0" max="100" value="25"> <span id="mezclaVal">25%</span></label>
+  </div>
+  <div class="fila">
+    <label class="chip"><input type="checkbox" id="soloPentagrama"> Ver solo mi voz</label>
+    <label class="chip"><input type="checkbox" id="bucle"> Repetir compases
+      <input type="number" id="desde" min="1" value="1" style="width:56px"> a
+      <input type="number" id="hasta" min="1" value="1" style="width:56px"></label>
+    <label>Sonido
+      <select id="timbre">
+        <option value="choir_aahs">Coro (aah)</option>
+        <option value="acoustic_grand_piano">Piano</option>
+        <option value="church_organ">Órgano</option>
+        <option value="flute">Flauta</option>
+      </select>
+    </label>
+  </div>
+</div>
+
+<div id="cargando">Cargando partitura…</div>
+
+<script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1/build/opensheetmusicdisplay.min.js"></script>
+<script type="module">
+import { Soundfont } from "https://cdn.jsdelivr.net/npm/smplr/+esm";
+
+const $ = id => document.getElementById(id);
+const UNIT = 10; // OSMD dibuja en unidades de 10 px a zoom 1
+
+// ---------- Estado ----------
+let osmd, eventos = [], vozActiva = 0, instrumento = null, ctx = null;
+let reproduciendo = false, indiceEvento = 0, tInicio = 0, tOffset = 0, timerPlan = null, raf = null;
+let sonando = []; // notas en curso para poder cortarlas al parar
+let compasInicio = 0;
+
+// ---------- Carga ----------
+async function cargarLista() {
+  const lista = await (await fetch('partituras/lista.json')).json();
+  for (const o of lista) { const op = document.createElement('option'); op.value = o.archivo; op.textContent = o.titulo; $('obra').appendChild(op); }
+  $('obra').onchange = () => cargarObra($('obra').value);
+  await cargarObra(lista[0].archivo);
+}
+
+async function cargarObra(archivo) {
+  parar();
+  $('cargando').style.display = 'grid';
+  if (!osmd) {
+    osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay('partitura', {
+      autoResize: true, drawTitle: true, drawPartNames: true, drawMeasureNumbers: true,
+      followCursor: false, cursorsOptions: [{ type: 0, color: '#b2432d', alpha: 0.5, follow: false }],
+    });
+  }
+  await osmd.load('partituras/' + archivo);
+  osmd.Zoom = window.innerWidth < 600 ? 0.55 : 0.8;
+  crearBotonesVoces();
+  aplicarVisibilidad();
+  osmd.render();
+  construirEventos();
+  osmd.cursor.show();
+  irACompas(0);
+  $('hasta').value = osmd.Sheet.SourceMeasures.length;
+  $('cargando').style.display = 'none';
+}
+
+function crearBotonesVoces() {
+  const cont = $('voces'); cont.innerHTML = '';
+  osmd.Sheet.Instruments.forEach((ins, i) => {
+    const b = document.createElement('button');
+    b.textContent = ins.Name || ('Voz ' + (i + 1));
+    b.onclick = () => { vozActiva = i; marcarVoz(); aplicarVisibilidad(); rerender(); };
+    cont.appendChild(b);
+  });
+  marcarVoz();
+}
+function marcarVoz() { [...$('voces').children].forEach((b, i) => b.classList.toggle('activa', i === vozActiva)); }
+
+function aplicarVisibilidad() {
+  const solo = $('soloPentagrama').checked;
+  osmd.Sheet.Instruments.forEach((ins, i) => { ins.Visible = !solo || i === vozActiva; });
+}
+function rerender() {
+  const compas = compasActual();
+  osmd.render();
+  construirEventos();
+  osmd.cursor.show();
+  irACompas(compas);
+}
+
+// ---------- Eventos musicales a partir del cursor de OSMD ----------
+// Recorremos el cursor una vez (respeta repeticiones y casillas) y guardamos,
+// para cada paso, el tiempo en segundos y las notas que empiezan ahí.
+function construirEventos() {
+  eventos = [];
+  osmd.cursor.reset();
+  const it = osmd.cursor.iterator; // ojo: reset() crea un iterador nuevo
+  let segundos = 0, tsAnterior = it.CurrentEnrolledTimestamp.RealValue;
+  const bpmDefecto = osmd.Sheet.DefaultStartTempoInBpm || 80;
+  let paso = 0;
+  let guarda = 0;
+  while (!it.EndReached && guarda++ < 20000) {
+    const ts = it.CurrentEnrolledTimestamp.RealValue;
+    const bpm = it.CurrentBpm || bpmDefecto;
+    segundos += (ts - tsAnterior) * 4 * 60 / bpm; // 1 redonda = 4 negras
+    tsAnterior = ts;
+    const notas = [];
+    for (const ve of it.CurrentVoiceEntries) {
+      if (ve.IsGrace) continue;
+      const parte = osmd.Sheet.Instruments.indexOf(ve.ParentVoice.Parent);
+      for (const n of ve.Notes) {
+        if (!n.Pitch || n.isRest()) continue;
+        if (n.NoteTie && n.NoteTie.StartNote !== n) continue; // nota ligada: no se vuelve a atacar
+        let dur = n.Length.RealValue;
+        if (n.NoteTie) dur = n.NoteTie.Notes.reduce((s, x) => s + x.Length.RealValue, 0);
+        notas.push({ parte, midi: n.Pitch.halfTone + 12, dur: dur * 4 * 60 / bpm });
+      }
+    }
+    eventos.push({ paso, seg: segundos, compas: it.CurrentMeasureIndex, notas });
+    osmd.cursor.next(); paso++;
+  }
+  osmd.cursor.reset();
+  if (eventos.length) console.log('Eventos:', eventos.length, 'duración', segundos.toFixed(1), 's · primera nota midi', eventos.find(e => e.notas.length)?.notas[0].midi);
+}
+
+function compasActual() { return eventos[indiceEvento]?.compas ?? 0; }
+
+function irACompas(compas) {
+  parar();
+  let i = eventos.findIndex(e => e.compas >= compas);
+  if (i < 0) i = 0;
+  indiceEvento = i; compasInicio = i;
+  moverCursor(i);
+}
+function moverCursor(i) {
+  osmd.cursor.reset();
+  for (let k = 0; k < i; k++) osmd.cursor.next();
+  osmd.cursor.update();
+  $('compas').textContent = (eventos[i]?.compas ?? 0) + 1;
+  const el = osmd.cursor.cursorElement;
+  if (el) { const r = el.getBoundingClientRect(); if (r.top < 60 || r.bottom > window.innerHeight - 220) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+}
+
+// ---------- Audio ----------
+async function prepararAudio() {
+  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (ctx.state === 'suspended') await ctx.resume();
+  if (!instrumento || instrumento.nombre !== $('timbre').value) {
+    $('estado').textContent = 'Cargando sonido…';
+    const sf = new Soundfont(ctx, { instrument: $('timbre').value });
+    await sf.load;
+    sf.nombre = $('timbre').value;
+    instrumento = sf;
+    $('estado').textContent = '';
+  }
+}
+
+function factorTempo() { return $('tempo').value / 100; }
+function rangoBucle() {
+  if (!$('bucle').checked) return null;
+  const d = Math.max(1, +$('desde').value) - 1, h = Math.max(d, +$('hasta').value - 1);
+  const ini = eventos.findIndex(e => e.compas >= d);
+  let fin = eventos.findIndex((e, i) => i > ini && e.compas > h);
+  if (fin < 0) fin = eventos.length;
+  return ini < 0 ? null : { ini, fin };
+}
+
+async function reproducir() {
+  if (reproduciendo) { pausar(); return; }
+  await prepararAudio();
+  const b = rangoBucle();
+  if (b && (indiceEvento < b.ini || indiceEvento >= b.fin)) indiceEvento = b.ini;
+  reproduciendo = true;
+  $('play').textContent = '❚❚ Pausa';
+  const f = factorTempo();
+  tInicio = ctx.currentTime + 0.15;
+  tOffset = eventos[indiceEvento].seg / f;
+  planificar();
+  timerPlan = setInterval(planificar, 100);
+  raf = requestAnimationFrame(seguirCursor);
+}
+
+// Programa las notas que caen en los próximos 0,4 s
+function planificar() {
+  const f = factorTempo(), mezcla = $('mezcla').value / 100, b = rangoBucle();
+  const fin = b ? b.fin : eventos.length;
+  const ahora = ctx.currentTime - tInicio + tOffset;
+  while (indiceEvento < fin && eventos[indiceEvento].seg / f <= ahora + 0.4) {
+    const e = eventos[indiceEvento];
+    const t = tInicio + e.seg / f - tOffset;
+    for (const n of e.notas) {
+      const vel = n.parte === vozActiva ? 110 : Math.round(110 * mezcla);
+      if (vel <= 0) continue;
+      const stop = instrumento.start({ note: n.midi, velocity: vel, time: t, duration: Math.max(0.05, n.dur / f - 0.03) });
+      sonando.push(stop);
+    }
+    indiceEvento++;
+  }
+  if (sonando.length > 200) sonando.splice(0, 100);
+  if (indiceEvento >= fin) {
+    const ultimo = eventos[fin - 1];
+    const tFin = tInicio + (ultimo.seg + 1.5) / f - tOffset;
+    if (ctx.currentTime >= tFin) {
+      if (b) { indiceEvento = b.ini; tInicio = ctx.currentTime; tOffset = eventos[b.ini].seg / f; }
+      else { parar(); irACompas(0); }
+    }
+  }
+}
+
+let cursorEn = -1;
+function seguirCursor() {
+  if (!reproduciendo) return;
+  const f = factorTempo();
+  const ahora = ctx.currentTime - tInicio + tOffset;
+  // último evento cuyo tiempo ya ha pasado, dentro del tramo en curso
+  let i = cursorEn < 0 ? 0 : cursorEn;
+  const b = rangoBucle(); const fin = b ? b.fin : eventos.length; const ini = b ? b.ini : 0;
+  if (i < ini || i >= fin) i = ini;
+  while (i + 1 < fin && eventos[i + 1].seg / f <= ahora) i++;
+  if (i !== cursorEn) { cursorEn = i; moverCursor(i); }
+  raf = requestAnimationFrame(seguirCursor);
+}
+
+function pausar() {
+  reproduciendo = false;
+  clearInterval(timerPlan); cancelAnimationFrame(raf);
+  for (const s of sonando) { try { s(ctx.currentTime); } catch {} }
+  sonando = [];
+  if (cursorEn >= 0) indiceEvento = cursorEn;
+  cursorEn = -1;
+  $('play').textContent = '▶ Reproducir';
+}
+function parar() { pausar(); }
+
+// ---------- Interacción ----------
+$('play').onclick = reproducir;
+$('stop').onclick = () => { parar(); irACompas(eventos[compasInicio]?.compas ?? 0); };
+$('inicio').onclick = () => irACompas(0);
+$('tempo').oninput = () => { $('tempoVal').textContent = $('tempo').value + '%'; if (reproduciendo) { pausar(); reproducir(); } };
+$('mezcla').oninput = () => $('mezclaVal').textContent = $('mezcla').value + '%';
+$('soloPentagrama').onchange = () => { aplicarVisibilidad(); rerender(); };
+$('timbre').onchange = () => { if (reproduciendo) { pausar(); reproducir(); } };
+
+// Tocar un compás de la partitura: empezar desde ahí
+$('partitura').addEventListener('click', ev => {
+  const svg = $('partitura').querySelector('svg'); if (!svg || !osmd.GraphicSheet) return;
+  const r = svg.getBoundingClientRect();
+  const x = (ev.clientX - r.left) / (UNIT * osmd.Zoom), y = (ev.clientY - r.top) / (UNIT * osmd.Zoom);
+  for (const fila of osmd.GraphicSheet.MeasureList) {
+    const vis = fila.filter(m => m);
+    if (!vis.length) continue;
+    const p = vis[0].PositionAndShape.AbsolutePosition, s = vis[0].PositionAndShape.Size;
+    const ult = vis[vis.length - 1];
+    const yFin = ult.PositionAndShape.AbsolutePosition.y + ult.PositionAndShape.Size.height;
+    if (x >= p.x && x <= p.x + s.width && y >= p.y - 3 && y <= yFin + 3) {
+      const idx = vis[0].MeasureNumber - 1;
+      irACompas(idx);
+      $('estado').textContent = 'Empezará en el compás ' + (idx + 1);
+      return;
+    }
+  }
+});
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(e => console.warn("Sin modo offline:", e));
+cargarLista().catch(e => { $('cargando').textContent = 'Error al cargar: ' + e.message; console.error(e); });
+</script>
+</body>
+</html>
