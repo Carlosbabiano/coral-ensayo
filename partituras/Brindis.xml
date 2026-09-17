@@ -185,7 +185,7 @@
         <stem default-y="-47">down</stem>
         <lyric number="2" placement="below" default-y="-76">
           <syllabic>middle</syllabic>
-          <text>Inosnues</text>
+          <text>mos nues</text>
         </lyric>
       </note>
       <note default-x="311">
@@ -295,7 +295,7 @@
         <stem default-y="-47">down</stem>
         <lyric number="2" placement="below" default-y="-76">
           <syllabic>begin</syllabic>
-          <text>Vl</text>
+          <text>Vi</text>
         </lyric>
       </note>
       <note default-x="160">
@@ -309,7 +309,7 @@
         <stem default-y="-47">down</stem>
         <lyric number="2" placement="below" default-y="-76">
           <syllabic>end</syllabic>
-          <text>IlO</text>
+          <text>no</text>
         </lyric>
         <lyric number="2" placement="below" default-y="-76">
           <syllabic>begin</syllabic>
@@ -344,7 +344,7 @@
         <stem default-y="7">up</stem>
         <lyric number="2" placement="below" default-y="-76">
           <syllabic>middle</syllabic>
-          <text>Ino</text>
+          <text>mo</text>
         </lyric>
       </note>
       <note default-x="55">
@@ -386,7 +386,7 @@
         </notations>
         <lyric number="2" placement="below" default-y="-76">
           <syllabic>begin</syllabic>
-          <text>¡Vl</text>
+          <text>¡Vi</text>
         </lyric>
       </note>
       <note default-x="164">
@@ -646,7 +646,7 @@
         <stem default-y="0">up</stem>
         <lyric number="1" placement="below" default-y="-71">
           <syllabic>middle</syllabic>
-          <text>moere</text>
+          <text>mor. Ve</text>
         </lyric>
       </note>
       <note default-x="58">
@@ -851,7 +851,7 @@
         <stem default-y="0">up</stem>
         <lyric number="1" placement="below" default-y="-76">
           <syllabic>middle</syllabic>
-          <text>biZ</text>
+          <text>biz</text>
         </lyric>
       </note>
       <note default-x="159">
@@ -1170,7 +1170,7 @@
         <stem default-y="0">up</stem>
         <lyric number="1" placement="below" default-y="-81">
           <syllabic>end</syllabic>
-          <text>niomque</text>
+          <text>mor que</text>
         </lyric>
       </note>
       <note default-x="225">
@@ -1216,7 +1216,7 @@
         <stem default-y="-19">up</stem>
         <lyric number="1" placement="below" default-y="-81">
           <syllabic>begin</syllabic>
-          <text>sieni</text>
+          <text>siem</text>
         </lyric>
       </note>
       <note default-x="73">
