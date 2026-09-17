@@ -28,7 +28,7 @@ function analizarParte(cuerpo) {
     const c = m.match(/<clef>\s*<sign>(\w)<\/sign>/); if (c && !clave) clave = c[1];
     const esperado = div * 4 * beats / bt;
     const porVoz = {};
-    for (const [nota] of m.matchAll(/<note>[\s\S]*?<\/note>/g)) {
+    for (const [nota] of m.matchAll(/<note(?:\s[^>]*)?>[\s\S]*?<\/note>/g)) {
       const v = (nota.match(/<voice>(\d+)/) || [, '1'])[1];
       if (!/<chord/.test(nota)) porVoz[v] = (porVoz[v] || 0) + +(nota.match(/<duration>(\d+)/) || [, 0])[1];
       const p = nota.match(/<step>(\w)<\/step>\s*(?:<alter>(-?\d+)<\/alter>)?\s*<octave>(\d)/);
@@ -62,7 +62,7 @@ function repararCompases(xml, avisos) {
   const medidas = cuerpo => [...cuerpo.matchAll(/<measure number="([^"]+)"[^>]*>([\s\S]*?)<\/measure>/g)];
   const sumaCompas = (m, div) => {
     let s = 0;
-    for (const [n] of m.matchAll(/<note>[\s\S]*?<\/note>/g)) if (!/<chord/.test(n) && !/<voice>[2-9]/.test(n)) s += +(n.match(/<duration>(\d+)/) || [, 0])[1];
+    for (const [n] of m.matchAll(/<note(?:\s[^>]*)?>[\s\S]*?<\/note>/g)) if (!/<chord/.test(n) && !/<voice>[2-9]/.test(n)) s += +(n.match(/<duration>(\d+)/) || [, 0])[1];
     return s / div;
   };
 
@@ -125,7 +125,7 @@ function repararCompases(xml, avisos) {
     return parte.replace(/<measure number="[^"]+"[^>]*>[\s\S]*?<\/measure>/g, m => {
       const d = m.match(/<divisions>(\d+)/); if (d) div = +d[1];
       const b = m.match(/<beats>(\d+)<\/beats>\s*<beat-type>(\d+)/); if (b) { beats = +b[1]; bt = +b[2]; }
-      const notas = [...m.matchAll(/<note>[\s\S]*?<\/note>/g)];
+      const notas = [...m.matchAll(/<note(?:\s[^>]*)?>[\s\S]*?<\/note>/g)];
       if (notas.length === 1 && /<rest/.test(notas[0][0]) && /<type>whole<\/type>/.test(notas[0][0])) {
         const dur = Math.round(div * 4 * beats / bt);
         return m.replace(notas[0][0], notas[0][0].replace(/<rest\s*\/>/, '<rest measure="yes"/>').replace(/<duration>\d+/, '<duration>' + dur));
