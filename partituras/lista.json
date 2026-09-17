@@ -8,11 +8,23 @@
     "archivo": "Cantares.xml"
   },
   {
-    "titulo": "Con amores, la mi madre",
+    "titulo": "Con amores la mi madre",
     "archivo": "Con_amores_la_mi_madre.xml"
   },
   {
     "titulo": "Hymne à la nuit (Les Choristes)",
     "archivo": "Hymne_a_la_nuit_Les_Choristes.xml"
+  },
+  {
+    "titulo": "Si la nieve resbala (Domínguez)",
+    "archivo": "Si_la_nieve_resbala_Dominguez.xml"
+  },
+  {
+    "titulo": "Tres morillas",
+    "archivo": "Tres_morillas.xml"
+  },
+  {
+    "titulo": "Ubi caritas (Gjeilo)",
+    "archivo": "Ubi_caritas_Gjeilo.xml"
   }
 ]

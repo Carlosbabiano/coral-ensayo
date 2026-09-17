@@ -1,5 +1,5 @@
 // Service worker: guarda la app, las partituras y los sonidos para funcionar sin conexión.
-const VERSION = 'coral-v7';
+const VERSION = 'coral-v8';
 const BASE = ['./', './index.html', './manifest.json', './icono-192.png', './icono-512.png', './icono-512-maskable.png', './apple-touch-icon.png', './partituras/lista.json'];
 
 self.addEventListener('install', e => {
