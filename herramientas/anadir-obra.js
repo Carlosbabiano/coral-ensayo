@@ -34,7 +34,8 @@ function analizarParte(cuerpo) {
       const p = nota.match(/<step>(\w)<\/step>\s*(?:<alter>(-?\d+)<\/alter>)?\s*<octave>(\d)/);
       if (p && !/<rest/.test(nota)) { suma += 12 * (+p[3] + 1) + SEMITONOS[p[1]] + (+(p[2] || 0)); n++; }
     }
-    for (const v in porVoz) if (porVoz[v] !== esperado) malos.push(num);
+    const sumas = Object.values(porVoz);
+    if (sumas.length && !sumas.some(s => s === esperado)) malos.push(num);
   }
   return { media: n ? suma / n : 60, clave, malos: [...new Set(malos)] };
 }
@@ -56,23 +57,71 @@ function nombresPorTesitura(partes) {
   return asignados;
 }
 
-function repararCompases(xml) {
-  // El escáner a veces pone la indicación de compás solo en una voz: se copia a las demás.
-  const tiempos = [...xml.matchAll(/<time[^>]*>[\s\S]*?<\/time>/g)].map(m => m[0]);
-  if (tiempos.length) {
-    xml = xml.replace(/(<part id="[^"]+">\s*<measure number="[^"]+"[^>]*>\s*<attributes>)([\s\S]*?)(<\/attributes>)/g,
-      (m, a, b, c) => {
-        if (/<time/.test(b)) return m;
-        if (/<\/key>/.test(b)) b = b.replace(/(<\/key>)/, '$1' + tiempos[0]);
-        else if (/<clef>/.test(b)) b = b.replace(/(<clef>)/, tiempos[0] + '$1');
-        else b += tiempos[0];
-        return a + b + c;
-      });
+function repararCompases(xml, avisos) {
+  const partes = () => [...xml.matchAll(/<part id="([^"]+)">([\s\S]*?)<\/part>/g)];
+  const medidas = cuerpo => [...cuerpo.matchAll(/<measure number="([^"]+)"[^>]*>([\s\S]*?)<\/measure>/g)];
+  const sumaCompas = (m, div) => {
+    let s = 0;
+    for (const [n] of m.matchAll(/<note>[\s\S]*?<\/note>/g)) if (!/<chord/.test(n) && !/<voice>[2-9]/.test(n)) s += +(n.match(/<duration>(\d+)/) || [, 0])[1];
+    return s / div;
+  };
+
+  // 1) Parte con dos pentagramas (acompañamiento de piano) junto a voces normales: se quita.
+  const esDoble = cuerpo => /<clef number="2">|<staves>\s*[2-9]|<staff>2<\/staff>/.test(cuerpo);
+  const simples = partes().filter(([, , c]) => !esDoble(c)).length;
+  for (const [todo, id, cuerpo] of partes()) {
+    if (!esDoble(cuerpo)) continue;
+    if (simples >= 2) {
+      xml = xml.replace(todo, '').replace(new RegExp(`<score-part id="${id}">[\\s\\S]*?</score-part>\\s*`), '');
+      avisos.push(`Se ha quitado una parte de dos pentagramas que parecía el acompañamiento de piano (${id}).`);
+    } else {
+      avisos.push(`La parte ${id} tiene dos pentagramas; la app la tratará como una sola voz.`);
+    }
   }
-  // Silencio de compás entero con duración incorrecta: se ajusta a la duración del compás
-  let div = 1, beats = 4, bt = 4;
+
+  // 2) Indicación de compás que falta en una voz pero está en otra, en el mismo compás: se copia.
+  const tiemposPorCompas = {};
+  for (const [, , cuerpo] of partes())
+    for (const [, num, m] of medidas(cuerpo)) { const t = m.match(/<time[^>]*>[\s\S]*?<\/time>/); if (t && !tiemposPorCompas[num]) tiemposPorCompas[num] = t[0]; }
+  xml = xml.replace(/<part id="[^"]+">[\s\S]*?<\/part>/g, parte =>
+    parte.replace(/(<measure number="([^"]+)"[^>]*>)([\s\S]*?)(<\/measure>)/g, (m, ini, num, cuerpo, fin) => {
+      const t = tiemposPorCompas[num];
+      if (!t || /<time/.test(cuerpo)) return m;
+      if (/<attributes>/.test(cuerpo)) {
+        cuerpo = cuerpo.replace(/(<attributes>)([\s\S]*?)(<\/attributes>)/, (a, o, b, c) => {
+          if (/<\/key>/.test(b)) b = b.replace(/(<\/key>)/, '$1' + t);
+          else if (/<clef>/.test(b)) b = b.replace(/(<clef>)/, t + '$1');
+          else b += t;
+          return o + b + c;
+        });
+      } else cuerpo = '<attributes>' + t + '</attributes>' + cuerpo;
+      return ini + cuerpo + fin;
+    }));
+
+  // 3) Una sola indicación de compás en toda la obra que no coincide con lo que suman los compases: se corrige.
+  const todosTiempos = [...xml.matchAll(/<beats>(\d+)<\/beats>\s*<beat-type>(\d+)<\/beat-type>/g)];
+  const distintos = new Set(todosTiempos.map(t => t[1] + '/' + t[2]));
+  if (distintos.size === 1) {
+    const [beats, bt] = [...distintos][0].split('/').map(Number);
+    const hist = {}; let total = 0;
+    for (const [, , cuerpo] of partes()) {
+      let div = 1;
+      for (const [, , m] of medidas(cuerpo)) { const d = m.match(/<divisions>(\d+)/); if (d) div = +d[1]; const q = sumaCompas(m, div).toFixed(2); hist[q] = (hist[q] || 0) + 1; total++; }
+    }
+    const [valor, veces] = Object.entries(hist).sort((a, b) => b[1] - a[1])[0] || [];
+    const real = +valor;
+    if (total && veces / total >= 0.8 && Math.abs(real - 4 * beats / bt) > 0.01 && real > 0) {
+      const nuevo = Number.isInteger(real) ? [real, 4] : Number.isInteger(real * 2) ? [real * 2, 8] : null;
+      if (nuevo) {
+        xml = xml.replace(/<beats>\d+<\/beats>(\s*)<beat-type>\d+<\/beat-type>/g, `<beats>${nuevo[0]}</beats>$1<beat-type>${nuevo[1]}</beat-type>`);
+        avisos.push(`El escáner puso compás de ${beats}/${bt} pero los compases suman ${nuevo[0]}/${nuevo[1]}: corregido.`);
+      }
+    }
+  }
+
+  // 4) Silencio de compás entero con duración incorrecta: se ajusta a la duración del compás
   xml = xml.replace(/<part id="[^"]+">[\s\S]*?<\/part>/g, parte => {
-    div = 1; beats = 4; bt = 4;
+    let div = 1, beats = 4, bt = 4;
     return parte.replace(/<measure number="[^"]+"[^>]*>[\s\S]*?<\/measure>/g, m => {
       const d = m.match(/<divisions>(\d+)/); if (d) div = +d[1];
       const b = m.match(/<beats>(\d+)<\/beats>\s*<beat-type>(\d+)/); if (b) { beats = +b[1]; bt = +b[2]; }
@@ -104,7 +153,9 @@ function procesar(ruta) {
   titulo = titulo.replace(/_+/g, ' ').trim();
   if (!xml.includes('<work-title>')) xml = xml.replace(/<score-partwise[^>]*>/, m => `${m}\n\t<work>\n\t\t<work-title>${titulo}</work-title>\n\t</work>`);
 
-  xml = repararCompases(xml);
+  const avisos = [];
+  xml = repararCompases(xml, avisos);
+  for (const av of avisos) console.log("  * " + av);
 
   // Partes
   const partes = [];
