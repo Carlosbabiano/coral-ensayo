@@ -405,7 +405,12 @@ $('partitura').addEventListener('click', ev => {
   }
 });
 
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(e => console.warn("Sin modo offline:", e));
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").then(reg => { try { reg.update(); } catch {} }).catch(e => console.warn("Sin modo offline:", e));
+  // Cuando se instala una versión nueva de la app, recargar una vez para usarla
+  let recargado = false; const habiaControlador = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (recargado || !habiaControlador) return; recargado = true; if (!reproduciendo) location.reload(); });
+}
 cargarLista().catch(e => { $('cargando').textContent = 'Error al cargar: ' + e.message; console.error(e); });
 </script>
 </body>
