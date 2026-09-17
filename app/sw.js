@@ -1,5 +1,5 @@
 // Service worker: guarda la app, las partituras y los sonidos para funcionar sin conexión.
-const VERSION = 'coral-v20';
+const VERSION = 'coral-v12';
 const BASE = ['./', './index.html', './manifest.json', './icono-192.png', './icono-512.png', './icono-512-maskable.png', './apple-touch-icon.png', './partituras/lista.json'];
 
 self.addEventListener('install', e => {
@@ -9,7 +9,8 @@ self.addEventListener('install', e => {
     // Todas las obras de la lista
     try {
       const lista = await (await fetch('./partituras/lista.json', { cache: 'no-store' })).json();
-      await cache.addAll(lista.map(o => './partituras/' + o.archivo));
+      const archivos = lista.flatMap(o => [o.archivo, o.pdf, o.posiciones].filter(Boolean).map(a => './partituras/' + a));
+      await cache.addAll(archivos);
     } catch (err) { console.warn('No se pudieron precargar las partituras', err); }
     self.skipWaiting();
   })());

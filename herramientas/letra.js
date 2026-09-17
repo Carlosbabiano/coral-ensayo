@@ -121,4 +121,4 @@ if (require.main === module) {
   fs.writeFileSync(out, salida);
   console.log(informe.join('\n'));
 }
-module.exports = { transplantar };
+module.exports = { transplantar, leerPartes, alinear };
