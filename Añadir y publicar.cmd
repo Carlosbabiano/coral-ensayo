@@ -2,7 +2,7 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 if "%~1"=="" (
-  echo Arrastra uno o varios archivos .xml del Escaner Musical sobre este icono.
+  echo Arrastra sobre este icono el .xml del Escaner Musical y el .pdf de la obra (juntos).
   echo Se anadiran a la app y se publicaran para todo el coro.
   pause
   exit /b
