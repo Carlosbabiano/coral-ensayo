@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Coral Villa de Mengíbar</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#24407a">
@@ -38,6 +38,14 @@
   .chip input { vertical-align: middle; }
   #compas { font-variant-numeric: tabular-nums; font-weight: 600; }
   #cargando { position: fixed; inset: 0; background: rgba(250,250,247,.9); display: grid; place-items: center; z-index: 10; font-size: 16px; }
+  .vista { display: flex; gap: 6px; margin: 8px 12px 0; }
+  .vista button { flex: 1; padding: 6px 0; border: 1px solid var(--line); background: #fff; border-radius: 8px; font: inherit; font-size: 13px; color: var(--fg); }
+  .vista button.activa { background: var(--soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  #pdfVista { display: none; padding: 8px 4px 220px; }
+  .pagina { position: relative; margin: 0 auto 10px; box-shadow: 0 1px 6px rgba(0,0,0,.15); background: #fff; }
+  .pagina canvas { display: block; width: 100%; height: auto; }
+  .pagina .capa { position: absolute; inset: 0; }
+  .pdfCursor { position: absolute; background: rgba(227,155,44,.35); border-left: 2px solid #e39b2c; pointer-events: none; transition: left .08s linear; }
 </style>
 </head>
 <body>
@@ -49,8 +57,13 @@
 <div style="padding: 8px 12px 0">
   <div class="voces" id="voces"></div>
 </div>
+<div class="vista" id="vista" style="display:none">
+  <button id="vistaPartitura" class="activa">Partitura</button>
+  <button id="vistaPdf">PDF original</button>
+</div>
 <div id="estado">Toca un compás de la partitura para empezar desde ahí.</div>
 <div id="partitura"></div>
+<div id="pdfVista"></div>
 
 <div class="controles">
   <div class="fila transporte">
@@ -93,10 +106,14 @@ let osmd, eventos = [], vozActiva = 0, instrumento = null, ctx = null;
 let reproduciendo = false, indiceEvento = 0, tInicio = 0, tOffset = 0, timerPlan = null, raf = null;
 let sonando = []; // notas en curso para poder cortarlas al parar
 let compasInicio = 0;
+// Vista "PDF original": la página del PDF con una marca que recorre los compases
+let listaObras = [], obraActual = null, posiciones = null, modoPdf = false, pdfjs = null, paginasPdf = [], pdfCargado = null;
+const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.3.289/';
 
 // ---------- Carga ----------
 async function cargarLista() {
   const lista = await (await fetch('partituras/lista.json')).json();
+  listaObras = lista;
   for (const o of lista) { const op = document.createElement('option'); op.value = o.archivo; op.textContent = o.titulo; $('obra').appendChild(op); }
   $('obra').onchange = () => cargarObra($('obra').value);
   await cargarObra(lista[0].archivo);
@@ -118,10 +135,82 @@ async function cargarObra(archivo) {
   osmd.render();
   construirEventos();
   osmd.cursor.show();
+  // ¿Tiene PDF original con posiciones de compases?
+  obraActual = listaObras.find(o => o.archivo === archivo) || {};
+  posiciones = null; paginasPdf = []; pdfCargado = null; $('pdfVista').innerHTML = '';
+  if (obraActual.pdf && obraActual.posiciones) {
+    try { posiciones = await (await fetch('partituras/' + obraActual.posiciones)).json(); } catch (e) { console.warn('Sin posiciones', e); }
+  }
+  $('vista').style.display = posiciones ? 'flex' : 'none';
+  if (!posiciones) modoPdf = false;
+  await aplicarModo();
   irACompas(0);
   $('hasta').value = osmd.Sheet.SourceMeasures.length;
   $('cargando').style.display = 'none';
 }
+
+// ---------- Vista PDF original ----------
+async function aplicarModo() {
+  $('vistaPartitura').classList.toggle('activa', !modoPdf);
+  $('vistaPdf').classList.toggle('activa', modoPdf);
+  // La partitura se oculta sin display:none para que OSMD no recalcule con tamaño cero
+  Object.assign($('partitura').style, modoPdf ? { position: 'absolute', left: '-20000px', width: '100%', height: '0', overflow: 'hidden', padding: '0' } : { position: '', left: '', width: '', height: '', overflow: '', padding: '' });
+  $('pdfVista').style.display = modoPdf ? 'block' : 'none';
+  $('soloPentagrama').disabled = modoPdf;
+  $('estado').textContent = modoPdf ? 'Toca un compás de la página para empezar desde ahí.' : 'Toca un compás de la partitura para empezar desde ahí.';
+  if (modoPdf && !pdfCargado) await cargarPdf();
+  try { localStorage.setItem('modoPdf', modoPdf ? '1' : '0'); } catch {}
+}
+
+async function cargarPdf() {
+  $('cargando').style.display = 'grid'; $('cargando').textContent = 'Cargando PDF…';
+  try {
+    if (!pdfjs) { pdfjs = await import(PDFJS + 'pdf.min.mjs'); pdfjs.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.mjs'; }
+    const doc = await pdfjs.getDocument({ url: 'partituras/' + obraActual.pdf }).promise;
+    const cont = $('pdfVista'); cont.innerHTML = ''; paginasPdf = [];
+    const anchoCss = Math.min(cont.clientWidth - 8, 900);
+    for (let n = 1; n <= doc.numPages; n++) {
+      const page = await doc.getPage(n);
+      const vp0 = page.getViewport({ scale: 1 });
+      const escala = anchoCss / vp0.width * Math.min(window.devicePixelRatio || 1, 2) * 1.5; // nítido al hacer zoom
+      const vp = page.getViewport({ scale: escala });
+      const div = document.createElement('div'); div.className = 'pagina'; div.style.width = anchoCss + 'px';
+      const canvas = document.createElement('canvas'); canvas.width = vp.width; canvas.height = vp.height;
+      const capa = document.createElement('div'); capa.className = 'capa'; capa.dataset.pagina = n - 1;
+      capa.addEventListener('click', ev => {
+        const r = capa.getBoundingClientRect(); const fx = (ev.clientX - r.left) / r.width, fy = (ev.clientY - r.top) / r.height;
+        const p = +capa.dataset.pagina;
+        const idx = posiciones.compases.findIndex(c => c && c.p === p && fx >= c.x0 && fx <= c.x1 && fy >= c.y0 && fy <= c.y1);
+        if (idx >= 0) { irACompas(idx); $('estado').textContent = 'Empezará en el compás ' + (idx + 1); }
+      });
+      const cursor = document.createElement('div'); cursor.className = 'pdfCursor'; cursor.style.display = 'none';
+      capa.appendChild(cursor); div.appendChild(canvas); div.appendChild(capa); cont.appendChild(div);
+      paginasPdf.push({ div, cursor });
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+    }
+    pdfCargado = true;
+  } catch (e) {
+    console.error(e); $('pdfVista').innerHTML = '<p style="padding:12px;color:var(--muted)">No se ha podido cargar el PDF (¿sin conexión la primera vez?).</p>';
+  }
+  $('cargando').style.display = 'none'; $('cargando').textContent = 'Cargando partitura…';
+}
+
+function moverCursorPdf(ev) {
+  if (!posiciones || !paginasPdf.length || !ev) return;
+  const c = posiciones.compases[ev.compas]; if (!c) return;
+  paginasPdf.forEach((pg, i) => { if (i !== c.p) pg.cursor.style.display = 'none'; });
+  const pg = paginasPdf[c.p]; if (!pg) return;
+  const frac = Math.max(0, Math.min(1, ev.frac || 0));
+  const s = pg.cursor.style;
+  s.display = 'block'; s.left = ((c.x0 + frac * (c.x1 - c.x0)) * 100) + '%'; s.width = '1.6%';
+  s.top = (c.y0 * 100) + '%'; s.height = ((c.y1 - c.y0) * 100) + '%';
+  const r = pg.cursor.getBoundingClientRect();
+  if (r.top < 60 || r.bottom > window.innerHeight - 220) pg.cursor.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+
+$('vistaPartitura').onclick = async () => { if (!modoPdf) return; modoPdf = false; await aplicarModo(); moverCursor(indiceEvento); };
+$('vistaPdf').onclick = async () => { if (modoPdf) return; modoPdf = true; await aplicarModo(); moverCursor(indiceEvento); };
+try { modoPdf = localStorage.getItem('modoPdf') === '1'; } catch {}
 
 function crearBotonesVoces() {
   const cont = $('voces'); cont.innerHTML = '';
@@ -175,7 +264,14 @@ function construirEventos() {
         notas.push({ parte, midi: n.Pitch.halfTone + 12, dur: dur * 4 * 60 / bpm });
       }
     }
-    eventos.push({ paso, seg: segundos, compas: it.CurrentMeasureIndex, notas });
+    // posición dentro del compás (0..1), para la marca en la vista PDF
+    let frac = 0;
+    try {
+      const sm = osmd.Sheet.SourceMeasures[it.CurrentMeasureIndex];
+      const tsm = (it.currentTimeStamp || it.CurrentSourceTimestamp);
+      if (sm && tsm && sm.Duration.RealValue > 0) frac = (tsm.RealValue - sm.AbsoluteTimestamp.RealValue) / sm.Duration.RealValue;
+    } catch {}
+    eventos.push({ paso, seg: segundos, compas: it.CurrentMeasureIndex, frac, notas });
     osmd.cursor.next(); paso++;
   }
   osmd.cursor.reset();
@@ -196,6 +292,7 @@ function moverCursor(i) {
   for (let k = 0; k < i; k++) osmd.cursor.next();
   osmd.cursor.update();
   $('compas').textContent = (eventos[i]?.compas ?? 0) + 1;
+  if (modoPdf) { moverCursorPdf(eventos[i]); return; }
   const el = osmd.cursor.cursorElement;
   if (el) { const r = el.getBoundingClientRect(); if (r.top < 60 || r.bottom > window.innerHeight - 220) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
 }
