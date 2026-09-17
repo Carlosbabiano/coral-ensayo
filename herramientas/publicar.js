@@ -33,3 +33,15 @@ try {
 } catch { /* ya estaba activado */ }
 const url = `https://${repo.split('/')[0].toLowerCase()}.github.io/${repo.split('/')[1]}/`;
 console.log(`\nListo. La app estará disponible en 1-2 minutos en:\n\n   ${url}\n\nComparte esa dirección con el coro. En el móvil: abrirla y "Añadir a pantalla de inicio".`);
+
+// Comprobación: que todos los archivos de las obras existan de verdad en internet (con el mismo nombre exacto)
+(async () => {
+  const lista = JSON.parse(require('fs').readFileSync(path.join(RAIZ, 'app', 'partituras', 'lista.json'), 'utf8'));
+  const archivos = lista.flatMap(o => [o.archivo, o.posiciones, ...(o.paginas || [])].filter(Boolean));
+  process.stdout.write('\nComprobando los archivos en internet (espera un par de minutos)...');
+  await new Promise(r => setTimeout(r, 120000));
+  const faltan = [];
+  for (const f of archivos) { try { const r = await fetch(url + 'partituras/' + f + '?t=' + Date.now(), { method: 'HEAD' }); if (r.status !== 200) faltan.push(f); } catch { faltan.push(f); } }
+  if (faltan.length) console.log(`\n! ATENCION: estos archivos no se encuentran en internet (revisa mayúsculas/minúsculas del nombre):\n  ${faltan.join('\n  ')}`);
+  else console.log(` correcto: ${archivos.length} archivos disponibles.`);
+})();
