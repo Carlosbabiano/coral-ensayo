@@ -342,7 +342,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Chris</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -355,7 +358,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>ti</text>
+        </lyric></note>
 		</measure>
 		<measure number="7">
 			<attributes>
@@ -376,7 +382,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -464,7 +473,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ca</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -477,7 +489,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ri</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -490,7 +505,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>tas</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -503,7 +521,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -516,7 +537,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -546,7 +570,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>mor,</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -571,7 +598,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -584,7 +614,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>us</text>
+        </lyric></note>
 		</measure>
 		<measure number="11">
 			<attributes>
@@ -606,7 +639,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>i</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -619,7 +655,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>bi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -631,7 +670,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>est.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>2</duration>
@@ -664,7 +706,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ga</text>
+        </lyric></note>
 		</measure>
 		<measure number="12">
 			<attributes>
@@ -712,7 +757,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>vit</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -725,7 +773,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>nos</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -751,7 +802,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>in</text>
+        </lyric></note>
 		</measure>
 		<measure number="13">
 			<attributes>
@@ -780,7 +834,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>num</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -793,7 +850,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Chris</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -806,7 +866,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>ti</text>
+        </lyric></note>
 		</measure>
 		<measure number="14">
 			<attributes>
@@ -827,7 +890,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -840,7 +906,10 @@
 				<dot />
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mor,</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -894,7 +963,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -927,7 +999,10 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mor.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>2</duration>
@@ -947,7 +1022,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Ex</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -960,7 +1038,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>sul</text>
+        </lyric></note>
 		</measure>
 		<measure number="17">
 			<attributes>
@@ -978,7 +1059,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>te</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -991,7 +1075,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -1004,7 +1091,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -1017,7 +1107,13 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>in</text>
+        </lyric><lyric number="2" placement="below">
+          <syllabic>single</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -1030,7 +1126,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ip</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -1043,7 +1142,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>so</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -1056,7 +1158,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ju</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -1069,7 +1174,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>cun</text>
+        </lyric></note>
 		</measure>
 		<measure number="18">
 			<attributes>
@@ -1115,7 +1223,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>mur.</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -1149,7 +1260,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -1162,7 +1276,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -1188,7 +1305,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -1201,7 +1321,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">continue</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -1214,7 +1337,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">continue</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -1227,7 +1353,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="20">
 			<attributes>
@@ -1245,7 +1374,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -1258,7 +1390,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>um</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -1270,7 +1405,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>vi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -1282,7 +1420,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>vum.</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -1295,7 +1436,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Ex</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -1308,7 +1452,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>sul</text>
+        </lyric></note>
 		</measure>
 		<measure number="21">
 			<attributes>
@@ -1326,7 +1473,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>te</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -1339,7 +1489,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -1352,7 +1505,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -1378,7 +1534,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ip</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -1391,7 +1550,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>so</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -1404,7 +1566,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ju</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -1417,7 +1582,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>cun</text>
+        </lyric></note>
 		</measure>
 		<measure number="22">
 			<attributes>
@@ -1434,7 +1602,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>de</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -1458,7 +1629,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mur.</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -1471,7 +1645,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Ti</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -1484,7 +1661,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 		</measure>
 		<measure number="23">
 			<attributes>
@@ -1501,7 +1681,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<chord />
 				<pitch>
@@ -1527,7 +1710,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -1580,7 +1766,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<chord />
 				<pitch>
@@ -1607,7 +1796,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<chord />
 				<pitch>
@@ -1634,7 +1826,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>rne</text>
+        </lyric></note>
 			<note>
 				<chord />
 				<pitch>
@@ -1663,7 +1858,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="24">
 			<attributes>
@@ -1681,7 +1879,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -1694,7 +1895,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>um</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -1707,7 +1911,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>vi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -1732,7 +1939,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>vum,</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -1745,7 +1955,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ti</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -1758,7 +1971,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 		</measure>
 		<measure number="25">
 			<attributes>
@@ -1775,7 +1991,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<chord />
 				<pitch>
@@ -1801,7 +2020,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -1814,7 +2036,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -1827,7 +2052,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<chord />
 				<pitch>
@@ -1854,7 +2082,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 			<note>
 				<chord />
 				<pitch>
@@ -1881,7 +2112,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<chord />
 				<pitch>
@@ -1955,7 +2189,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -1968,7 +2205,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>um</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -1981,7 +2221,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>vi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -2006,7 +2249,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>vum,</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -2019,7 +2265,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -2032,7 +2281,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>um</text>
+        </lyric></note>
 		</measure>
 		<measure number="27">
 			<attributes>
@@ -2049,7 +2301,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>vi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -2061,7 +2316,10 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>vum.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -2086,7 +2344,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>Et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -2099,7 +2360,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>ex</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -2112,7 +2376,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>cor</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -2126,7 +2393,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>de</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -2139,7 +2409,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>di</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -2152,7 +2425,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>li</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -2165,7 +2441,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ga</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -2178,7 +2457,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="29">
 			<attributes>
@@ -2196,7 +2478,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>nos</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -2209,7 +2494,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>sin</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -2222,7 +2510,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ce</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -2289,7 +2580,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>ex</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -2303,7 +2597,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>cor</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -2316,7 +2613,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>dc</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -2329,7 +2629,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>di</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -2344,7 +2647,10 @@
 				<staff>1</staff>
 				<beam number="1">continue</beam>
 				<beam number="2">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>li</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -2371,7 +2677,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ga</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -2384,7 +2693,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="31">
 			<attributes>
@@ -2538,7 +2850,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>U</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -2573,7 +2888,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ca</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -2599,7 +2917,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ri</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -2612,7 +2933,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>tas</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -2638,7 +2962,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 		</measure>
 		<measure number="35">
 			<attributes>
@@ -2715,7 +3042,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>i</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -2728,7 +3058,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>bi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -2741,7 +3074,10 @@
 				<dot />
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>est.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -2761,7 +3097,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Con</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -2774,7 +3113,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>gre</text>
+        </lyric></note>
 		</measure>
 		<measure number="37">
 			<attributes>
@@ -2796,7 +3138,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ga</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -2822,7 +3167,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>vit</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -2835,7 +3183,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>nos</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -2861,7 +3212,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>in</text>
+        </lyric></note>
 		</measure>
 		<measure number="38">
 			<attributes>
@@ -2878,7 +3232,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>u</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -2890,7 +3247,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>num</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -2903,7 +3263,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Chris</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -2916,7 +3279,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>ti</text>
+        </lyric></note>
 		</measure>
 		<measure number="39">
 			<attributes>
@@ -2937,7 +3303,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -2950,7 +3319,10 @@
 				<dot />
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mor,</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -2985,7 +3357,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Chris</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -2997,7 +3372,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>ti</text>
+        </lyric></note>
 		</measure>
 		<measure number="41">
 			<attributes>
@@ -3018,7 +3396,10 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -3048,7 +3429,10 @@
 				<dot />
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mor.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -3076,7 +3460,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>A</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -3164,7 +3551,10 @@
 				<notations>
 					<tied type="start" />
 				</notations>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>men.</text>
+        </lyric></note>
 		</measure>
 		<measure number="45">
 			<attributes>
@@ -3285,7 +3675,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ga</text>
+        </lyric></note>
 		</measure>
 		<measure number="5">
 			<attributes>
@@ -3333,7 +3726,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>vit</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -3346,7 +3742,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>nos</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -3372,7 +3771,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>in</text>
+        </lyric></note>
 		</measure>
 		<measure number="6">
 			<attributes>
@@ -3389,7 +3791,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>u</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -3401,7 +3806,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>num</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -3414,7 +3822,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Chris</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -3427,7 +3838,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>ti</text>
+        </lyric></note>
 		</measure>
 		<measure number="7">
 			<attributes>
@@ -3481,7 +3895,10 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mor.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>2</duration>
@@ -3501,7 +3918,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>U</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -3514,7 +3934,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>bi</text>
+        </lyric></note>
 		</measure>
 		<measure number="9">
 			<attributes>
@@ -3536,7 +3959,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ca</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -3549,7 +3975,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ri</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -3562,7 +3991,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>tas</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -3575,7 +4007,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -3588,7 +4023,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -3618,7 +4056,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>mor,</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -3643,7 +4084,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -3656,7 +4100,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>us</text>
+        </lyric></note>
 		</measure>
 		<measure number="11">
 			<attributes>
@@ -3678,7 +4125,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>i</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -3691,7 +4141,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>bi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -3703,7 +4156,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>est.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>2</duration>
@@ -3758,7 +4214,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ga</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -3784,7 +4243,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>vit</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -3797,7 +4259,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>nos</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -3823,7 +4288,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>in</text>
+        </lyric></note>
 		</measure>
 		<measure number="13">
 			<attributes>
@@ -3852,7 +4320,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>num</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -3865,7 +4336,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Chris</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -3878,7 +4352,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>ti</text>
+        </lyric></note>
 		</measure>
 		<measure number="14">
 			<attributes>
@@ -3912,7 +4389,10 @@
 				<dot />
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -3967,7 +4447,10 @@
 				<dot />
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4000,7 +4483,10 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mor.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>2</duration>
@@ -4020,7 +4506,13 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Ex</text>
+        </lyric><lyric number="2" placement="below">
+          <syllabic>single</syllabic>
+          <text>"III</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4033,7 +4525,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>sul</text>
+        </lyric></note>
 		</measure>
 		<measure number="17">
 			<attributes>
@@ -4051,7 +4546,45 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>te</text>
+        </lyric></note>
+			<note>
+				<pitch>
+					<step>E</step>
+					<alter>0</alter>
+					<octave>4</octave>
+				</pitch>
+				<duration>1</duration>
+				<voice>1</voice>
+				<type>eighth</type>
+				<stem>up</stem>
+				<staff>1</staff>
+				<beam number="1">end</beam>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
+			<note>
+				<pitch>
+					<step>E</step>
+					<alter>0</alter>
+					<octave>4</octave>
+				</pitch>
+				<duration>1</duration>
+				<voice>1</voice>
+				<type>eighth</type>
+				<stem>up</stem>
+				<staff>1</staff>
+				<beam number="1">begin</beam>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric><lyric number="2" placement="below">
+          <syllabic>single</syllabic>
+          <text>cresc.pocoapoco</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4077,7 +4610,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ip</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4090,7 +4626,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>so</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4103,33 +4642,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
-			<note>
-				<pitch>
-					<step>E</step>
-					<alter>0</alter>
-					<octave>4</octave>
-				</pitch>
-				<duration>1</duration>
-				<voice>1</voice>
-				<type>eighth</type>
-				<stem>up</stem>
-				<staff>1</staff>
-				<beam number="1">end</beam>
-			</note>
-			<note>
-				<pitch>
-					<step>E</step>
-					<alter>0</alter>
-					<octave>4</octave>
-				</pitch>
-				<duration>1</duration>
-				<voice>1</voice>
-				<type>eighth</type>
-				<stem>up</stem>
-				<staff>1</staff>
-				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ju</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -4142,7 +4658,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>cun</text>
+        </lyric></note>
 		</measure>
 		<measure number="18">
 			<attributes>
@@ -4202,7 +4721,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Tl</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4215,7 +4737,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 		</measure>
 		<measure number="19">
 			<attributes>
@@ -4237,7 +4762,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -4263,7 +4791,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -4289,7 +4820,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -4302,7 +4836,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -4315,7 +4852,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -4328,7 +4868,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="20">
 			<attributes>
@@ -4347,7 +4890,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4360,7 +4906,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>um</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -4372,7 +4921,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>vi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4385,7 +4937,10 @@
 				<accidental>sharp</accidental>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>vum.</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4398,7 +4953,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Ex</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4411,7 +4969,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>sul</text>
+        </lyric></note>
 		</measure>
 		<measure number="21">
 			<attributes>
@@ -4429,7 +4990,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>te</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -4442,33 +5006,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
-			<note>
-				<pitch>
-					<step>F</step>
-					<alter>1</alter>
-					<octave>4</octave>
-				</pitch>
-				<duration>1</duration>
-				<voice>1</voice>
-				<type>eighth</type>
-				<stem>up</stem>
-				<staff>1</staff>
-				<beam number="1">begin</beam>
-			</note>
-			<note>
-				<pitch>
-					<step>F</step>
-					<alter>1</alter>
-					<octave>4</octave>
-				</pitch>
-				<duration>1</duration>
-				<voice>1</voice>
-				<type>eighth</type>
-				<stem>up</stem>
-				<staff>1</staff>
-				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -4481,7 +5022,42 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
+			<note>
+				<pitch>
+					<step>F</step>
+					<alter>1</alter>
+					<octave>4</octave>
+				</pitch>
+				<duration>1</duration>
+				<voice>1</voice>
+				<type>eighth</type>
+				<stem>up</stem>
+				<staff>1</staff>
+				<beam number="1">end</beam>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>in</text>
+        </lyric></note>
+			<note>
+				<pitch>
+					<step>F</step>
+					<alter>1</alter>
+					<octave>4</octave>
+				</pitch>
+				<duration>1</duration>
+				<voice>1</voice>
+				<type>eighth</type>
+				<stem>up</stem>
+				<staff>1</staff>
+				<beam number="1">begin</beam>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ip</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4494,7 +5070,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>so</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4507,7 +5086,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ju</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4520,7 +5102,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>cun</text>
+        </lyric></note>
 		</measure>
 		<measure number="22">
 			<attributes>
@@ -4538,7 +5123,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>de</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -4598,7 +5186,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mul;:</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -4624,7 +5215,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Ti</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4637,7 +5231,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 		</measure>
 		<measure number="23">
 			<attributes>
@@ -4654,7 +5251,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -4667,7 +5267,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4693,7 +5296,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -4706,7 +5312,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4719,7 +5328,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -4732,7 +5344,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="24">
 			<attributes>
@@ -4750,7 +5365,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -4763,7 +5381,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>um</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -4776,7 +5397,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>vi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4801,7 +5425,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>vum,</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4844,7 +5471,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -4857,7 +5487,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4883,7 +5516,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -4896,7 +5532,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4909,7 +5548,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4922,7 +5564,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="26">
 			<attributes>
@@ -4940,7 +5585,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4953,7 +5601,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>um</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -4991,7 +5642,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>vum,</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -5004,7 +5658,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -5017,7 +5674,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>um</text>
+        </lyric></note>
 		</measure>
 		<measure number="27">
 			<attributes>
@@ -5034,7 +5694,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>vi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -5046,7 +5709,10 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>vum.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -5071,7 +5737,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>Et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -5084,7 +5753,42 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>ex</text>
+        </lyric></note>
+			<note>
+				<pitch>
+					<step>F</step>
+					<alter>1</alter>
+					<octave>4</octave>
+				</pitch>
+				<duration>1</duration>
+				<voice>1</voice>
+				<type>eighth</type>
+				<stem>up</stem>
+				<staff>1</staff>
+				<beam number="1">begin</beam>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>cor</text>
+        </lyric></note>
+			<note>
+				<pitch>
+					<step>F</step>
+					<alter>1</alter>
+					<octave>4</octave>
+				</pitch>
+				<duration>1</duration>
+				<voice>1</voice>
+				<type>eighth</type>
+				<stem>up</stem>
+				<staff>1</staff>
+				<beam number="1">end</beam>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>de</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -5110,7 +5814,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>li</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -5123,7 +5830,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ga</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -5136,33 +5846,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
-			<note>
-				<pitch>
-					<step>F</step>
-					<alter>1</alter>
-					<octave>4</octave>
-				</pitch>
-				<duration>1</duration>
-				<voice>1</voice>
-				<type>eighth</type>
-				<stem>up</stem>
-				<staff>1</staff>
-				<beam number="1">begin</beam>
-			</note>
-			<note>
-				<pitch>
-					<step>F</step>
-					<alter>1</alter>
-					<octave>4</octave>
-				</pitch>
-				<duration>1</duration>
-				<voice>1</voice>
-				<type>eighth</type>
-				<stem>up</stem>
-				<staff>1</staff>
-				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="29">
 			<attributes>
@@ -5193,7 +5880,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="2" placement="below">
+          <syllabic>begin</syllabic>
+          <text>sin</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -5234,7 +5924,10 @@
 				<accidental>sharp</accidental>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="2" placement="below">
+          <syllabic>end</syllabic>
+          <text>I‘O,</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -5260,7 +5953,13 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="2" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric><lyric number="3" placement="below">
+          <syllabic>single</syllabic>
+          <text>W‘P</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -5273,7 +5972,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="2" placement="below">
+          <syllabic>single</syllabic>
+          <text>ex</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -5286,7 +5988,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="2" placement="below">
+          <syllabic>begin</syllabic>
+          <text>cor</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -5299,7 +6004,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="2" placement="below">
+          <syllabic>end</syllabic>
+          <text>de</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -5312,7 +6020,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="2" placement="below">
+          <syllabic>begin</syllabic>
+          <text>di</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -5325,7 +6036,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="2" placement="below">
+          <syllabic>middle</syllabic>
+          <text>li</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -5338,7 +6052,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="2" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ga</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -5351,7 +6068,13 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>u</text>
+        </lyric><lyric number="2" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus '</text>
+        </lyric></note>
 		</measure>
 		<measure number="31">
 			<attributes>
@@ -5370,7 +6093,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="2" placement="below">
+          <syllabic>single</syllabic>
+          <text>nos</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -5383,7 +6109,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="2" placement="below">
+          <syllabic>begin</syllabic>
+          <text>sin</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -5395,7 +6124,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="2" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ce</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -5409,7 +6141,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="2" placement="below">
+          <syllabic>end</syllabic>
+          <text>ro.</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -5523,7 +6258,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>U</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -5536,7 +6274,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>bl</text>
+        </lyric></note>
 		</measure>
 		<measure number="34">
 			<attributes>
@@ -5558,7 +6299,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ca</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -5571,7 +6315,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ri</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -5584,7 +6331,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>tas</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -5597,7 +6347,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -5700,7 +6453,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>i</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -5713,7 +6469,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>bi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -5726,7 +6485,10 @@
 				<dot />
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>est.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -5746,7 +6508,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Con</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -5759,7 +6524,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>gre</text>
+        </lyric></note>
 		</measure>
 		<measure number="37">
 			<attributes>
@@ -5781,7 +6549,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ga</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -5807,7 +6578,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>vit</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -5824,7 +6598,10 @@
 				<notations>
 					<tied type="start" />
 				</notations>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>nos</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -5854,7 +6631,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>in</text>
+        </lyric></note>
 		</measure>
 		<measure number="38">
 			<attributes>
@@ -5872,7 +6652,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>u</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -5897,7 +6680,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>num</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -5910,7 +6696,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Chris</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -5923,7 +6712,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>ti</text>
+        </lyric></note>
 		</measure>
 		<measure number="39">
 			<attributes>
@@ -5944,7 +6736,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -5957,7 +6752,10 @@
 				<dot />
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mor,</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -5992,7 +6790,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Chris</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -6004,7 +6805,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>ti</text>
+        </lyric></note>
 		</measure>
 		<measure number="41">
 			<attributes>
@@ -6026,7 +6830,10 @@
 				<dot />
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -6056,7 +6863,10 @@
 				<dot />
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mor.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -6085,7 +6895,10 @@
 				<dot />
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>A</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -6131,7 +6944,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>men,</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -6348,7 +7164,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ca</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -6361,7 +7180,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ri</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -6374,7 +7196,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>tas</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -6387,7 +7212,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -6400,7 +7228,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -6430,7 +7261,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>mor,</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -6455,7 +7289,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -6468,7 +7305,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>us</text>
+        </lyric></note>
 		</measure>
 		<measure number="11">
 			<attributes>
@@ -6490,7 +7330,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>i</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -6503,7 +7346,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>bi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -6548,7 +7394,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ga</text>
+        </lyric></note>
 		</measure>
 		<measure number="12">
 			<attributes>
@@ -6596,7 +7445,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>vit</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -6609,7 +7461,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>nos</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -6635,7 +7490,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>in</text>
+        </lyric></note>
 		</measure>
 		<measure number="13">
 			<attributes>
@@ -6664,7 +7522,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>num</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -6677,7 +7538,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Chris</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -6690,7 +7554,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>ti</text>
+        </lyric></note>
 		</measure>
 		<measure number="14">
 			<attributes>
@@ -6712,7 +7579,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -6738,7 +7608,10 @@
 				<dot />
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mor,</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -6793,7 +7666,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -6839,7 +7715,10 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mor.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>2</duration>
@@ -6859,7 +7738,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Ex</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -6872,7 +7754,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>sul</text>
+        </lyric></note>
 		</measure>
 		<measure number="17">
 			<attributes>
@@ -6890,7 +7775,42 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>te</text>
+        </lyric></note>
+			<note>
+				<pitch>
+					<step>A</step>
+					<alter>0</alter>
+					<octave>3</octave>
+				</pitch>
+				<duration>1</duration>
+				<voice>1</voice>
+				<type>eighth</type>
+				<stem>up</stem>
+				<staff>1</staff>
+				<beam number="1">end</beam>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
+			<note>
+				<pitch>
+					<step>A</step>
+					<alter>0</alter>
+					<octave>3</octave>
+				</pitch>
+				<duration>1</duration>
+				<voice>1</voice>
+				<type>eighth</type>
+				<stem>up</stem>
+				<staff>1</staff>
+				<beam number="1">begin</beam>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -6916,7 +7836,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ip</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -6929,33 +7852,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
-			<note>
-				<pitch>
-					<step>A</step>
-					<alter>0</alter>
-					<octave>3</octave>
-				</pitch>
-				<duration>1</duration>
-				<voice>1</voice>
-				<type>eighth</type>
-				<stem>up</stem>
-				<staff>1</staff>
-				<beam number="1">begin</beam>
-			</note>
-			<note>
-				<pitch>
-					<step>A</step>
-					<alter>0</alter>
-					<octave>3</octave>
-				</pitch>
-				<duration>1</duration>
-				<voice>1</voice>
-				<type>eighth</type>
-				<stem>up</stem>
-				<staff>1</staff>
-				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>so</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -6968,7 +7868,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ju</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -6981,7 +7884,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>cun</text>
+        </lyric></note>
 		</measure>
 		<measure number="18">
 			<attributes>
@@ -7040,7 +7946,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>mur.</text>
+        </lyric></note>
 		</measure>
 		<measure number="19">
 			<attributes>
@@ -7061,7 +7970,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -7073,7 +7985,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -7086,7 +8001,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -7099,7 +8017,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -7112,7 +8033,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -7125,7 +8049,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="20">
 			<attributes>
@@ -7143,7 +8070,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -7156,7 +8086,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>um</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -7169,7 +8102,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>vi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -7195,7 +8131,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>vum.</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -7208,7 +8147,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Ex</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -7221,7 +8163,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>sul</text>
+        </lyric></note>
 		</measure>
 		<measure number="21">
 			<attributes>
@@ -7239,7 +8184,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>te</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -7252,7 +8200,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -7265,7 +8216,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -7278,7 +8232,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>in</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -7291,7 +8248,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ip</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -7304,7 +8264,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>so</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -7317,7 +8280,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ju</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -7330,7 +8296,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>cun</text>
+        </lyric></note>
 		</measure>
 		<measure number="22">
 			<attributes>
@@ -7347,7 +8316,10 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>de</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -7359,7 +8331,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mur.</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -7372,7 +8347,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Ti</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -7385,7 +8363,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 		</measure>
 		<measure number="23">
 			<attributes>
@@ -7402,7 +8383,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -7415,7 +8399,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -7441,7 +8428,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -7454,7 +8444,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -7467,7 +8460,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -7480,7 +8476,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="24">
 			<attributes>
@@ -7498,7 +8497,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -7511,7 +8513,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>um</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -7523,7 +8528,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>vi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -7535,7 +8543,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>vum,</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -7548,7 +8559,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ti</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -7561,7 +8575,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 		</measure>
 		<measure number="25">
 			<attributes>
@@ -7578,7 +8595,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -7591,7 +8611,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus..</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -7617,7 +8640,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -7630,7 +8656,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -7643,7 +8672,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -7656,7 +8688,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="26">
 			<attributes>
@@ -7699,7 +8734,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>vi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -7711,7 +8749,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>vum,</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -7724,7 +8765,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -7737,7 +8781,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>um</text>
+        </lyric></note>
 		</measure>
 		<measure number="27">
 			<attributes>
@@ -7767,7 +8814,10 @@
 				<accidental>sharp</accidental>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>vum,</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -7793,7 +8843,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>Et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -7806,7 +8859,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>ex</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -7819,7 +8875,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>cor</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -7832,7 +8891,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>de</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -7845,7 +8907,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>di</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -7858,7 +8923,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>li</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -7871,7 +8939,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ga</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -7884,7 +8955,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="29">
 			<attributes>
@@ -7903,7 +8977,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>nos</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -7916,7 +8993,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>sin</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -7928,7 +9008,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>cc</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -7941,7 +9024,10 @@
 				<dot />
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>Io,</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -7967,7 +9053,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -7980,7 +9069,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>ex</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -7993,7 +9085,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>cor</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -8006,7 +9101,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>de</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -8019,7 +9117,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>di</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -8032,7 +9133,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>li</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -8045,7 +9149,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ga</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -8058,7 +9165,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="31">
 			<attributes>
@@ -8077,7 +9187,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>nos</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -8090,7 +9203,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>sin</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -8102,7 +9218,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ce</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -8119,7 +9238,10 @@
 				<notations>
 					<tied type="start" />
 				</notations>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>ro.</text>
+        </lyric></note>
 		</measure>
 		<measure number="32">
 			<attributes>
@@ -8198,7 +9320,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>U</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -8211,7 +9336,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>bi</text>
+        </lyric></note>
 		</measure>
 		<measure number="34">
 			<attributes>
@@ -8233,7 +9361,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ca</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -8246,7 +9377,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ri</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -8259,7 +9393,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>tas</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -8272,7 +9409,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -8301,7 +9441,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mor,</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -8326,7 +9469,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -8339,7 +9485,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>us</text>
+        </lyric></note>
 		</measure>
 		<measure number="36">
 			<attributes>
@@ -8361,7 +9510,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>i</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -8374,7 +9526,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>bi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -8387,7 +9542,10 @@
 				<dot />
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>est.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -8407,7 +9565,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Con</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -8420,7 +9581,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>gre</text>
+        </lyric></note>
 		</measure>
 		<measure number="37">
 			<attributes>
@@ -8442,7 +9606,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ga</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -8468,7 +9635,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>vit</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -8485,7 +9655,10 @@
 				<notations>
 					<tied type="start" />
 				</notations>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>nos</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -8515,7 +9688,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>in</text>
+        </lyric></note>
 		</measure>
 		<measure number="38">
 			<attributes>
@@ -8532,7 +9708,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>u</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -8544,7 +9723,10 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>num</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -8557,7 +9739,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Chris</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -8570,7 +9755,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>ti</text>
+        </lyric></note>
 		</measure>
 		<measure number="39">
 			<attributes>
@@ -8592,7 +9780,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -8618,7 +9809,10 @@
 				<dot />
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mor,</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -9076,7 +10270,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ca</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -9089,7 +10286,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ri</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -9102,7 +10302,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>tas</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -9115,7 +10318,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -9128,7 +10334,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -9158,7 +10367,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>mor,</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -9183,7 +10395,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -9196,7 +10411,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>us</text>
+        </lyric></note>
 		</measure>
 		<measure number="11">
 			<attributes>
@@ -9218,7 +10436,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>i</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -9231,7 +10452,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>bi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -9243,7 +10467,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>est.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>2</duration>
@@ -9276,7 +10503,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ga</text>
+        </lyric></note>
 		</measure>
 		<measure number="12">
 			<attributes>
@@ -9324,7 +10554,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>vit</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -9337,7 +10570,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>nos</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -9363,7 +10599,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>in</text>
+        </lyric></note>
 		</measure>
 		<measure number="13">
 			<attributes>
@@ -9392,7 +10631,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>num</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -9405,7 +10647,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Chris</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -9418,7 +10663,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>ti</text>
+        </lyric></note>
 		</measure>
 		<measure number="14">
 			<attributes>
@@ -9439,7 +10687,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -9452,7 +10703,10 @@
 				<dot />
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mor,</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -9506,7 +10760,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -9539,7 +10796,10 @@
 				<type>half</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mor.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>2</duration>
@@ -9559,7 +10819,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Ex</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -9572,7 +10835,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>sul</text>
+        </lyric></note>
 		</measure>
 		<measure number="17">
 			<attributes>
@@ -9590,7 +10856,42 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>te</text>
+        </lyric></note>
+			<note>
+				<pitch>
+					<step>A</step>
+					<alter>0</alter>
+					<octave>3</octave>
+				</pitch>
+				<duration>1</duration>
+				<voice>1</voice>
+				<type>eighth</type>
+				<stem>down</stem>
+				<staff>1</staff>
+				<beam number="1">end</beam>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
+			<note>
+				<pitch>
+					<step>A</step>
+					<alter>0</alter>
+					<octave>3</octave>
+				</pitch>
+				<duration>1</duration>
+				<voice>1</voice>
+				<type>eighth</type>
+				<stem>down</stem>
+				<staff>1</staff>
+				<beam number="1">begin</beam>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -9616,7 +10917,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ip</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -9629,33 +10933,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
-			<note>
-				<pitch>
-					<step>A</step>
-					<alter>0</alter>
-					<octave>3</octave>
-				</pitch>
-				<duration>1</duration>
-				<voice>1</voice>
-				<type>eighth</type>
-				<stem>down</stem>
-				<staff>1</staff>
-				<beam number="1">begin</beam>
-			</note>
-			<note>
-				<pitch>
-					<step>A</step>
-					<alter>0</alter>
-					<octave>3</octave>
-				</pitch>
-				<duration>1</duration>
-				<voice>1</voice>
-				<type>eighth</type>
-				<stem>down</stem>
-				<staff>1</staff>
-				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>so</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -9668,7 +10949,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ju</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -9681,7 +10965,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>cun</text>
+        </lyric></note>
 		</measure>
 		<measure number="18">
 			<attributes>
@@ -9727,7 +11014,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>mur.</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -9761,7 +11051,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -9774,7 +11067,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -9800,7 +11096,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -9813,7 +11112,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -9826,7 +11128,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -9839,7 +11144,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="20">
 			<attributes>
@@ -9857,7 +11165,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -9870,7 +11181,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>um</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -9882,7 +11196,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>vi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -9894,7 +11211,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>vum.</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -9907,7 +11227,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Ex</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -9920,7 +11243,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>sul</text>
+        </lyric></note>
 		</measure>
 		<measure number="21">
 			<attributes>
@@ -9938,7 +11264,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>te</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -9951,7 +11280,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -9964,7 +11296,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -9977,7 +11312,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>in</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -9990,7 +11328,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ip</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -10003,7 +11344,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>so</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -10016,7 +11360,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ju</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -10029,7 +11376,10 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>cun</text>
+        </lyric></note>
 		</measure>
 		<measure number="22">
 			<attributes>
@@ -10046,7 +11396,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>de</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -10070,7 +11423,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mur.</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -10083,7 +11439,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Ti</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -10096,7 +11455,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 		</measure>
 		<measure number="23">
 			<attributes>
@@ -10113,7 +11475,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -10125,7 +11490,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -10138,7 +11506,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -10151,7 +11522,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -10164,7 +11538,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -10177,7 +11554,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="24">
 			<attributes>
@@ -10195,7 +11575,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -10208,7 +11591,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>um</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -10221,7 +11607,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>vi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -10246,7 +11635,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>vum,</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -10259,7 +11651,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ti</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -10272,7 +11667,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric></note>
 		</measure>
 		<measure number="25">
 			<attributes>
@@ -10289,7 +11687,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -10301,7 +11702,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -10314,7 +11718,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -10327,7 +11734,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>a '</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -10340,7 +11750,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>me</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -10353,7 +11766,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="26">
 			<attributes>
@@ -10371,7 +11787,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -10384,7 +11803,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>um</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -10397,7 +11819,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>vi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -10422,7 +11847,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>vum,</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -10435,7 +11863,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -10448,7 +11879,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>um</text>
+        </lyric></note>
 		</measure>
 		<measure number="27">
 			<attributes>
@@ -10465,7 +11899,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>vi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -10477,7 +11914,13 @@
 				<type>half</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>vum.</text>
+        </lyric><lyric number="2" placement="below">
+          <syllabic>single</syllabic>
+          <text>(m )</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -10502,7 +11945,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>Et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -10515,7 +11961,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>ex</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -10529,7 +11978,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>cor</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -10542,7 +11994,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>de</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -10555,7 +12010,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>di</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -10568,7 +12026,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>li</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -10581,7 +12042,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ga</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -10594,7 +12058,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="29">
 			<attributes>
@@ -10612,7 +12079,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>nos</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -10625,7 +12095,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>sin</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -10637,7 +12110,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ce</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -10677,7 +12153,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -10691,7 +12170,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>ex</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -10704,7 +12186,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>cor</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -10717,7 +12202,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>de</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -10731,7 +12219,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>di</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -10744,7 +12235,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>li</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -10757,7 +12251,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ga</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -10770,7 +12267,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mus</text>
+        </lyric></note>
 		</measure>
 		<measure number="31">
 			<attributes>
@@ -10788,7 +12288,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>nos</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -10801,7 +12304,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>sin</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -10814,7 +12320,10 @@
 				<accidental>sharp</accidental>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ce</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -10828,7 +12337,10 @@
 				<accidental>natural</accidental>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>ro.</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -10919,7 +12431,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>ca</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -10932,7 +12447,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ri</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -10945,7 +12463,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>tas</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -10958,7 +12479,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>et</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -10987,7 +12511,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mor,</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -11012,7 +12539,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>De</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -11025,7 +12555,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>us</text>
+        </lyric></note>
 		</measure>
 		<measure number="36">
 			<attributes>
@@ -11047,7 +12580,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>i</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -11060,7 +12596,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>bi</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -11073,7 +12612,10 @@
 				<dot />
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>est.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -11093,7 +12635,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Con</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -11106,7 +12651,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>gre</text>
+        </lyric></note>
 		</measure>
 		<measure number="37">
 			<attributes>
@@ -11128,7 +12676,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>middle</syllabic>
+          <text>ga</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -11154,7 +12705,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>vit</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -11167,7 +12721,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>nos</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -11193,7 +12750,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>in</text>
+        </lyric></note>
 		</measure>
 		<measure number="38">
 			<attributes>
@@ -11210,7 +12770,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>u</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -11222,7 +12785,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>num</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -11235,7 +12801,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Chris</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -11248,7 +12817,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>ti</text>
+        </lyric></note>
 		</measure>
 		<measure number="39">
 			<attributes>
@@ -11269,7 +12841,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -11282,7 +12857,10 @@
 				<dot />
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>mor,</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -11317,7 +12895,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>Chris</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -11329,7 +12910,10 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>ti</text>
+        </lyric></note>
 		</measure>
 		<measure number="41">
 			<attributes>
@@ -11350,7 +12934,10 @@
 				<type>half</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>a</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -11380,7 +12967,10 @@
 				<dot />
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>single</syllabic>
+          <text>mor.</text>
+        </lyric></note>
 			<note>
 				<rest />
 				<duration>1</duration>
@@ -11435,7 +13025,10 @@
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>begin</syllabic>
+          <text>A</text>
+        </lyric></note>
 			<note>
 				<pitch>
 					<step>A</step>
@@ -11485,7 +13078,10 @@
 				<notations>
 					<tied type="start" />
 				</notations>
-			</note>
+			<lyric number="1" placement="below">
+          <syllabic>end</syllabic>
+          <text>men.</text>
+        </lyric></note>
 		</measure>
 		<measure number="45">
 			<attributes>
