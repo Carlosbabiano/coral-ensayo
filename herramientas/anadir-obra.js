@@ -56,6 +56,37 @@ function nombresPorTesitura(partes) {
   return asignados;
 }
 
+function repararCompases(xml) {
+  // El escáner a veces pone la indicación de compás solo en una voz: se copia a las demás.
+  const tiempos = [...xml.matchAll(/<time[^>]*>[\s\S]*?<\/time>/g)].map(m => m[0]);
+  if (tiempos.length) {
+    xml = xml.replace(/(<part id="[^"]+">\s*<measure number="[^"]+"[^>]*>\s*<attributes>)([\s\S]*?)(<\/attributes>)/g,
+      (m, a, b, c) => {
+        if (/<time/.test(b)) return m;
+        if (/<\/key>/.test(b)) b = b.replace(/(<\/key>)/, '$1' + tiempos[0]);
+        else if (/<clef>/.test(b)) b = b.replace(/(<clef>)/, tiempos[0] + '$1');
+        else b += tiempos[0];
+        return a + b + c;
+      });
+  }
+  // Silencio de compás entero con duración incorrecta: se ajusta a la duración del compás
+  let div = 1, beats = 4, bt = 4;
+  xml = xml.replace(/<part id="[^"]+">[\s\S]*?<\/part>/g, parte => {
+    div = 1; beats = 4; bt = 4;
+    return parte.replace(/<measure number="[^"]+"[^>]*>[\s\S]*?<\/measure>/g, m => {
+      const d = m.match(/<divisions>(\d+)/); if (d) div = +d[1];
+      const b = m.match(/<beats>(\d+)<\/beats>\s*<beat-type>(\d+)/); if (b) { beats = +b[1]; bt = +b[2]; }
+      const notas = [...m.matchAll(/<note>[\s\S]*?<\/note>/g)];
+      if (notas.length === 1 && /<rest/.test(notas[0][0]) && /<type>whole<\/type>/.test(notas[0][0])) {
+        const dur = Math.round(div * 4 * beats / bt);
+        return m.replace(notas[0][0], notas[0][0].replace(/<rest\s*\/>/, '<rest measure="yes"/>').replace(/<duration>\d+/, '<duration>' + dur));
+      }
+      return m;
+    });
+  });
+  return xml;
+}
+
 function limpiarNombreArchivo(titulo) {
   return titulo.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'Obra';
 }
@@ -72,6 +103,8 @@ function procesar(ruta) {
   if (!titulo || /^(untitled|sin t[ií]tulo|score|partitura)$/i.test(titulo)) titulo = path.basename(ruta).replace(/\.[^.]+$/, '');
   titulo = titulo.replace(/_+/g, ' ').trim();
   if (!xml.includes('<work-title>')) xml = xml.replace(/<score-partwise[^>]*>/, m => `${m}\n\t<work>\n\t\t<work-title>${titulo}</work-title>\n\t</work>`);
+
+  xml = repararCompases(xml);
 
   // Partes
   const partes = [];
