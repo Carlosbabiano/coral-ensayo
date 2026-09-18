@@ -73,7 +73,7 @@
     <span class="chip">Compás <span id="compas">–</span></span>
   </div>
   <div class="fila">
-    <label>Tempo <input type="range" id="tempo" min="40" max="130" value="100"> <span id="tempoVal">100%</span></label>
+    <label>Tempo <input type="range" id="tempo" min="30" max="208" value="80"> <span id="tempoVal" title="Toca para volver al tempo de la partitura" style="cursor:pointer;min-width:5.5em">♩ = 80</span></label>
     <label>Otras voces <input type="range" id="mezcla" min="0" max="100" value="25"> <span id="mezclaVal">25%</span></label>
   </div>
   <div class="fila">
@@ -144,6 +144,7 @@ async function cargarObra(archivo) {
   $('vista').style.display = posiciones ? 'flex' : 'none';
   if (!posiciones) modoPdf = false;
   await aplicarModo();
+  prepararTempo(archivo);
   irACompas(0);
   $('hasta').value = osmd.Sheet.SourceMeasures.length;
   $('cargando').style.display = 'none';
@@ -299,7 +300,18 @@ async function prepararAudio() {
   }
 }
 
-function factorTempo() { return $('tempo').value / 100; }
+// Tempo: el deslizador está en pulsaciones por minuto (negra); el factor se aplica sobre el tempo escrito en la partitura
+let tempoPartitura = 80;
+function factorTempo() { return $('tempo').value / tempoPartitura; }
+function mostrarTempo() { $('tempoVal').textContent = '♩ = ' + $('tempo').value + ($('tempo').value == tempoPartitura ? '' : ' (' + Math.round(factorTempo() * 100) + '%)'); }
+function prepararTempo(archivo) {
+  tempoPartitura = Math.round(osmd.Sheet.DefaultStartTempoInBpm || 80);
+  let v = tempoPartitura;
+  try { const g = localStorage.getItem('tempo:' + archivo); if (g) v = +g; } catch {}
+  $('tempo').value = Math.max(30, Math.min(208, v));
+  mostrarTempo();
+}
+$('tempoVal').onclick = () => { $('tempo').value = tempoPartitura; $('tempo').dispatchEvent(new Event('input')); };
 function rangoBucle() {
   if (!$('bucle').checked) return null;
   const d = Math.max(1, +$('desde').value) - 1, h = Math.max(d, +$('hasta').value - 1);
@@ -380,7 +392,7 @@ function parar() { pausar(); }
 $('play').onclick = reproducir;
 $('stop').onclick = () => { parar(); irACompas(eventos[compasInicio]?.compas ?? 0); };
 $('inicio').onclick = () => irACompas(0);
-$('tempo').oninput = () => { $('tempoVal').textContent = $('tempo').value + '%'; if (reproduciendo) { pausar(); reproducir(); } };
+$('tempo').oninput = () => { mostrarTempo(); try { localStorage.setItem('tempo:' + (obraActual.archivo || ''), $('tempo').value); } catch {} if (reproduciendo) { pausar(); reproducir(); } };
 $('mezcla').oninput = () => $('mezclaVal').textContent = $('mezcla').value + '%';
 $('soloPentagrama').onchange = () => { aplicarVisibilidad(); rerender(); };
 $('timbre').onchange = () => { if (reproduciendo) { pausar(); reproducir(); } };

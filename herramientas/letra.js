@@ -78,6 +78,14 @@ function transplantar(escXml, audXml) {
   for (const [s, i, j] of cand) { if (usadasE.has(i) || usadasA.has(j)) continue; usadasE.add(i); usadasA.add(j); parejas.push([i, j, s]); }
 
   let salida = escXml; const informe = [];
+  // Tempo: el escáner escribe siempre 80; si Audiveris ha leído el de la partitura, se usa ese (en negras por minuto)
+  const tempoAud = audXml.match(/<sound[^>]*tempo="([\d.]+)"/);
+  if (tempoAud) {
+    const bpm = Math.round(+tempoAud[1]);
+    const antes = salida;
+    salida = salida.replace(/<per-minute>[\d.]+<\/per-minute>/, `<per-minute>${bpm}</per-minute>`).replace(/(<beat-unit>)[a-z]+(<\/beat-unit>)/, '$1quarter$2').replace(/(<sound[^>]*tempo=")[\d.]+(")/, `$1${bpm}$2`);
+    if (antes !== salida) informe.push(`tempo de la partitura: ♩ = ${bpm}`);
+  }
   for (const [i, j] of parejas.sort((x, y) => x[0] - y[0])) {
     const e = E[i], a = A[j];
     const { pares } = alinear(e.tokens, a.tokens);
