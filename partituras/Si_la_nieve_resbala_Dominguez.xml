@@ -72,10 +72,10 @@
 				<direction-type>
 					<metronome>
 						<beat-unit>quarter</beat-unit>
-						<per-minute>80</per-minute>
+						<per-minute>72</per-minute>
 					</metronome>
 				</direction-type>
-				<sound tempo="80"/>
+				<sound tempo="72"/>
 			</direction>
 			<note>
 				<pitch>
@@ -2045,7 +2045,7 @@
 				<beam number="1">begin</beam>
 			<lyric number="1" placement="below">
           <syllabic>begin</syllabic>
-          <text>qué ha</text>
+          <text>quéJla</text>
         </lyric></note>
 			<note>
 				<pitch>

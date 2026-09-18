@@ -72,10 +72,10 @@
 				<direction-type>
 					<metronome>
 						<beat-unit>quarter</beat-unit>
-						<per-minute>80</per-minute>
+						<per-minute>52</per-minute>
 					</metronome>
 				</direction-type>
-				<sound tempo="80"/>
+				<sound tempo="52"/>
 			</direction>
 			<note>
 				<rest />
