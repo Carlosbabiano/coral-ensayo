@@ -173,7 +173,7 @@ async function cargarPdf() {
       const r = capa.getBoundingClientRect(); const fx = (ev.clientX - r.left) / r.width, fy = (ev.clientY - r.top) / r.height;
       const p = +capa.dataset.pagina;
       const idx = posiciones.compases.findIndex(c => c && c.p === p && fx >= c.x0 && fx <= c.x1 && fy >= c.y0 && fy <= c.y1);
-      if (idx >= 0) { irACompas(idx); $('estado').textContent = 'Empezará en el compás ' + (idx + 1); }
+      if (idx >= 0) { irACompas(idx); $('estado').textContent = 'Empezará en el compás ' + (idx + 1); avisarCompasElegido(idx + 1); }
     });
     const cursor = document.createElement('div'); cursor.className = 'pdfCursor'; cursor.style.display = 'none';
     capa.appendChild(cursor); div.appendChild(img); div.appendChild(capa); cont.appendChild(div);
@@ -401,6 +401,7 @@ $('partitura').addEventListener('click', ev => {
       const idx = vis[0].MeasureNumber - 1;
       irACompas(idx);
       $('estado').textContent = 'Empezará en el compás ' + (idx + 1);
+      avisarCompasElegido(idx + 1);
       return;
     }
   }
@@ -471,6 +472,8 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (recargado || !habiaControlador) return; recargado = true; if (!reproduciendo) location.reload(); });
 }
 window.irACompas = irACompas; // para el Gestor de obras (previsualización): saltar a un compás desde fuera
+// Dentro del Gestor de obras, tocar un compás abre su tarjeta de revisión
+function avisarCompasElegido(numero) { try { if (window.parent !== window && window.parent.compasElegido) window.parent.compasElegido(numero); } catch {} }
 cargarLista().catch(e => { $('cargando').textContent = 'Error al cargar: ' + e.message; console.error(e); });
 </script>
 </body>

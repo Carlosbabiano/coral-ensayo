@@ -249,8 +249,14 @@ function pintarPanel() {
     else html += `<div class="aviso bien">Todos los compases cuadran.</div>`;
     if (b.entrada.paginas) html += `<div class="aviso bien">Letra y página original sacadas del PDF (${b.entrada.paginas.length} página(s)). Comprueba en la vista «PDF original» que la marca del compás cae donde debe.</div>`;
     else html += `<div class="aviso">Sin PDF: la obra irá sin letra y sin vista de página original.</div>`;
-    html += `<div style="margin-top:8px" class="ayuda">Revisar otro compás: <input type="number" id="revisarNum" min="1" style="width:70px"> <button class="mini" id="revisarBtn">Ver</button></div>`;
-    html += `</div><div id="revision"></div>`;
+    html += `</div>`;
+    html += `<div class="tarjeta"><h4>Revisar o editar un compás</h4><div class="acciones" style="margin:0">
+      <button class="mini" id="revisarAnt" title="Compás anterior">◀</button>
+      <label>Compás <input type="number" id="revisarNum" min="1" value="${compasEnRevision || 1}" style="width:80px"></label>
+      <button class="mini" id="revisarSig" title="Compás siguiente">▶</button>
+      <button class="principal" id="revisarBtn">Ver</button>
+      <span class="ayuda">También puedes tocar un compás en la previsualización de abajo: se abre su tarjeta con el recorte de la página, lo que leyó el escáner y el botón «Editar» de cada voz.</span></div></div>`;
+    html += `<div id="revision"></div>`;
 
     html += `<div class="acciones"><button class="principal" id="publicar">Publicar para el coro</button><span class="ayuda">Se guarda en la app, se sube a internet y los móviles la reciben solos.</span><span class="hueco"></span><button class="peligro" id="descartar">Descartar borrador</button></div>`;
     html += `<div class="tarjeta" style="padding:8px"><iframe class="previa" id="previa" src="/borrador/${b.id}/?t=${Date.now()}"></iframe></div>`;
@@ -268,6 +274,8 @@ function pintarPanel() {
   for (const a of panel.querySelectorAll('.compases a')) a.onclick = () => revisarCompas(+a.dataset.compas);
   $('revisarBtn') && ($('revisarBtn').onclick = () => { const n = +$('revisarNum').value; if (n) revisarCompas(n); });
   $('revisarNum') && ($('revisarNum').onkeydown = e => { if (e.key === 'Enter') $('revisarBtn').click(); });
+  $('revisarAnt') && ($('revisarAnt').onclick = () => { const n = Math.max(1, (+$('revisarNum').value || 1) - 1); $('revisarNum').value = n; revisarCompas(n); });
+  $('revisarSig') && ($('revisarSig').onclick = () => { const n = (+$('revisarNum').value || 0) + 1; $('revisarNum').value = n; revisarCompas(n); });
   if (compasEnRevision && b.estado === 'listo') revisarCompas(compasEnRevision, true);
 }
 
@@ -278,8 +286,11 @@ function irACompas(n) {
 
 // ---------- Revisar un compás: recorte de la página + lo que leyó el escáner, voz por voz ----------
 let compasEnRevision = null;
+// La previsualización (la app dentro del marco) avisa aquí al tocar un compás
+window.compasElegido = n => { if (borradorActual && borradorActual.estado === 'listo') { if ($('revisarNum')) $('revisarNum').value = n; revisarCompas(n, true); } };
 async function revisarCompas(n, silencioso) {
   const b = borradorActual; compasEnRevision = n;
+  if ($('revisarNum')) $('revisarNum').value = n;
   let d;
   try { d = await api(`/api/borradores/${b.id}/compas/${n}`); } catch (e) { return alert(e.message); }
   const v0 = d.voces[0];
