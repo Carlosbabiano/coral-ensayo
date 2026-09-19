@@ -348,7 +348,8 @@ function prepararObra({ xml: rutaXml, pdf: rutaPdf = null, dirSalida, log = cons
     log(`  ${nombres.get(p.id).padEnd(10)} (antes: ${p.nombreActual || 'sin nombre'} - tesitura media ${tesitura}, clave ${p.clave || '?'})`);
     return { id: p.id, nombre: nombres.get(p.id), nombreActual: p.nombreActual, tesitura, clave: p.clave || '?' };
   });
-  const sospechosos = [...new Set(partes.flatMap(p => p.malos))];
+  // Mismo criterio que al revisar después: cualquier voz cuyas figuras no sumen el compás (también si está vacía)
+  const sospechosos = sospechososDe(xml);
   if (sospechosos.length) log(`  ! Compases con duración sospechosa (revísalos en el PDF): ${sospechosos.join(', ')}`);
   else log('  OK Todos los compases cuadran.');
 
