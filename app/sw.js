@@ -1,5 +1,5 @@
 // Service worker: guarda la app, las partituras y los sonidos para funcionar sin conexión.
-const VERSION = 'coral-v54';
+const VERSION = 'coral-v55';
 const BASE = ['./', './index.html', './manifest.json', './icono-192.png', './icono-512.png', './icono-512-maskable.png', './apple-touch-icon.png', './partituras/lista.json'];
 
 // Instalación: solo lo imprescindible (si un archivo fallara, la versión nueva no se instalaría nunca)
