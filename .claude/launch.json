@@ -6,6 +6,18 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["--yes", "http-server", "app", "-p", "5173", "-c-1", "--silent"],
       "port": 5173
+    },
+    {
+      "name": "gestor",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["herramientas/gestor.js"],
+      "port": 5180
+    },
+    {
+      "name": "gestor-prueba",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set GESTOR_SIN_INTERNET=1&& set GESTOR_SIN_NAVEGADOR=1&& node herramientas/gestor.js"],
+      "port": 5180
     }
   ]
 }

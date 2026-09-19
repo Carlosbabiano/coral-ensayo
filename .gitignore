@@ -3,3 +3,5 @@ node_modules/
 *.mp3
 .DS_Store
 Thumbs.db
+borradores/
+herramientas/cache/

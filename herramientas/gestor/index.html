@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Gestor de obras · Coral Villa de Mengíbar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/app/icono-192.png">
+<style>
+  :root { --bg: #fafaf7; --fg: #1d1d1b; --muted: #6b6b66; --line: #dcdcd6; --accent: #24407a; --accent-fg: #fff; --soft: #f0efe9; --ok: #2e7d32; --warn: #b26a00; --bad: #b3261e; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { display: grid; grid-template-rows: auto 1fr; }
+  header { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: #fff; }
+  header img { width: 40px; height: 40px; border-radius: 50%; }
+  header h1 { font-size: 17px; margin: 0; flex: 1; }
+  header .muted { font-size: 13px; color: var(--muted); }
+  main { display: grid; grid-template-columns: 340px 1fr; min-height: 0; }
+  aside { border-right: 1px solid var(--line); padding: 14px; overflow: auto; background: #fff; }
+  section.panel { padding: 14px 18px; overflow: auto; min-width: 0; }
+  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 18px 0 8px; }
+  h2:first-child { margin-top: 0; }
+  .zona { border: 2px dashed #b9b9b2; border-radius: 12px; padding: 22px 14px; text-align: center; color: var(--muted); cursor: pointer; transition: .15s; background: var(--soft); }
+  .zona.sobre { border-color: var(--accent); background: #e8edf8; color: var(--accent); }
+  .zona strong { color: var(--fg); display: block; margin-bottom: 4px; }
+  .zona input { display: none; }
+  ul.lista { list-style: none; padding: 0; margin: 0; }
+  ul.lista li { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+  ul.lista li:hover { background: var(--soft); }
+  ul.lista li.activa { background: #e8edf8; }
+  ul.lista li .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  ul.lista li .e { font-size: 12px; color: var(--muted); }
+  .punto { width: 9px; height: 9px; border-radius: 50%; background: #bbb; flex: none; }
+  .punto.listo { background: var(--ok); } .punto.preparando { background: var(--warn); animation: latido 1s infinite; } .punto.error { background: var(--bad); }
+  @keyframes latido { 50% { opacity: .3; } }
+  button { font: inherit; border: 1px solid var(--line); background: #fff; color: var(--fg); padding: 7px 14px; border-radius: 8px; cursor: pointer; }
+  button:hover { background: var(--soft); }
+  button.principal { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; }
+  button.principal:hover { background: #1b3161; }
+  button.peligro { color: var(--bad); border-color: #e6b8b5; }
+  button.peligro:hover { background: #fbeeed; }
+  button.mini { padding: 3px 9px; font-size: 13px; }
+  button:disabled { opacity: .5; cursor: default; }
+  .vacio { color: var(--muted); padding: 30px 0; text-align: center; }
+  .cab { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .cab h3 { margin: 0; font-size: 20px; flex: 1; }
+  .tarjeta { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; }
+  .tarjeta h4 { margin: 0 0 10px; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .campos { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; align-items: center; }
+  .campos label { color: var(--muted); }
+  input[type=text], input[type=number], select { font: inherit; padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+  input[type=text] { width: 100%; max-width: 420px; }
+  input[type=number] { width: 90px; }
+  table.voces { border-collapse: collapse; }
+  table.voces td { padding: 4px 10px 4px 0; }
+  table.voces td.d { color: var(--muted); font-size: 13px; }
+  .aviso { padding: 6px 10px; border-radius: 8px; margin: 4px 0; background: #fff7e6; border: 1px solid #f3dcae; }
+  .aviso.mal { background: #fdecec; border-color: #f0bcb9; }
+  .aviso.bien { background: #eaf5ea; border-color: #bfe0c0; }
+  .compases a { display: inline-block; margin: 2px 6px 2px 0; padding: 1px 8px; border-radius: 999px; background: #fff; border: 1px solid #f3dcae; cursor: pointer; text-decoration: none; color: var(--fg); }
+  .compases a:hover { background: #fff1d6; }
+  pre.log { background: #1e1e1e; color: #d6d6d6; padding: 12px; border-radius: 10px; font: 12.5px/1.45 Consolas, monospace; max-height: 260px; overflow: auto; white-space: pre-wrap; margin: 0; }
+  details summary { cursor: pointer; color: var(--muted); }
+  iframe.previa { width: 100%; height: 78vh; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+  .acciones { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 14px 0; }
+  .acciones .hueco { flex: 1; }
+  .velo { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 20; }
+  .velo.ver { display: flex; }
+  .ventana { background: #fff; border-radius: 14px; width: min(760px, 92vw); max-height: 86vh; display: flex; flex-direction: column; padding: 18px 20px; gap: 12px; }
+  .ventana h3 { margin: 0; }
+  .ventana pre.log { flex: 1; max-height: none; min-height: 200px; }
+  .progreso { display: inline-block; width: 16px; height: 16px; border: 3px solid #c9d2e8; border-top-color: var(--accent); border-radius: 50%; animation: girar .8s linear infinite; vertical-align: middle; }
+  @keyframes girar { to { transform: rotate(360deg); } }
+  .ayuda { font-size: 13px; color: var(--muted); }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } aside { border-right: 0; border-bottom: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<header>
+  <img src="/app/icono-192.png" alt="">
+  <h1>Gestor de obras · Coral Villa de Mengíbar</h1>
+  <span class="muted" id="info"></span>
+  <a href="/app/" target="_blank"><button class="mini">Abrir la app del PC</button></a>
+  <a href="https://carlosbabiano.github.io/coral-ensayo/" target="_blank"><button class="mini">Ver la app publicada</button></a>
+</header>
+<main>
+  <aside>
+    <h2>Nueva obra</h2>
+    <label class="zona" id="zona">
+      <strong>Arrastra aquí el .xml del Escáner Musical y el .pdf de la obra</strong>
+      o haz clic para elegirlos
+      <input type="file" id="elegir" multiple accept=".xml,.musicxml,.pdf">
+    </label>
+    <p class="ayuda">Sin el PDF la obra irá sin letra y sin la vista de página original. Si el PDF está en la carpeta <code>pdf/</code> con el mismo nombre, se usa solo.</p>
+    <h2>Borradores</h2>
+    <ul class="lista" id="borradores"></ul>
+    <div class="vacio" id="sinBorradores" style="padding:10px 0">Ninguno</div>
+    <h2>Publicadas en la app</h2>
+    <ul class="lista" id="publicadas"></ul>
+  </aside>
+  <section class="panel" id="panel">
+    <div class="vacio">Arrastra una partitura para empezar, o elige un borrador de la lista.</div>
+  </section>
+</main>
+
+<div class="velo" id="velo">
+  <div class="ventana">
+    <h3 id="veloTitulo">Publicando…</h3>
+    <pre class="log" id="veloLog"></pre>
+    <div class="acciones" style="margin:0"><span class="hueco"></span><button id="veloCerrar" disabled>Cerrar</button></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const VOCES = ['Soprano', 'Mezzosoprano', 'Contralto', 'Tenor', 'Barítono', 'Bajo', 'Voz', 'Piano'];
+let estado = { borradores: [], publicadas: [] }, seleccionado = null, fuente = null, borradorActual = null;
+
+async function api(ruta, opciones) {
+  const r = await fetch(ruta, opciones);
+  const datos = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(datos.error || ('Error ' + r.status));
+  return datos;
+}
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// ---------- Estado general ----------
+async function refrescar() {
+  estado = await api('/api/estado');
+  $('info').textContent = `${estado.publicadas.length} obras publicadas · caché ${estado.version}`;
+  const ul = $('borradores'); ul.innerHTML = '';
+  for (const b of estado.borradores) {
+    const li = document.createElement('li');
+    li.className = b.id === seleccionado ? 'activa' : '';
+    const nombre = b.entrada?.titulo || b.archivos?.find(a => /\.xml$/i.test(a))?.replace(/\.[^.]+$/, '') || 'Borrador';
+    const textoEstado = { nuevo: 'sin preparar', preparando: 'preparando…', listo: 'lista para revisar', error: 'con errores' }[b.estado] || b.estado;
+    li.innerHTML = `<span class="punto ${b.estado}"></span><span class="t">${esc(nombre)}<br><span class="e">${textoEstado}</span></span>`;
+    li.onclick = () => seleccionar(b.id);
+    ul.appendChild(li);
+  }
+  $('sinBorradores').style.display = estado.borradores.length ? 'none' : '';
+  const up = $('publicadas'); up.innerHTML = '';
+  for (const o of estado.publicadas) {
+    const li = document.createElement('li');
+    li.style.cursor = 'default';
+    li.innerHTML = `<span class="t">${esc(o.titulo)}<br><span class="e">${o.paginas ? 'con página original' : 'solo partitura'}</span></span>`;
+    const b = document.createElement('button'); b.className = 'mini peligro'; b.textContent = 'Retirar';
+    b.onclick = () => retirar(o);
+    li.appendChild(b);
+    up.appendChild(li);
+  }
+}
+
+// ---------- Subir archivos ----------
+const zona = $('zona');
+zona.addEventListener('dragover', e => { e.preventDefault(); zona.classList.add('sobre'); });
+zona.addEventListener('dragleave', () => zona.classList.remove('sobre'));
+zona.addEventListener('drop', e => { e.preventDefault(); zona.classList.remove('sobre'); subir([...e.dataTransfer.files]); });
+$('elegir').addEventListener('change', e => { subir([...e.target.files]); e.target.value = ''; });
+
+async function subir(archivos) {
+  const validos = archivos.filter(f => /\.(xml|musicxml|pdf)$/i.test(f.name));
+  if (!validos.length) return alert('Solo se admiten archivos .xml / .musicxml del Escáner Musical y .pdf');
+  if (!validos.some(f => /\.(xml|musicxml)$/i.test(f.name))) return alert('Hace falta el archivo .xml del Escáner Musical: las notas salen de ahí. El PDF solo sirve para la letra y la página original.');
+  // Un borrador por cada XML; el PDF con el mismo nombre va con él
+  const clave = n => n.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const xmls = validos.filter(f => /\.(xml|musicxml)$/i.test(f.name));
+  const pdfs = validos.filter(f => /\.pdf$/i.test(f.name));
+  for (const p of pdfs) if (!xmls.some(x => clave(x.name) === clave(p.name))) alert(`El PDF "${p.name}" no tiene un .xml con el mismo nombre, así que no sé con qué obra va. Ponle el mismo nombre que al XML.`);
+  let primero = null;
+  for (const x of xmls) {
+    const b = await api('/api/borradores', { method: 'POST' });
+    const pdf = pdfs.find(p => clave(p.name) === clave(x.name));
+    for (const f of [x, pdf].filter(Boolean)) {
+      await api(`/api/borradores/${b.id}/archivos?nombre=${encodeURIComponent(f.name)}`, { method: 'POST', body: f });
+    }
+    await api(`/api/borradores/${b.id}/preparar`, { method: 'POST' });
+    primero = primero || b.id;
+  }
+  await refrescar();
+  if (primero) seleccionar(primero);
+}
+
+// ---------- Panel del borrador ----------
+async function seleccionar(id) {
+  seleccionado = id;
+  if (fuente) { fuente.close(); fuente = null; }
+  borradorActual = await api('/api/borradores/' + id);
+  await refrescar();
+  pintarPanel();
+  if (borradorActual.estado === 'preparando' || borradorActual.estado === 'nuevo') {
+    fuente = new EventSource(`/api/borradores/${id}/eventos`);
+    fuente.onmessage = ev => {
+      const m = JSON.parse(ev.data);
+      if (m.tipo === 'log') { borradorActual.log.push(m.linea); const pre = $('log'); if (pre) { pre.textContent += m.linea + '\n'; pre.scrollTop = pre.scrollHeight; } }
+      if (m.tipo === 'estado') { fuente.close(); fuente = null; borradorActual = m.borrador; refrescar(); pintarPanel(); }
+    };
+  }
+}
+
+function pintarPanel() {
+  const b = borradorActual, panel = $('panel');
+  if (!b) { panel.innerHTML = '<div class="vacio">Arrastra una partitura para empezar, o elige un borrador de la lista.</div>'; return; }
+  const nombre = b.entrada?.titulo || b.archivos?.find(a => /\.xml$/i.test(a))?.replace(/\.[^.]+$/, '') || 'Borrador';
+  let html = `<div class="cab"><h3>${esc(nombre)}</h3>`;
+  if (b.estado === 'preparando') html += `<span class="progreso"></span> <span class="ayuda">Preparando la obra… si hay PDF, Audiveris tarda un par de minutos la primera vez.</span>`;
+  html += `</div>`;
+
+  if (b.estado === 'error') {
+    html += `<div class="aviso mal"><strong>No se ha podido preparar:</strong> ${esc(b.error)}</div>`;
+  }
+
+  if (b.estado === 'listo') {
+    // Ajustes
+    html += `<div class="tarjeta"><h4>Revisar</h4><div class="campos">
+      <label>Título</label><input type="text" id="ajTitulo" value="${esc(b.entrada.titulo)}">
+      <label>Tempo</label><span><input type="number" id="ajTempo" min="20" max="300" value="${b.tempo || ''}" placeholder="80"> ♩ por minuto ${b.tempo ? '' : '<span class="ayuda">(la partitura no lo trae; sin dato la app usa 80)</span>'}</span>
+      <label style="align-self:start">Voces</label><table class="voces">`;
+    for (const p of b.partes) {
+      const opciones = [...new Set([...VOCES, p.nombre])].map(v => `<option ${v === p.nombre ? 'selected' : ''}>${esc(v)}</option>`).join('');
+      html += `<tr><td><select data-id="${esc(p.id)}" class="ajVoz">${opciones}</select></td><td class="d">tesitura media ${esc(p.tesitura)}, clave ${esc(p.clave)}${p.nombreActual && p.nombreActual !== p.nombre ? `, en el archivo: "${esc(p.nombreActual)}"` : ''}</td><td><label class="ayuda"><input type="checkbox" class="ajQuitar" data-id="${esc(p.id)}"> quitar</label></td></tr>`;
+    }
+    html += `</table><label></label><span><button id="aplicar">Aplicar cambios</button> <span class="ayuda">La previsualización se recarga con los cambios.</span></span></div></div>`;
+
+    // Avisos
+    html += `<div class="tarjeta"><h4>Comprobaciones</h4>`;
+    for (const a of b.avisos) html += `<div class="aviso">${esc(a)}</div>`;
+    if (b.sospechosos.length) html += `<div class="aviso">Compases con duración sospechosa (compáralos con el PDF; toca uno para ir a él): <span class="compases">${b.sospechosos.map(c => `<a data-compas="${esc(c)}">${esc(c)}</a>`).join('')}</span></div>`;
+    else html += `<div class="aviso bien">Todos los compases cuadran.</div>`;
+    if (b.entrada.paginas) html += `<div class="aviso bien">Letra y página original sacadas del PDF (${b.entrada.paginas.length} página(s)). Comprueba en la vista «PDF original» que la marca del compás cae donde debe.</div>`;
+    else html += `<div class="aviso">Sin PDF: la obra irá sin letra y sin vista de página original.</div>`;
+    html += `</div>`;
+
+    html += `<div class="acciones"><button class="principal" id="publicar">Publicar para el coro</button><span class="ayuda">Se guarda en la app, se sube a internet y los móviles la reciben solos.</span><span class="hueco"></span><button class="peligro" id="descartar">Descartar borrador</button></div>`;
+    html += `<div class="tarjeta" style="padding:8px"><iframe class="previa" id="previa" src="/borrador/${b.id}/?t=${Date.now()}"></iframe></div>`;
+  }
+
+  html += `<details ${b.estado === 'listo' ? '' : 'open'}><summary>Registro del proceso</summary><pre class="log" id="log">${esc((b.log || []).join('\n'))}\n</pre></details>`;
+  if (b.estado !== 'listo' && b.estado !== 'preparando') html += `<div class="acciones"><button id="reintentar">Volver a preparar</button><span class="hueco"></span><button class="peligro" id="descartar">Descartar borrador</button></div>`;
+  panel.innerHTML = html;
+  const pre = $('log'); if (pre) pre.scrollTop = pre.scrollHeight;
+
+  $('aplicar') && ($('aplicar').onclick = aplicar);
+  $('publicar') && ($('publicar').onclick = publicar);
+  $('descartar') && ($('descartar').onclick = descartar);
+  $('reintentar') && ($('reintentar').onclick = async () => { await api(`/api/borradores/${b.id}/preparar`, { method: 'POST' }).catch(e => alert(e.message)); seleccionar(b.id); });
+  for (const a of panel.querySelectorAll('.compases a')) a.onclick = () => irACompas(+a.dataset.compas);
+}
+
+function irACompas(n) {
+  const marco = $('previa'); if (!marco) return;
+  try { marco.contentWindow.irACompas(Math.max(0, n - 1)); marco.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  catch (e) { alert('Espera a que cargue la previsualización.'); }
+}
+
+async function aplicar() {
+  const b = borradorActual;
+  const nombres = {}; for (const s of document.querySelectorAll('.ajVoz')) nombres[s.dataset.id] = s.value;
+  const quitar = [...document.querySelectorAll('.ajQuitar:checked')].map(c => c.dataset.id);
+  if (quitar.length && !confirm(`¿Quitar ${quitar.length} voz/voces de la obra? (Solo afecta a la copia de la app, no a tus archivos.)`)) return;
+  const tempo = +$('ajTempo').value || null;
+  try {
+    await api(`/api/borradores/${b.id}/ajustes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo: $('ajTitulo').value, nombres, quitar, tempo }) });
+    await seleccionar(b.id);
+  } catch (e) { alert(e.message); }
+}
+
+async function descartar() {
+  const b = borradorActual;
+  if (!confirm('¿Descartar este borrador? Tus archivos originales no se tocan.')) return;
+  await api('/api/borradores/' + b.id, { method: 'DELETE' }).catch(e => alert(e.message));
+  seleccionado = null; borradorActual = null;
+  await refrescar(); pintarPanel();
+}
+
+// ---------- Publicar / retirar (con ventana de progreso) ----------
+function abrirVelo(titulo) {
+  $('veloTitulo').innerHTML = `<span class="progreso"></span> ${esc(titulo)}`;
+  $('veloLog').textContent = ''; $('veloCerrar').disabled = true; $('velo').classList.add('ver');
+  const f = new EventSource('/api/publicacion/eventos');
+  f.onmessage = ev => {
+    const m = JSON.parse(ev.data);
+    if (m.tipo === 'log') { $('veloLog').textContent += m.linea + '\n'; $('veloLog').scrollTop = $('veloLog').scrollHeight; }
+    if (m.tipo === 'fin') { f.close(); $('veloTitulo').textContent = m.ok ? 'Publicado' : 'Ha fallado la publicación'; $('veloCerrar').disabled = false; refrescar(); }
+  };
+  return f;
+}
+$('veloCerrar').onclick = () => { $('velo').classList.remove('ver'); if (seleccionado && !estado.borradores.some(b => b.id === seleccionado)) { seleccionado = null; borradorActual = null; pintarPanel(); } };
+
+async function publicar() {
+  const b = borradorActual;
+  const ya = estado.publicadas.find(o => o.archivo === b.entrada.archivo);
+  if (!confirm(`¿Publicar "${b.entrada.titulo}" para todo el coro?${ya ? '\n\nSustituirá a la obra del mismo nombre que ya está publicada.' : ''}`)) return;
+  const f = abrirVelo('Publicando "' + b.entrada.titulo + '"…');
+  try { await api(`/api/borradores/${b.id}/publicar`, { method: 'POST' }); }
+  catch (e) { f.close(); $('veloTitulo').textContent = 'No se ha podido publicar'; $('veloLog').textContent = e.message; $('veloCerrar').disabled = false; }
+}
+async function retirar(o) {
+  if (!confirm(`¿Retirar "${o.titulo}" de la app? Dejará de verse en los móviles del coro. (El PDF y el XML de tu carpeta no se borran.)`)) return;
+  const f = abrirVelo('Retirando "' + o.titulo + '"…');
+  try { await api(`/api/publicadas/${encodeURIComponent(o.archivo)}/retirar`, { method: 'POST' }); }
+  catch (e) { f.close(); $('veloTitulo').textContent = 'No se ha podido retirar'; $('veloLog').textContent = e.message; $('veloCerrar').disabled = false; }
+}
+
+refrescar().then(() => { if (estado.publicando) abrirVelo('Publicación en marcha…'); }).catch(e => { $('panel').innerHTML = '<div class="vacio">No se puede hablar con el gestor: ' + esc(e.message) + '</div>'; });
+</script>
+</body>
+</html>
