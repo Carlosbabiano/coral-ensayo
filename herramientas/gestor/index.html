@@ -385,7 +385,7 @@ function teclaEditor(e) {
   if (k === 'ArrowUp') a = e.shiftKey ? 'sost' : 'arriba'; else if (k === 'ArrowDown') a = e.shiftKey ? 'bemol' : 'abajo';
   else if (k === 'ArrowLeft') a = 'izq'; else if (k === 'ArrowRight') a = 'der';
   else if (/^[1-6]$/.test(k)) { a = 'figura'; extra = ['whole', 'half', 'quarter', 'eighth', '16th', '32nd'][+k - 1]; }
-  else if (k === '.') a = 'puntillo'; else if (k === 's' || k === 'S') a = 'silencio'; else if (k === 'l' || k === 'L') a = 'liga';
+  else if (k === '.' || e.code === 'Period' || e.code === 'NumpadDecimal') a = 'puntillo'; else if (k === 's' || k === 'S') a = 'silencio'; else if (k === 'l' || k === 'L') a = 'liga';
   else if (k === 'Delete' || k === 'Backspace') a = 'borrar'; else if (k === '+' || k === 'Insert') a = 'anadir';
   else if (k === 'Escape') { notaSel = null; pintarBarraNota(); try { $('previa').contentWindow.seleccionarNota(0, 0, 0); } catch {} return; }
   if (!a) return;
