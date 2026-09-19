@@ -285,6 +285,81 @@ function detalleCompas(xml, numero) {
   });
   return voces;
 }
+// ---------- Editor de compás: leer las notas de una voz de forma estructurada y volver a escribirlas ----------
+const FIGURA_NEGRAS = { breve: 8, whole: 4, half: 2, quarter: 1, eighth: 0.5, '16th': 0.25, '32nd': 0.125 };
+const DIV_EDITOR = 8; // divisiones por negra al reescribir: llega hasta la fusa con puntillo
+function notasCompas(xml, numero) {
+  const voces = [];
+  recorrerCompases(xml, c => {
+    if (c.num !== String(numero)) return;
+    // Con tresillos, notas de adorno o varias voces en el mismo pentagrama el editor no se atreve: mejor MuseScore
+    const editable = !/<time-modification|<grace|<backup|<voice>[2-9]/.test(c.cuerpo);
+    const notas = [...c.cuerpo.matchAll(RE_NOTA)].map(([n]) => {
+      const p = n.match(/<step>(\w)<\/step>\s*(?:<alter>(-?\d+)<\/alter>)?\s*<octave>(\d)/);
+      return {
+        silencio: /<rest/.test(n), compasEntero: /<rest measure="yes"/.test(n),
+        step: p ? p[1] : 'C', alter: p && p[2] ? +p[2] : 0, octave: p ? +p[3] : 4,
+        negras: +(n.match(/<duration>(\d+)/) || [, 0])[1] / c.div,
+        type: (n.match(/<type>([^<]*)/) || [, ''])[1], dot: (n.match(/<dot\s*\/>/g) || []).length,
+        acorde: /<chord/.test(n), ligaEmpieza: /<tie type="start"/.test(n), ligaTermina: /<tie type="stop"/.test(n),
+        letra: (n.match(/<text>([^<]*)/) || [, ''])[1].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'), silaba: (n.match(/<syllabic>([^<]*)/) || [, 'single'])[1],
+      };
+    });
+    voces.push({ id: c.id, nombre: c.nombre, beats: c.beats, bt: c.bt, esperado: 4 * c.beats / c.bt, editable, notas });
+  });
+  return voces;
+}
+function ponerDivisiones(cuerpo, v) {
+  if (/<attributes>[\s\S]*?<divisions>/.test(cuerpo)) return cuerpo.replace(/<divisions>\d+<\/divisions>/, `<divisions>${v}</divisions>`);
+  if (/<attributes>/.test(cuerpo)) return cuerpo.replace('<attributes>', `<attributes><divisions>${v}</divisions>`);
+  return `<attributes><divisions>${v}</divisions></attributes>` + cuerpo;
+}
+function xmlDeNota(n, esperado) {
+  if (!FIGURA_NEGRAS[n.type] && !(n.silencio && n.compasEntero)) throw new Error('Figura no válida: ' + n.type);
+  const dot = Math.min(2, Math.max(0, +n.dot || 0));
+  let negras = n.silencio && n.compasEntero ? esperado : FIGURA_NEGRAS[n.type] * (dot === 1 ? 1.5 : dot === 2 ? 1.75 : 1);
+  const dur = Math.round(negras * DIV_EDITOR);
+  const ligas = [n.ligaTermina && 'stop', n.ligaEmpieza && 'start'].filter(Boolean);
+  let s = '<note>' + (n.acorde && !n.silencio ? '<chord/>' : '');
+  if (n.silencio) s += n.compasEntero ? '<rest measure="yes"/>' : '<rest/>';
+  else {
+    if (!/^[A-G]$/.test(n.step) || !(n.octave >= 0 && n.octave <= 9) || !(n.alter >= -2 && n.alter <= 2)) throw new Error('Nota no válida');
+    s += `<pitch><step>${n.step}</step><alter>${+n.alter || 0}</alter><octave>${+n.octave}</octave></pitch>`;
+  }
+  s += `<duration>${dur}</duration>` + ligas.map(t => `<tie type="${t}"/>`).join('') + `<voice>1</voice><type>${n.silencio && n.compasEntero ? 'whole' : n.type}</type>` + '<dot/>'.repeat(dot);
+  if (!n.silencio && +n.alter) s += `<accidental>${{ 1: 'sharp', 2: 'double-sharp', '-1': 'flat', '-2': 'flat-flat' }[+n.alter]}</accidental>`;
+  s += '<staff>1</staff>';
+  if (ligas.length) s += '<notations>' + ligas.map(t => `<tied type="${t}"/>`).join('') + '</notations>';
+  if (n.letra && !n.silencio) s += `<lyric number="1" placement="below"><syllabic>${['single', 'begin', 'middle', 'end'].includes(n.silaba) ? n.silaba : 'single'}</syllabic><text>${escapar(String(n.letra))}</text></lyric>`;
+  return s + '</note>';
+}
+// Sustituye las notas de una voz en un compás (conserva atributos, direcciones y barras). Devuelve el XML nuevo.
+function escribirCompas(xml, partId, numero, notas) {
+  numero = String(numero);
+  let hecho = false;
+  const nuevo = xml.replace(RE_PARTE, (todo, id, cuerpo) => {
+    if (id !== partId) return todo;
+    let div = 1, beats = 4, bt = 4, arreglarSiguiente = false;
+    const c2 = cuerpo.replace(/(<measure number="([^"]+)"[^>]*>)([\s\S]*?)(<\/measure>)/g, (m, ini, num, c, fin) => {
+      const d = c.match(/<divisions>(\d+)/);
+      if (arreglarSiguiente) { arreglarSiguiente = false; if (!d) return ini + ponerDivisiones(c, div) + fin; } // el siguiente hereda las divisiones antiguas de forma explícita
+      if (d) div = +d[1];
+      const b = c.match(/<beats>(\d+)<\/beats>\s*<beat-type>(\d+)/); if (b) { beats = +b[1]; bt = +b[2]; }
+      if (num !== numero) return m;
+      hecho = true; arreglarSiguiente = true;
+      const esperado = 4 * beats / bt;
+      const attrs = ponerDivisiones((c.match(/<attributes>[\s\S]*?<\/attributes>/) || [''])[0], DIV_EDITOR);
+      const barraIzq = (c.match(/<barline location="left">[\s\S]*?<\/barline>/) || [''])[0];
+      const barraDer = (c.match(/<barline location="right">[\s\S]*?<\/barline>/) || [''])[0];
+      const direcciones = (c.match(/<direction[\s>][\s\S]*?<\/direction>/g) || []).join('');
+      return ini + barraIzq + attrs + direcciones + notas.map(n => xmlDeNota(n, esperado)).join('') + barraDer + fin;
+    });
+    return `<part id="${id}">` + c2 + '</part>';
+  });
+  if (!hecho) throw new Error('No existe el compás ' + numero + ' en la voz ' + partId);
+  return nuevo;
+}
+
 // Pone (o cambia) la indicación de compás dentro del cuerpo de un compás
 function ponerTiempo(cuerpo, beats, bt) {
   const t = `<time><beats>${beats}</beats><beat-type>${bt}</beat-type></time>`;
@@ -441,6 +516,6 @@ function guardarPdf(rutaPdf, base) {
 module.exports = {
   RAIZ, DIR_APP, DIR_PARTITURAS, DIR_PDF, LISTA, NOMBRES_VOCES,
   clave, pdfPara, prepararObra, editarObra, leerPartes, tituloDe, tempoDe, limpiarNombreArchivo,
-  sospechososDe, detalleCompas, fijarCompas,
+  sospechososDe, detalleCompas, fijarCompas, notasCompas, escribirCompas, FIGURA_NEGRAS,
   leerLista, incorporarEnApp, retirarDeApp, subirVersionCache, versionCache, guardarEnGit, guardarPdf,
 };

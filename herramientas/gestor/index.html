@@ -72,6 +72,10 @@
   @keyframes girar { to { transform: rotate(360deg); } }
   .ayuda { font-size: 13px; color: var(--muted); }
   .revision { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; }
+  table.editor { border-collapse: collapse; width: 100%; }
+  table.editor th { font-size: 12px; color: var(--muted); font-weight: 600; text-align: left; padding: 2px 6px; }
+  table.editor td { padding: 3px 6px 3px 0; white-space: nowrap; }
+  table.editor select, table.editor input { padding: 4px 6px; font-size: 14px; }
   .revision canvas { max-width: 100%; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
   .revision table.voces td { vertical-align: top; padding-bottom: 8px; }
   @media (max-width: 1100px) { .revision { grid-template-columns: 1fr; } }
@@ -286,10 +290,12 @@ async function revisarCompas(n, silencioso) {
   html += `<div><div class="aviso ${cuadra ? 'bien' : 'mal'}">Compás de <strong>${v0.beats}/${v0.bt}</strong>${v0.cambio ? ' (cambia aquí)' : ''}: caben ${v0.esperado} negras.` + (cuadra ? ' Todas las voces cuadran.' : ` No cuadra en: <strong>${malas.map(esc).join(', ')}</strong>.`) + `</div><table class="voces">`;
   for (const v of d.voces) {
     const bien = Math.abs(v.suma - v.esperado) < 0.01;
-    html += `<tr${bien ? '' : ' style="background:#fdecec"'}><td><strong>${esc(v.nombre)}</strong><br>${bien ? '<span class="ayuda">cuadra</span>' : `<span style="color:var(--bad);font-weight:600">no cuadra: suma ${v.suma} de ${v.esperado}</span>`}</td><td>${v.notas.map(esc).join('<br>') || '<i>vacío</i>'}</td></tr>`;
+    const ed = (d.edicion || []).find(e => e.id === v.id);
+    const botonEditar = ed && ed.editable ? `<button class="mini" data-editar="${esc(v.id)}">Editar</button>` : `<span class="ayuda" title="Tiene tresillos, adornos o dos voces en el pentagrama">no editable aquí</span>`;
+    html += `<tr${bien ? '' : ' style="background:#fdecec"'}><td><strong>${esc(v.nombre)}</strong><br>${bien ? '<span class="ayuda">cuadra</span>' : `<span style="color:var(--bad);font-weight:600">no cuadra: suma ${v.suma} de ${v.esperado}</span>`}<br>${botonEditar}</td><td>${v.notas.map(esc).join('<br>') || '<i>vacío</i>'}</td></tr>`;
   }
-  html += `</table>
-    <div class="ayuda" style="margin-top:10px">Si el compás de la partitura es otro (el escáner suele perderse los cambios de compás), cámbialo aquí. Si son las notas las que están mal, corrígelas en MuseScore y vuelve a subir el XML.</div>
+  html += `</table><div id="editorCompas"></div>
+    <div class="ayuda" style="margin-top:10px">Si el compás de la partitura es otro (el escáner suele perderse los cambios de compás), cámbialo aquí. Si son las notas las que están mal, pulsa «Editar» en la voz.</div>
     <div class="acciones" style="margin:8px 0 0">Este compás va en <input type="number" id="cBeats" min="1" max="32" value="${v0.beats}" style="width:60px"> / <select id="cBt">${[1, 2, 4, 8, 16].map(x => `<option ${x === v0.bt ? 'selected' : ''}>${x}</option>`).join('')}</select>
       <label class="ayuda"><input type="checkbox" id="cRestaurar" checked> el siguiente vuelve al compás de antes</label>
       <button id="cAplicar">Cambiar el compás</button></div>
@@ -301,9 +307,78 @@ async function revisarCompas(n, silencioso) {
       await seleccionar(b.id);
     } catch (e) { alert(e.message); }
   };
+  for (const bt of $('tarjetaRevision').querySelectorAll('button[data-editar]')) bt.onclick = () => abrirEditor(d, bt.dataset.editar);
   if (d.pagina && d.posicion) dibujarRecorte(`/borrador/${b.id}/partituras/${d.pagina}`, d.posicion);
   irACompas(n);
   if (!silencioso) $('tarjetaRevision').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ---------- Editor de notas de una voz en un compás ----------
+const NOTAS_ES = [['C', 'Do'], ['D', 'Re'], ['E', 'Mi'], ['F', 'Fa'], ['G', 'Sol'], ['A', 'La'], ['B', 'Si']];
+const FIGURAS = [['whole', 'redonda'], ['half', 'blanca'], ['quarter', 'negra'], ['eighth', 'corchea'], ['16th', 'semicorchea'], ['32nd', 'fusa']];
+const NEGRAS = { whole: 4, half: 2, quarter: 1, eighth: 0.5, '16th': 0.25, '32nd': 0.125 };
+let editor = null; // { voz, esperado, notas: [...] }
+function abrirEditor(d, vozId) {
+  const v = d.edicion.find(e => e.id === vozId);
+  editor = { numero: d.numero, voz: vozId, nombre: v.nombre, esperado: v.esperado, notas: JSON.parse(JSON.stringify(v.notas)) };
+  for (const n of editor.notas) if (!NEGRAS[n.type]) n.type = n.compasEntero ? 'whole' : 'quarter';
+  pintarEditor();
+}
+function duracion(n) { return n.silencio && n.compasEntero ? editor.esperado : NEGRAS[n.type] * (n.dot === 1 ? 1.5 : n.dot === 2 ? 1.75 : 1); }
+function pintarEditor() {
+  const e = editor; if (!e) return;
+  const suma = e.notas.reduce((s, n) => s + (n.acorde && !n.silencio ? 0 : duracion(n)), 0);
+  const cuadra = Math.abs(suma - e.esperado) < 0.001;
+  const sel = (clase, i, opciones, valor) => `<select class="${clase}" data-i="${i}">${opciones.map(([v, t]) => `<option value="${v}" ${String(v) === String(valor) ? 'selected' : ''}>${t}</option>`).join('')}</select>`;
+  let html = `<div class="tarjeta" style="margin:10px 0 0;background:var(--soft)"><h4>Editar ${esc(e.nombre)}, compás ${e.numero}</h4><table class="editor">
+    <tr class="cabecera"><th></th><th>Nota</th><th>Alt.</th><th>Oct.</th><th>Figura</th><th>Puntillo</th><th>Ligadura</th><th>Letra</th><th></th></tr>`;
+  e.notas.forEach((n, i) => {
+    html += `<tr>
+      <td>${sel('eTipo', i, [['nota', '♪ nota'], ['silencio', '𝄽 silencio'], ['compas', '𝄻 compás entero']], n.silencio ? (n.compasEntero ? 'compas' : 'silencio') : 'nota')}</td>
+      <td>${n.silencio ? '' : sel('eStep', i, NOTAS_ES, n.step)}</td>
+      <td>${n.silencio ? '' : sel('eAlter', i, [[-1, '♭'], [0, '♮'], [1, '♯']], n.alter)}</td>
+      <td>${n.silencio ? '' : sel('eOct', i, [2, 3, 4, 5, 6].map(o => [o, o]), n.octave)}</td>
+      <td>${n.silencio && n.compasEntero ? '' : sel('eType', i, FIGURAS, n.type)}</td>
+      <td>${n.silencio && n.compasEntero ? '' : sel('eDot', i, [[0, 'no'], [1, 'uno'], [2, 'dos']], n.dot)}</td>
+      <td>${n.silencio ? '' : sel('eLiga', i, [['', 'no'], ['start', 'empieza'], ['stop', 'termina'], ['both', 'las dos']], n.ligaEmpieza && n.ligaTermina ? 'both' : n.ligaEmpieza ? 'start' : n.ligaTermina ? 'stop' : '')}</td>
+      <td>${n.silencio ? '' : `<input type="text" class="eLetra" data-i="${i}" value="${esc(n.letra)}" style="width:70px"> ${sel('eSilaba', i, [['single', 'palabra'], ['begin', 'inicio-'], ['middle', '-medio-'], ['end', '-final']], n.silaba)}`}</td>
+      <td><button class="mini" data-sube="${i}" title="Subir">↑</button> <button class="mini" data-baja="${i}" title="Bajar">↓</button> <button class="mini peligro" data-quita="${i}" title="Quitar">✕</button></td></tr>`;
+  });
+  html += `</table>
+    <div class="acciones" style="margin:10px 0 0"><button class="mini" id="eMasNota">+ nota</button><button class="mini" id="eMasSilencio">+ silencio</button>
+      <span class="${cuadra ? 'ayuda' : ''}" style="${cuadra ? '' : 'color:var(--bad);font-weight:600'}">Suma ${suma} negras de ${e.esperado}${cuadra ? ' ✓' : ''}</span>
+      <span class="hueco"></span><button id="eCancelar">Cancelar</button><button class="principal" id="eGuardar" ${cuadra ? '' : 'disabled title="El compás tiene que cuadrar para guardar"'}>Guardar compás</button></div></div>`;
+  const cont = $('editorCompas'); cont.innerHTML = html;
+  const leer = () => {
+    for (const s of cont.querySelectorAll('select, input')) {
+      const i = +s.dataset.i, n = e.notas[i]; if (!n) continue;
+      if (s.classList.contains('eTipo')) { n.silencio = s.value !== 'nota'; n.compasEntero = s.value === 'compas'; }
+      if (s.classList.contains('eStep')) n.step = s.value;
+      if (s.classList.contains('eAlter')) n.alter = +s.value;
+      if (s.classList.contains('eOct')) n.octave = +s.value;
+      if (s.classList.contains('eType')) n.type = s.value;
+      if (s.classList.contains('eDot')) n.dot = +s.value;
+      if (s.classList.contains('eLiga')) { n.ligaEmpieza = s.value === 'start' || s.value === 'both'; n.ligaTermina = s.value === 'stop' || s.value === 'both'; }
+      if (s.classList.contains('eLetra')) n.letra = s.value;
+      if (s.classList.contains('eSilaba')) n.silaba = s.value;
+    }
+  };
+  for (const s of cont.querySelectorAll('select, input')) s.onchange = () => { leer(); pintarEditor(); };
+  for (const bt of cont.querySelectorAll('button[data-quita]')) bt.onclick = () => { leer(); e.notas.splice(+bt.dataset.quita, 1); pintarEditor(); };
+  for (const bt of cont.querySelectorAll('button[data-sube]')) bt.onclick = () => { leer(); const i = +bt.dataset.sube; if (i > 0) { [e.notas[i - 1], e.notas[i]] = [e.notas[i], e.notas[i - 1]]; } pintarEditor(); };
+  for (const bt of cont.querySelectorAll('button[data-baja]')) bt.onclick = () => { leer(); const i = +bt.dataset.baja; if (i < e.notas.length - 1) { [e.notas[i + 1], e.notas[i]] = [e.notas[i], e.notas[i + 1]]; } pintarEditor(); };
+  const nueva = silencio => { leer(); const ult = [...e.notas].reverse().find(n => !n.silencio); e.notas.push({ silencio, compasEntero: false, step: ult ? ult.step : 'G', alter: ult ? ult.alter : 0, octave: ult ? ult.octave : 4, type: 'quarter', dot: 0, acorde: false, ligaEmpieza: false, ligaTermina: false, letra: '', silaba: 'single' }); pintarEditor(); };
+  $('eMasNota').onclick = () => nueva(false);
+  $('eMasSilencio').onclick = () => nueva(true);
+  $('eCancelar').onclick = () => { editor = null; cont.innerHTML = ''; };
+  $('eGuardar').onclick = async () => {
+    leer();
+    try {
+      await api(`/api/borradores/${borradorActual.id}/compas/${e.numero}/notas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voz: e.voz, notas: e.notas }) });
+      editor = null;
+      await seleccionar(borradorActual.id);
+    } catch (err) { alert(err.message); }
+  };
 }
 function dibujarRecorte(src, p) {
   const img = new Image();

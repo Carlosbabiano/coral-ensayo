@@ -114,7 +114,20 @@ function detalleCompas(id, numero) {
       if (posicion) pagina = b.entrada.paginas[posicion.p] || null;
     } catch {}
   }
-  return { numero: +numero, voces, posicion, pagina, sospechoso: b.sospechosos.includes(String(numero)) };
+  return { numero: +numero, voces, edicion: obra.notasCompas(xmlDe(b), numero), posicion, pagina, sospechoso: b.sospechosos.includes(String(numero)) };
+}
+function guardarNotas(id, numero, { voz, notas }) {
+  const b = leerBorrador(id);
+  if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
+  if (!Array.isArray(notas) || !notas.length || notas.length > 64) throw new Error('Notas no válidas');
+  const ruta = path.join(dirDe(id), 'partituras', b.entrada.archivo);
+  const xml = obra.escribirCompas(fs.readFileSync(ruta, 'utf8'), voz, numero, notas);
+  fs.writeFileSync(ruta, xml);
+  b.sospechosos = obra.sospechososDe(xml);
+  const nombre = (b.partes.find(p => p.id === voz) || {}).nombre || voz;
+  b.log.push(`Compás ${numero}, ${nombre}: notas editadas a mano en el gestor (${notas.length} figuras).`);
+  guardarBorrador(b);
+  return b;
 }
 function cambiarCompas(id, numero, { beats, bt, restaurar }) {
   const b = leerBorrador(id);
@@ -274,6 +287,9 @@ const servidor = http.createServer(async (req, res) => {
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/(\d+)$/)) && req.method === 'GET') {
       try { return json(res, detalleCompas(m[1], m[2])); } catch (e) { return json(res, { error: e.message }, 400); }
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/(\d+)\/notas$/)) && req.method === 'POST') {
+      try { return json(res, resumen(guardarNotas(m[1], m[2], JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}')))); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/(\d+)\/tiempo$/)) && req.method === 'POST') {
       try { return json(res, resumen(cambiarCompas(m[1], m[2], JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}')))); } catch (e) { return json(res, { error: e.message }, 400); }
