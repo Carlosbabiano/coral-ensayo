@@ -1,5 +1,13 @@
 [
   {
+    "titulo": "Ave Maria",
+    "archivo": "Ave_Maria.xml",
+    "posiciones": "Ave_Maria.pos.json",
+    "paginas": [
+      "Ave_Maria-p1.jpg"
+    ]
+  },
+  {
     "titulo": "Brindis",
     "archivo": "Brindis.xml",
     "posiciones": "Brindis.pos.json",
