@@ -400,6 +400,24 @@ $('partitura').addEventListener('click', ev => {
   }
 });
 
+// Mantener la pantalla encendida mientras la app esté a la vista (para leer la partitura sin que se apague).
+// El sistema quita el bloqueo al cambiar de app o apagar la pantalla; se vuelve a pedir al volver.
+let bloqueoPantalla = null, avisadoPantalla = false;
+async function mantenerPantalla() {
+  if (!('wakeLock' in navigator) || document.visibilityState !== 'visible' || bloqueoPantalla) return;
+  try {
+    bloqueoPantalla = await navigator.wakeLock.request('screen');
+    bloqueoPantalla.addEventListener('release', () => { bloqueoPantalla = null; });
+  } catch (e) {
+    bloqueoPantalla = null;
+    if (!avisadoPantalla) { avisadoPantalla = true; console.warn('No se pudo mantener la pantalla encendida:', e.message); }
+  }
+}
+document.addEventListener('visibilitychange', mantenerPantalla);
+// Algunos navegadores solo lo permiten tras tocar la pantalla: reintentar en cada toque si no está activo
+document.addEventListener('pointerdown', mantenerPantalla, { passive: true });
+mantenerPantalla();
+
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").then(reg => { try { reg.update(); } catch {} }).catch(e => console.warn("Sin modo offline:", e));
   // Cuando se instala una versión nueva de la app, recargar una vez para usarla
