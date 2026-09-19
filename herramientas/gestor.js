@@ -175,6 +175,52 @@ function subirAInternet(alAcabar = () => {}) {
   p.on('error', e => { registrar('X No se pudo ejecutar la publicación: ' + e.message); fin(false); });
 }
 
+// ---------- Carpeta de entrada (Google Drive) ----------
+// Lo que se deje en Entrada/ (por ejemplo compartido desde el móvil a Google Drive) se convierte en borrador solo:
+// el XML crea el borrador; si en ESPERA_PDF segundos aparece un PDF con el mismo nombre, va con él.
+const DIR_ENTRADA = path.join(obra.RAIZ, 'Entrada');
+const ESPERA_PDF = 30, INTERVALO = 3;
+const vistos = new Map();   // nombre -> { size, mtime, estableDesde }
+const entradaEstado = { esperando: [], avisos: [] };
+fs.mkdirSync(DIR_ENTRADA, { recursive: true });
+function vigilarEntrada() {
+  let nombres = [];
+  try { nombres = fs.readdirSync(DIR_ENTRADA).filter(n => /\.(xml|musicxml|pdf)$/i.test(n) && !n.startsWith('~') && !n.startsWith('.')); } catch { return; }
+  const ahora = Date.now();
+  for (const n of [...vistos.keys()]) if (!nombres.includes(n)) vistos.delete(n);
+  const estables = [];
+  for (const n of nombres) {
+    let st; try { st = fs.statSync(path.join(DIR_ENTRADA, n)); } catch { continue; }
+    const v = vistos.get(n);
+    if (!v || v.size !== st.size || v.mtime !== st.mtimeMs) { vistos.set(n, { size: st.size, mtime: st.mtimeMs, estableDesde: ahora }); continue; }
+    if (ahora - v.estableDesde >= INTERVALO * 1000 * 2 && st.size > 0) estables.push(n); // sin cambios durante dos vueltas: Drive ha terminado de bajarlo
+  }
+  const xmls = estables.filter(n => /\.(xml|musicxml)$/i.test(n)), pdfs = estables.filter(n => /\.pdf$/i.test(n));
+  entradaEstado.esperando = nombres;
+  for (const xml of xmls) {
+    const pdf = pdfs.find(p => obra.clave(p) === obra.clave(xml));
+    const esperaAgotada = ahora - vistos.get(xml).estableDesde >= ESPERA_PDF * 1000;
+    if (!pdf && !esperaAgotada) continue; // le damos tiempo al PDF a llegar
+    try {
+      const id = nuevoId();
+      const dirEntrada = path.join(dirDe(id), 'entrada');
+      fs.mkdirSync(dirEntrada, { recursive: true });
+      const archivos = [];
+      for (const f of [xml, pdf].filter(Boolean)) {
+        const origen = path.join(DIR_ENTRADA, f), destino = path.join(dirEntrada, f);
+        try { fs.renameSync(origen, destino); } catch { fs.copyFileSync(origen, destino); fs.unlinkSync(origen); }
+        archivos.push(f); vistos.delete(f);
+      }
+      const b = { id, creado: new Date().toISOString(), estado: 'nuevo', archivos, log: ['Recogido de la carpeta Entrada: ' + archivos.join(' + ')], origen: 'entrada' };
+      guardarBorrador(b);
+      procesar(id);
+      emitir('gestor', { tipo: 'nuevo', id });
+      console.log('Entrada: ' + archivos.join(' + ') + ' -> borrador ' + id);
+    } catch (e) { console.warn('Entrada: no se pudo recoger ' + xml + ': ' + e.message); entradaEstado.avisos = ['No se pudo recoger ' + xml + ': ' + e.message]; }
+  }
+}
+setInterval(vigilarEntrada, INTERVALO * 1000);
+
 // ---------- Servidor ----------
 function enviarArchivo(res, ruta) {
   if (!fs.existsSync(ruta) || fs.statSync(ruta).isDirectory()) { res.writeHead(404); return res.end('No encontrado'); }
@@ -213,7 +259,7 @@ const servidor = http.createServer(async (req, res) => {
 
     // API
     if (ruta === '/api/estado' && req.method === 'GET') {
-      return json(res, { borradores: listarBorradores().map(resumen), publicadas: obra.leerLista(), publicando, version: obra.versionCache(), raiz: obra.RAIZ, preparando: [...trabajando] });
+      return json(res, { borradores: listarBorradores().map(resumen), publicadas: obra.leerLista(), publicando, version: obra.versionCache(), raiz: obra.RAIZ, preparando: [...trabajando], entrada: { ruta: DIR_ENTRADA, esperaPdf: ESPERA_PDF, ...entradaEstado } });
     }
     if (ruta === '/api/borradores' && req.method === 'POST') {
       const id = nuevoId();
@@ -256,6 +302,7 @@ const servidor = http.createServer(async (req, res) => {
     if ((m = ruta.match(/^\/api\/publicadas\/([^/]+)\/retirar$/)) && req.method === 'POST') {
       try { retirarObra(m[1]); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
+    if (ruta === '/api/gestor/eventos' && req.method === 'GET') return suscribir('gestor', res);
     if (ruta === '/api/publicacion/eventos' && req.method === 'GET') {
       suscribir('publicacion', res);
       for (const linea of registroPublicacion) res.write('data: ' + JSON.stringify({ tipo: 'log', linea }) + '\n\n');

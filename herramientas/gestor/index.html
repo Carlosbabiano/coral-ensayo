@@ -95,6 +95,7 @@
       <input type="file" id="elegir" multiple accept=".xml,.musicxml,.pdf">
     </label>
     <p class="ayuda">Sin el PDF la obra irá sin letra y sin la vista de página original. Si el PDF está en la carpeta <code>pdf/</code> con el mismo nombre, se usa solo.</p>
+    <div class="ayuda" id="entrada" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px"></div>
     <h2>Borradores</h2>
     <ul class="lista" id="borradores"></ul>
     <div class="vacio" id="sinBorradores" style="padding:10px 0">Ninguno</div>
@@ -131,6 +132,11 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 async function refrescar() {
   estado = await api('/api/estado');
   $('info').textContent = `${estado.publicadas.length} obras publicadas · caché ${estado.version}`;
+  const en = estado.entrada || {};
+  let te = `<strong>Desde el móvil:</strong> comparte el XML (y el PDF) a Google Drive, a la carpeta <code>Entrada</code> del proyecto. En cuanto lleguen al PC se convierten en borrador solos.`;
+  if (en.esperando && en.esperando.length) te += `<br>En la carpeta ahora: ${en.esperando.map(esc).join(', ')} <span class="progreso" style="width:11px;height:11px;border-width:2px"></span> <span>(un XML sin PDF espera ${en.esperaPdf} s por si llega)</span>`;
+  if (en.avisos && en.avisos.length) te += `<br><span style="color:var(--bad)">${esc(en.avisos[0])}</span>`;
+  $('entrada').innerHTML = te;
   const ul = $('borradores'); ul.innerHTML = '';
   for (const b of estado.borradores) {
     const li = document.createElement('li');
@@ -358,6 +364,10 @@ async function retirar(o) {
 }
 
 refrescar().then(() => { if (estado.publicando) abrirVelo('Publicación en marcha…'); }).catch(e => { $('panel').innerHTML = '<div class="vacio">No se puede hablar con el gestor: ' + esc(e.message) + '</div>'; });
+// Avisos generales del gestor (p. ej. un borrador nuevo recogido de la carpeta Entrada) y refresco periódico de las listas
+const avisosGestor = new EventSource('/api/gestor/eventos');
+avisosGestor.onmessage = ev => { const m = JSON.parse(ev.data); if (m.tipo === 'nuevo') { refrescar(); if (!seleccionado) seleccionar(m.id); } };
+setInterval(() => { if (document.visibilityState === 'visible' && !$('velo').classList.contains('ver')) refrescar().catch(() => {}); }, 5000);
 </script>
 </body>
 </html>

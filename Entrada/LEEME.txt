@@ -1,0 +1,9 @@
+Carpeta de entrada del Gestor de obras.
+
+Deja aquí el .xml del Escáner Musical y el .pdf de la obra (con el mismo nombre).
+Desde el móvil: en Escáner Musical, "Compartir" el XML a Google Drive, dentro de esta carpeta
+(CORAL VILLA DE MENGIBAR / Entrada). El PDF, igual.
+
+Cuando Google Drive los baje al PC, el Gestor de obras (Gestor.cmd, tiene que estar abierto)
+los recoge solo, prepara la obra y la deja lista para revisar y publicar.
+Los archivos desaparecen de aquí al recogerlos: pasan a la carpeta "borradores".
