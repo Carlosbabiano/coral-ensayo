@@ -191,8 +191,13 @@ function moverCursorPdf(ev) {
   const s = pg.cursor.style;
   s.display = 'block'; s.left = ((c.x0 + frac * (c.x1 - c.x0)) * 100) + '%'; s.width = '1.6%';
   s.top = (c.y0 * 100) + '%'; s.height = ((c.y1 - c.y0) * 100) + '%';
-  const r = pg.cursor.getBoundingClientRect();
-  if (r.top < 60 || r.bottom > window.innerHeight - 220) pg.cursor.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  enfocar(pg.cursor);
+}
+// Lleva el cursor a la vista desplazando SOLO esta página (scrollIntoView arrastraría también a la página
+// que nos contiene cuando la app va dentro del Gestor de obras)
+function enfocar(el) {
+  const r = el.getBoundingClientRect();
+  if (r.top < 60 || r.bottom > window.innerHeight - 220) window.scrollBy({ top: r.top + r.height / 2 - window.innerHeight / 2, behavior: 'smooth' });
 }
 
 $('vistaPartitura').onclick = async () => { if (!modoPdf) return; modoPdf = false; await aplicarModo(); moverCursor(indiceEvento); };
@@ -268,7 +273,7 @@ function moverCursor(i) {
   $('compas').textContent = (eventos[i]?.compas ?? 0) + 1;
   if (modoPdf) { moverCursorPdf(eventos[i]); return; }
   const el = osmd.cursor.cursorElement;
-  if (el) { const r = el.getBoundingClientRect(); if (r.top < 60 || r.bottom > window.innerHeight - 220) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  if (el) enfocar(el);
 }
 
 // ---------- Audio ----------
