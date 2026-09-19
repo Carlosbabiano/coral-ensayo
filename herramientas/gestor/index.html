@@ -319,7 +319,7 @@ function pintarBarraNota() {
       <select data-accion="figura" title="Figura (teclas 1 a 6)">${Object.entries(NOMBRE_FIGURA).map(([v, t]) => `<option value="${v}" ${v === n.type ? 'selected' : ''}>${t}</option>`).join('')}</select>
       ${b('·', 'Puntillo (tecla .)', 'puntillo')}${b('𝄽', 'Nota ↔ silencio (tecla S)', 'silencio')}${b('~', 'Ligadura (tecla L)', 'liga')}${b('✕', 'Borrar (Supr)', 'borrar')}${b('+', 'Añadir una figura detrás (tecla +)', 'anadir')}${b('←', 'Figura anterior', 'izq')}${b('→', 'Figura siguiente', 'der')}</span></div>`;
   for (const el of barra.querySelectorAll('[data-accion]')) el.onclick = ev => { if (el.tagName === 'SELECT') return; accionNota(el.dataset.accion); ev.preventDefault(); };
-  const sel = barra.querySelector('select[data-accion=figura]'); sel.onchange = () => { n.type = sel.value; n.compasEntero = false; cambiado(); };
+  const sel = barra.querySelector('select[data-accion=figura]'); sel.onchange = () => { n.type = sel.value; n.compasEntero = false; cambiado(true); };
 }
 function accionNota(a, extra) {
   const s = notaSel; if (!s || !s.editable) return;
@@ -339,9 +339,16 @@ function accionNota(a, extra) {
   else if (a === 'borrar') { s.notas.splice(s.indice, 1); if (s.indice >= s.notas.length) s.indice = s.notas.length - 1; }
   else if (a === 'anadir') { const c = JSON.parse(JSON.stringify(n)); c.letra = ''; c.ligaEmpieza = c.ligaTermina = false; c.compasEntero = false; s.notas.splice(s.indice + 1, 0, c); s.indice++; }
   else return;
-  cambiado();
+  cambiado(['arriba', 'abajo', 'sost', 'bemol', 'figura', 'puntillo', 'silencio', 'anadir'].includes(a));
 }
-function cambiado() { pintarBarraNota(); clearTimeout(guardadoPendiente); guardadoPendiente = setTimeout(guardarSeleccion, 450); }
+// Hace sonar la nota seleccionada con el sonido de la app (duración según la figura)
+function sonarSeleccion() {
+  const s = notaSel, n = s && s.notas[s.indice];
+  if (!n || n.silencio) return;
+  const seg = Math.min(1.6, Math.max(0.35, (NEGRAS[n.type] || 1) * (n.dot ? 1.5 : 1) * 0.5));
+  try { $('previa').contentWindow.sonarNota(n.step, n.alter, n.octave, seg); } catch {}
+}
+function cambiado(conSonido) { if (conSonido) sonarSeleccion(); pintarBarraNota(); clearTimeout(guardadoPendiente); guardadoPendiente = setTimeout(guardarSeleccion, 450); }
 async function guardarSeleccion() {
   guardadoPendiente = null;
   const s = notaSel; if (!s) return;
@@ -370,6 +377,7 @@ async function moverSeleccion(delta) {
     } catch { return; }
   }
   $('previa').contentWindow.seleccionarNota(s.compas, s.staff, s.indice);
+  sonarSeleccion();
   pintarBarraNota();
 }
 function pintarChips() {
