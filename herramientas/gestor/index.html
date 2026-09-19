@@ -72,7 +72,8 @@
   @keyframes girar { to { transform: rotate(360deg); } }
   .ayuda { font-size: 13px; color: var(--muted); }
   .revision { display: grid; grid-template-columns: minmax(280px, 420px) 1fr; gap: 16px; align-items: start; }
-  .barraNota { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 8px 10px; margin-bottom: 8px; background: #fff7e6; border: 1px solid #f3dcae; border-radius: 10px; font-size: 14px; }
+  #barraNota { position: sticky; top: 0; z-index: 6; background: #fff; padding-top: 4px; }
+  .barraNota { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 8px 10px; margin-bottom: 8px; background: #fff7e6; border: 1px solid #f3dcae; border-radius: 10px; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
   .barraNota .botones { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
   .barraNota .botones button { min-width: 32px; font-size: 15px; padding: 3px 7px; }
   .barraNota select { padding: 3px 6px; }
