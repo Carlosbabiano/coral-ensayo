@@ -92,7 +92,38 @@ function ajustar(id, ajustes) {
   if (ajustes.titulo && ajustes.titulo.trim()) b.entrada.titulo = ajustes.titulo.trim();
   b.partes = b.partes.filter(p => !(ajustes.quitar || []).includes(p.id)).map(p => ({ ...p, nombre: (ajustes.nombres || {})[p.id] || p.nombre }));
   b.tempo = obra.tempoDe(xml);
+  b.sospechosos = obra.sospechososDe(xml);
   b.log.push('Ajustes aplicados: ' + JSON.stringify(ajustes));
+  guardarBorrador(b);
+  return b;
+}
+
+// ---------- Revisar un compás: lo que hay escrito, voz por voz, y dónde está en la página ----------
+function xmlDe(b) { return fs.readFileSync(path.join(dirDe(b.id), 'partituras', b.entrada.archivo), 'utf8'); }
+function detalleCompas(id, numero) {
+  const b = leerBorrador(id);
+  if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
+  const voces = obra.detalleCompas(xmlDe(b), numero);
+  if (!voces.length) throw new Error('No existe el compás ' + numero);
+  let posicion = null, pagina = null;
+  if (b.entrada.posiciones && b.entrada.paginas) {
+    try {
+      const pos = JSON.parse(fs.readFileSync(path.join(dirDe(id), 'partituras', b.entrada.posiciones), 'utf8'));
+      posicion = pos.compases[+numero - 1] || null;
+      if (posicion) pagina = b.entrada.paginas[posicion.p] || null;
+    } catch {}
+  }
+  return { numero: +numero, voces, posicion, pagina, sospechoso: b.sospechosos.includes(String(numero)) };
+}
+function cambiarCompas(id, numero, { beats, bt, restaurar }) {
+  const b = leerBorrador(id);
+  if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
+  if (!(+beats >= 1 && +beats <= 32) || ![1, 2, 4, 8, 16].includes(+bt)) throw new Error('Indicación de compás no válida');
+  const ruta = path.join(dirDe(id), 'partituras', b.entrada.archivo);
+  const xml = obra.fijarCompas(fs.readFileSync(ruta, 'utf8'), numero, +beats, +bt, restaurar !== false);
+  fs.writeFileSync(ruta, xml);
+  b.sospechosos = obra.sospechososDe(xml);
+  b.log.push(`Compás ${numero} puesto en ${beats}/${bt}` + (restaurar !== false ? ' (el siguiente vuelve al compás anterior)' : ''));
   guardarBorrador(b);
   return b;
 }
@@ -207,6 +238,12 @@ const servidor = http.createServer(async (req, res) => {
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)$/)) && req.method === 'GET') { const b = leerBorrador(m[1]); return b ? json(res, b) : json(res, { error: 'No existe' }, 404); }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/ajustes$/)) && req.method === 'POST') {
       try { return json(res, resumen(ajustar(m[1], JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}')))); } catch (e) { return json(res, { error: e.message }, 400); }
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/(\d+)$/)) && req.method === 'GET') {
+      try { return json(res, detalleCompas(m[1], m[2])); } catch (e) { return json(res, { error: e.message }, 400); }
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/(\d+)\/tiempo$/)) && req.method === 'POST') {
+      try { return json(res, resumen(cambiarCompas(m[1], m[2], JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}')))); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/publicar$/)) && req.method === 'POST') {
       try { publicarBorrador(m[1]); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }
