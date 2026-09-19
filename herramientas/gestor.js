@@ -98,13 +98,17 @@ function ajustar(id, ajustes) {
 }
 
 // ---------- Publicar ----------
-let publicando = false;
+// El registro de la publicación en curso se guarda para reenviarlo a quien se conecte después de empezar
+let publicando = false, registroPublicacion = [], finPublicacion = null;
+const registrar = linea => { registroPublicacion.push(linea); emitir('publicacion', { tipo: 'log', linea }); };
+function empezarPublicacion() {
+  if (publicando) throw new Error('Ya hay una publicación en marcha');
+  publicando = true; registroPublicacion = []; finPublicacion = null;
+}
 function publicarBorrador(id) {
   const b = leerBorrador(id);
   if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
-  if (publicando) throw new Error('Ya hay una publicación en marcha');
-  publicando = true;
-  const registrar = linea => emitir('publicacion', { tipo: 'log', linea });
+  empezarPublicacion();
   const dirSalida = path.join(dirDe(id), 'partituras');
   try {
     const existia = obra.incorporarEnApp(b.entrada, dirSalida);
@@ -119,9 +123,7 @@ function publicarBorrador(id) {
   subirAInternet(() => { fs.rmSync(dirDe(id), { recursive: true, force: true }); });
 }
 function retirarObra(archivo) {
-  if (publicando) throw new Error('Ya hay una publicación en marcha');
-  publicando = true;
-  const registrar = linea => emitir('publicacion', { tipo: 'log', linea });
+  empezarPublicacion();
   try {
     const o = obra.retirarDeApp(archivo);
     const version = obra.subirVersionCache();
@@ -131,8 +133,7 @@ function retirarObra(archivo) {
   subirAInternet();
 }
 function subirAInternet(alAcabar = () => {}) {
-  const registrar = linea => emitir('publicacion', { tipo: 'log', linea });
-  const fin = ok => { publicando = false; if (ok) alAcabar(); emitir('publicacion', { tipo: 'fin', ok }); };
+  const fin = ok => { publicando = false; finPublicacion = { tipo: 'fin', ok }; if (ok) alAcabar(); emitir('publicacion', finPublicacion); };
   if (process.env.GESTOR_SIN_INTERNET) { registrar('(Modo de prueba: no se sube a internet.)'); return setTimeout(() => fin(true), 500); }
   registrar('Publicando en internet...');
   const p = spawn(process.execPath, [path.join(__dirname, 'publicar.js')], { cwd: obra.RAIZ, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
@@ -218,7 +219,12 @@ const servidor = http.createServer(async (req, res) => {
     if ((m = ruta.match(/^\/api\/publicadas\/([^/]+)\/retirar$/)) && req.method === 'POST') {
       try { retirarObra(m[1]); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
-    if (ruta === '/api/publicacion/eventos' && req.method === 'GET') return suscribir('publicacion', res);
+    if (ruta === '/api/publicacion/eventos' && req.method === 'GET') {
+      suscribir('publicacion', res);
+      for (const linea of registroPublicacion) res.write('data: ' + JSON.stringify({ tipo: 'log', linea }) + '\n\n');
+      if (finPublicacion) res.write('data: ' + JSON.stringify(finPublicacion) + '\n\n');
+      return;
+    }
 
     res.writeHead(404); res.end('No encontrado');
   } catch (e) {

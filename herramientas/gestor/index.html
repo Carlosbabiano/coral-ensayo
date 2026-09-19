@@ -273,6 +273,7 @@ async function descartar() {
 }
 
 // ---------- Publicar / retirar (con ventana de progreso) ----------
+// Abre la ventana de progreso y devuelve una promesa que se cumple cuando ya se reciben los avisos del servidor
 function abrirVelo(titulo) {
   $('veloTitulo').innerHTML = `<span class="progreso"></span> ${esc(titulo)}`;
   $('veloLog').textContent = ''; $('veloCerrar').disabled = true; $('velo').classList.add('ver');
@@ -282,7 +283,7 @@ function abrirVelo(titulo) {
     if (m.tipo === 'log') { $('veloLog').textContent += m.linea + '\n'; $('veloLog').scrollTop = $('veloLog').scrollHeight; }
     if (m.tipo === 'fin') { f.close(); $('veloTitulo').textContent = m.ok ? 'Publicado' : 'Ha fallado la publicación'; $('veloCerrar').disabled = false; refrescar(); }
   };
-  return f;
+  return new Promise(ok => { f.onopen = () => ok(f); setTimeout(() => ok(f), 1500); });
 }
 $('veloCerrar').onclick = () => { $('velo').classList.remove('ver'); if (seleccionado && !estado.borradores.some(b => b.id === seleccionado)) { seleccionado = null; borradorActual = null; pintarPanel(); } };
 
@@ -290,13 +291,13 @@ async function publicar() {
   const b = borradorActual;
   const ya = estado.publicadas.find(o => o.archivo === b.entrada.archivo);
   if (!confirm(`¿Publicar "${b.entrada.titulo}" para todo el coro?${ya ? '\n\nSustituirá a la obra del mismo nombre que ya está publicada.' : ''}`)) return;
-  const f = abrirVelo('Publicando "' + b.entrada.titulo + '"…');
+  const f = await abrirVelo('Publicando "' + b.entrada.titulo + '"…');
   try { await api(`/api/borradores/${b.id}/publicar`, { method: 'POST' }); }
   catch (e) { f.close(); $('veloTitulo').textContent = 'No se ha podido publicar'; $('veloLog').textContent = e.message; $('veloCerrar').disabled = false; }
 }
 async function retirar(o) {
   if (!confirm(`¿Retirar "${o.titulo}" de la app? Dejará de verse en los móviles del coro. (El PDF y el XML de tu carpeta no se borran.)`)) return;
-  const f = abrirVelo('Retirando "' + o.titulo + '"…');
+  const f = await abrirVelo('Retirando "' + o.titulo + '"…');
   try { await api(`/api/publicadas/${encodeURIComponent(o.archivo)}/retirar`, { method: 'POST' }); }
   catch (e) { f.close(); $('veloTitulo').textContent = 'No se ha podido retirar'; $('veloLog').textContent = e.message; $('veloCerrar').disabled = false; }
 }
