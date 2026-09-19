@@ -77,7 +77,6 @@
     <label>Otras voces <input type="range" id="mezcla" min="0" max="100" value="25"> <span id="mezclaVal">25%</span></label>
   </div>
   <div class="fila">
-    <label class="chip"><input type="checkbox" id="soloPentagrama"> Ver solo mi voz</label>
     <label class="chip"><input type="checkbox" id="bucle"> Repetir compases
       <input type="number" id="desde" min="1" value="1" style="width:56px"> a
       <input type="number" id="hasta" min="1" value="1" style="width:56px"></label>
@@ -131,7 +130,6 @@ async function cargarObra(archivo) {
   await osmd.load('partituras/' + archivo);
   osmd.Zoom = window.innerWidth < 600 ? 0.55 : 0.8;
   crearBotonesVoces();
-  aplicarVisibilidad();
   osmd.render();
   construirEventos();
   osmd.cursor.show();
@@ -157,7 +155,6 @@ async function aplicarModo() {
   // La partitura se oculta sin display:none para que OSMD no recalcule con tamaño cero
   Object.assign($('partitura').style, modoPdf ? { position: 'absolute', left: '-20000px', width: '100%', height: '0', overflow: 'hidden', padding: '0' } : { position: '', left: '', width: '', height: '', overflow: '', padding: '' });
   $('pdfVista').style.display = modoPdf ? 'block' : 'none';
-  $('soloPentagrama').disabled = modoPdf;
   $('estado').textContent = modoPdf ? 'Toca un compás de la página para empezar desde ahí.' : 'Toca un compás de la partitura para empezar desde ahí.';
   if (modoPdf && !pdfCargado) await cargarPdf();
   try { localStorage.setItem('modoPdf', modoPdf ? '1' : '0'); } catch {}
@@ -206,24 +203,13 @@ function crearBotonesVoces() {
   osmd.Sheet.Instruments.forEach((ins, i) => {
     const b = document.createElement('button');
     b.textContent = ins.Name || ('Voz ' + (i + 1));
-    b.onclick = () => { vozActiva = i; marcarVoz(); aplicarVisibilidad(); rerender(); };
+    b.onclick = () => { vozActiva = i; marcarVoz(); };
     cont.appendChild(b);
   });
   marcarVoz();
 }
 function marcarVoz() { [...$('voces').children].forEach((b, i) => b.classList.toggle('activa', i === vozActiva)); }
 
-function aplicarVisibilidad() {
-  const solo = $('soloPentagrama').checked;
-  osmd.Sheet.Instruments.forEach((ins, i) => { ins.Visible = !solo || i === vozActiva; });
-}
-function rerender() {
-  const compas = compasActual();
-  osmd.render();
-  construirEventos();
-  osmd.cursor.show();
-  irACompas(compas);
-}
 
 // ---------- Eventos musicales a partir del cursor de OSMD ----------
 // Recorremos el cursor una vez (respeta repeticiones y casillas) y guardamos,
@@ -266,8 +252,6 @@ function construirEventos() {
   osmd.cursor.reset();
   if (eventos.length) console.log('Eventos:', eventos.length, 'duración', segundos.toFixed(1), 's · primera nota midi', eventos.find(e => e.notas.length)?.notas[0].midi);
 }
-
-function compasActual() { return eventos[indiceEvento]?.compas ?? 0; }
 
 function irACompas(compas) {
   parar();
@@ -394,7 +378,6 @@ $('stop').onclick = () => { parar(); irACompas(eventos[compasInicio]?.compas ?? 
 $('inicio').onclick = () => irACompas(0);
 $('tempo').oninput = () => { mostrarTempo(); try { localStorage.setItem('tempo:' + (obraActual.archivo || ''), $('tempo').value); } catch {} if (reproduciendo) { pausar(); reproducir(); } };
 $('mezcla').oninput = () => $('mezclaVal').textContent = $('mezcla').value + '%';
-$('soloPentagrama').onchange = () => { aplicarVisibilidad(); rerender(); };
 $('timbre').onchange = () => { if (reproduciendo) { pausar(); reproducir(); } };
 
 // Tocar un compás de la partitura: empezar desde ahí
