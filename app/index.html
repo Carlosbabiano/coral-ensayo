@@ -403,35 +403,60 @@ $('partitura').addEventListener('click', ev => {
 
 // Mantener la pantalla encendida mientras la app esté a la vista (para leer la partitura sin que se apague).
 // El sistema quita el bloqueo al cambiar de app o apagar la pantalla; se vuelve a pedir al volver.
-let bloqueoPantalla = null, errorPantalla = '', pidiendoPantalla = false;
-const pantallaActiva = () => !!bloqueoPantalla && !bloqueoPantalla.released;
+// Plan A: la API Wake Lock del navegador. Plan B (si la API falla o no contesta, p. ej. iOS): un vídeo
+// diminuto y silencioso en bucle; mientras se reproduce, el móvil no apaga la pantalla.
+let bloqueoPantalla = null, errorPantalla = '', pidiendoPantalla = false, videoPantalla = null;
+const videoActivo = () => !!videoPantalla && !videoPantalla.paused && !videoPantalla.ended;
+const pantallaActiva = () => (!!bloqueoPantalla && !bloqueoPantalla.released) || videoActivo();
 function indicarPantalla() {
   const p = $('pantalla');
   p.textContent = pantallaActiva() ? '🔆' : '🌙';
-  p.title = pantallaActiva() ? 'La pantalla no se apagará mientras la app esté a la vista' : 'La pantalla puede apagarse. ' + errorPantalla;
+  p.title = pantallaActiva() ? 'La pantalla no se apagará mientras la app esté a la vista' + (videoActivo() ? ' (vídeo)' : '') : 'La pantalla puede apagarse. ' + errorPantalla;
 }
-async function mantenerPantalla() {
-  if (pidiendoPantalla || document.visibilityState !== 'visible' || pantallaActiva()) return;
-  if (!('wakeLock' in navigator)) { errorPantalla = 'Este navegador no permite mantener la pantalla encendida.'; indicarPantalla(); return; }
+function videoMantener() {
+  if (!videoPantalla) {
+    videoPantalla = document.createElement('video');
+    videoPantalla.setAttribute('title', 'Coral: pantalla encendida');
+    videoPantalla.setAttribute('playsinline', ''); videoPantalla.setAttribute('loop', '');
+    videoPantalla.src = 'pantalla.mp4';
+    // Algunos móviles no repiten bien un vídeo tan corto: rebobinar a mano
+    videoPantalla.addEventListener('timeupdate', () => { if (videoPantalla.currentTime > 0.5) videoPantalla.currentTime = Math.random() * 0.2; });
+    videoPantalla.addEventListener('pause', indicarPantalla); videoPantalla.addEventListener('play', indicarPantalla);
+  }
+  return videoPantalla.play();
+}
+function mantenerPantalla(ev) {
+  if (document.visibilityState !== 'visible' || pantallaActiva()) return;
+  const gesto = !!ev && ev.isTrusted && ['click', 'touchend', 'pointerup'].includes(ev.type);
+  // Plan B: solo puede arrancar dentro de un gesto del usuario (y después ya se puede reanudar sin gesto)
+  if (errorPantalla && (gesto || videoPantalla)) {
+    videoMantener().then(indicarPantalla, e => { errorPantalla += ' · Vídeo: ' + e.name + ': ' + e.message; indicarPantalla(); });
+  }
+  if (pidiendoPantalla) return;
+  if (!('wakeLock' in navigator)) { errorPantalla = errorPantalla || 'Este navegador no tiene la API para mantener la pantalla encendida.'; indicarPantalla(); return; }
   pidiendoPantalla = true;
-  try {
-    const b = await navigator.wakeLock.request('screen');
+  let contestado = false;
+  const fin = () => { contestado = true; pidiendoPantalla = false; indicarPantalla(); };
+  navigator.wakeLock.request('screen').then(b => {
     bloqueoPantalla = b; errorPantalla = '';
     b.addEventListener('release', () => { if (bloqueoPantalla === b) bloqueoPantalla = null; indicarPantalla(); });
-  } catch (e) {
+    if (videoPantalla) videoPantalla.pause();
+    fin();
+  }, e => {
     bloqueoPantalla = null; errorPantalla = e.name + ': ' + e.message;
     console.warn('No se pudo mantener la pantalla encendida:', errorPantalla);
-  }
-  pidiendoPantalla = false;
-  indicarPantalla();
+    fin();
+  });
+  // iOS a veces no contesta nunca: darlo por fallido a los 3 s y pasar al plan B en el siguiente toque
+  setTimeout(() => { if (!contestado) { pidiendoPantalla = false; errorPantalla = 'El sistema no contesta a la petición.'; indicarPantalla(); } }, 3000);
 }
 // Al volver a la app (iOS tarda un poco en considerar la página visible)
 document.addEventListener('visibilitychange', () => { indicarPantalla(); setTimeout(mantenerPantalla, 300); });
-window.addEventListener('pageshow', mantenerPantalla);
-window.addEventListener('focus', mantenerPantalla);
+window.addEventListener('pageshow', () => mantenerPantalla());
+window.addEventListener('focus', () => mantenerPantalla());
 // Safari solo lo permite tras un gesto del usuario: en pantallas táctiles el gesto cuenta al soltar (touchend/click), no al pulsar
 for (const ev of ['touchend', 'pointerup', 'click']) document.addEventListener(ev, mantenerPantalla, { passive: true });
-$('pantalla').onclick = () => setTimeout(() => { if (!pantallaActiva()) alert('No se puede mantener la pantalla encendida.\n\n' + errorPantalla + '\n\nSi el móvil está en modo de bajo consumo, desactívalo y vuelve a tocar el icono.'); }, 600);
+$('pantalla').onclick = () => setTimeout(() => { if (!pantallaActiva()) alert('No se puede mantener la pantalla encendida.\n\n' + (errorPantalla || 'Esperando respuesta del sistema… vuelve a tocar el icono.') + '\n\nSi el móvil está en modo de bajo consumo, desactívalo y vuelve a tocar el icono.'); }, 800);
 mantenerPantalla();
 
 if ("serviceWorker" in navigator) {
