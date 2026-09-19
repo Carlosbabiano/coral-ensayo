@@ -12,12 +12,15 @@ Publicada en: https://carlosbabiano.github.io/coral-ensayo/
 - `pdf/` — PDF originales de las obras.
 - `herramientas/` — scripts (Node): `gestor.js` (+ `gestor/index.html`), `obra.js`, `anadir-obra.js`, `letra.js`, `posiciones.js`, `paginas.js`, `publicar.js`.
 - `borradores/` — obras en preparación en el gestor (no se publican).
+- `Entrada/` — buzón: lo que se deje aquí (p. ej. desde el móvil vía Google Drive) lo recoge el gestor.
 - `guia/` — guía para corregir notas en MuseScore.
 
 ## Añadir una obra (con previsualización): Gestor.cmd
 1. Exportar el MusicXML (`.xml`, sin comprimir) desde Escáner Musical.
 2. Abrir `Gestor.cmd`: arranca un servidor local y abre el gestor en el navegador (http://localhost:5180).
-3. Arrastrar el `.xml` **y el `.pdf`** de la obra a la zona de la página (o elegirlos con un clic).
+3. Arrastrar el `.xml` **y el `.pdf`** de la obra a la zona de la página (o elegirlos con un clic). O, desde el
+   móvil, compartirlos a Google Drive en la carpeta `Entrada/` del proyecto: el gestor los recoge solo en cuanto
+   llegan al PC (si el XML llega sin PDF, espera 30 s por si viene detrás y luego busca uno en `pdf/`).
 4. El gestor prepara la obra (nombra las voces, revisa los compases, lee el PDF con Audiveris para la letra y
    la posición de cada compás) y la muestra en el mismo reproductor que usa el coro. Ahí se pueden cambiar el
    título, el nombre de cada voz, el tempo y quitar voces (por ejemplo el piano), y saltar a los compases dudosos.

@@ -61,7 +61,8 @@ function procesar(id) {
   const dirSalida = path.join(dirDe(id), 'partituras');
   fs.rmSync(dirSalida, { recursive: true, force: true });
 
-  Object.assign(b, { estado: 'preparando', log: [], error: null, entrada: null, avisos: [], partes: [], sospechosos: [], tempo: null, pdf: pdf ? path.basename(pdf) : null });
+  const cabecera = b.origen === 'entrada' ? ['Recogido de la carpeta Entrada: ' + archivos.join(' + ')] : [];
+  Object.assign(b, { estado: 'preparando', log: cabecera, error: null, entrada: null, avisos: [], partes: [], sospechosos: [], tempo: null, pdf: pdf ? path.basename(pdf) : null });
   guardarBorrador(b);
   trabajando.add(id);
   const registrar = linea => { b.log.push(linea); guardarBorrador(b); emitir(id, { tipo: 'log', linea }); };
