@@ -282,8 +282,12 @@ async function revisarCompas(n, silencioso) {
   const cuadra = d.voces.every(v => Math.abs(v.suma - v.esperado) < 0.01);
   let html = `<div class="tarjeta" id="tarjetaRevision"><h4>Compás ${n}</h4><div class="revision">`;
   html += d.pagina ? `<div><canvas id="recorte"></canvas><div class="ayuda">Recorte de la página original (compás ${n} en el centro, con los vecinos a los lados).</div></div>` : `<div class="ayuda">Sin PDF no hay imagen del compás.</div>`;
-  html += `<div><div class="aviso ${cuadra ? 'bien' : ''}">Compás de <strong>${v0.beats}/${v0.bt}</strong>${v0.cambio ? ' (cambia aquí)' : ''}: caben ${v0.esperado} negras.` + (cuadra ? ' Todas las voces cuadran.' : '') + `</div><table class="voces">`;
-  for (const v of d.voces) html += `<tr><td><strong>${esc(v.nombre)}</strong><br><span class="ayuda">${v.suma === v.esperado ? 'cuadra' : 'suma ' + v.suma + ' negras'}</span></td><td>${v.notas.map(esc).join('<br>') || '<i>vacío</i>'}</td></tr>`;
+  const malas = d.voces.filter(v => Math.abs(v.suma - v.esperado) >= 0.01).map(v => v.nombre);
+  html += `<div><div class="aviso ${cuadra ? 'bien' : 'mal'}">Compás de <strong>${v0.beats}/${v0.bt}</strong>${v0.cambio ? ' (cambia aquí)' : ''}: caben ${v0.esperado} negras.` + (cuadra ? ' Todas las voces cuadran.' : ` No cuadra en: <strong>${malas.map(esc).join(', ')}</strong>.`) + `</div><table class="voces">`;
+  for (const v of d.voces) {
+    const bien = Math.abs(v.suma - v.esperado) < 0.01;
+    html += `<tr${bien ? '' : ' style="background:#fdecec"'}><td><strong>${esc(v.nombre)}</strong><br>${bien ? '<span class="ayuda">cuadra</span>' : `<span style="color:var(--bad);font-weight:600">no cuadra: suma ${v.suma} de ${v.esperado}</span>`}</td><td>${v.notas.map(esc).join('<br>') || '<i>vacío</i>'}</td></tr>`;
+  }
   html += `</table>
     <div class="ayuda" style="margin-top:10px">Si el compás de la partitura es otro (el escáner suele perderse los cambios de compás), cámbialo aquí. Si son las notas las que están mal, corrígelas en MuseScore y vuelve a subir el XML.</div>
     <div class="acciones" style="margin:8px 0 0">Este compás va en <input type="number" id="cBeats" min="1" max="32" value="${v0.beats}" style="width:60px"> / <select id="cBt">${[1, 2, 4, 8, 16].map(x => `<option ${x === v0.bt ? 'selected' : ''}>${x}</option>`).join('')}</select>
