@@ -281,7 +281,7 @@ function abrirVelo(titulo) {
   f.onmessage = ev => {
     const m = JSON.parse(ev.data);
     if (m.tipo === 'log') { $('veloLog').textContent += m.linea + '\n'; $('veloLog').scrollTop = $('veloLog').scrollHeight; }
-    if (m.tipo === 'fin') { f.close(); $('veloTitulo').textContent = m.ok ? 'Publicado' : 'Ha fallado la publicación'; $('veloCerrar').disabled = false; refrescar(); }
+    if (m.tipo === 'fin') { f.close(); $('veloTitulo').textContent = m.ok ? 'Hecho' : 'Ha fallado la publicación'; $('veloCerrar').disabled = false; refrescar(); }
   };
   return new Promise(ok => { f.onopen = () => ok(f); setTimeout(() => ok(f), 1500); });
 }
