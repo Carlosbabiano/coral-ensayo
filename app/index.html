@@ -410,13 +410,19 @@ function buscarNota(x, y) {
   }));
   return mejor;
 }
+// El SVG se encoge con CSS para caber en la ventana (max-width: 100%): factor entre lo dibujado y lo mostrado
+function escalaSvg() {
+  const svg = $('partitura').querySelector('svg'); if (!svg) return 1;
+  const w = +svg.getAttribute('width') || (svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width);
+  return w ? svg.getBoundingClientRect().width / w : 1;
+}
 function marcarNota(sel) {
   let el = $('notaSel');
   if (!el) { el = document.createElement('div'); el.id = 'notaSel'; $('partitura').appendChild(el); }
   if (!sel) { el.style.display = 'none'; return; }
   const svg = $('partitura').querySelector('svg'); if (!svg) return;
   const rs = svg.getBoundingClientRect(), rc = $('partitura').getBoundingClientRect();
-  const k = UNIT * osmd.Zoom, p = sel.nota.PositionAndShape.AbsolutePosition;
+  const k = UNIT * osmd.Zoom * escalaSvg(), p = sel.nota.PositionAndShape.AbsolutePosition;
   Object.assign(el.style, { display: 'block', left: (rs.left - rc.left + (p.x - 0.7) * k) + 'px', top: (rs.top - rc.top + (p.y - 1.3) * k) + 'px', width: 2.6 * k + 'px', height: 2.6 * k + 'px' });
 }
 window.seleccionarNota = (compas, staff, indice) => {
@@ -444,8 +450,8 @@ window.addEventListener('resize', () => setTimeout(() => marcarNota(notaSel), 30
 // Tocar un compás de la partitura: empezar desde ahí (en modo editor, tocar una nota la selecciona)
 $('partitura').addEventListener('click', ev => {
   const svg = $('partitura').querySelector('svg'); if (!svg || !osmd.GraphicSheet) return;
-  const r = svg.getBoundingClientRect();
-  const x = (ev.clientX - r.left) / (UNIT * osmd.Zoom), y = (ev.clientY - r.top) / (UNIT * osmd.Zoom);
+  const r = svg.getBoundingClientRect(), k = UNIT * osmd.Zoom * escalaSvg();
+  const x = (ev.clientX - r.left) / k, y = (ev.clientY - r.top) / k;
   if (modoEditor) {
     const sel = buscarNota(x, y);
     notaSel = sel; marcarNota(sel);
