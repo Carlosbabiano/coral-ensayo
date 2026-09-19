@@ -132,11 +132,17 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 async function refrescar() {
   estado = await api('/api/estado');
   $('info').textContent = `${estado.publicadas.length} obras publicadas · caché ${estado.version}`;
-  const en = estado.entrada || {};
-  let te = `<strong>Desde el móvil:</strong> comparte el XML (y el PDF) a Google Drive, a la carpeta <code>Entrada</code> del proyecto. En cuanto lleguen al PC se convierten en borrador solos.`;
-  if (en.esperando && en.esperando.length) te += `<br>En la carpeta ahora: ${en.esperando.map(esc).join(', ')} <span class="progreso" style="width:11px;height:11px;border-width:2px"></span> <span>(un XML sin PDF espera ${en.esperaPdf} s por si llega)</span>`;
-  if (en.avisos && en.avisos.length) te += `<br><span style="color:var(--bad)">${esc(en.avisos[0])}</span>`;
+  const en = estado.entrada || { obras: [], pdfsSueltos: [] };
+  let te = `<strong>Carpeta Entrada</strong> (desde el móvil: compartir el XML y el PDF a Google Drive, carpeta <code>Entrada</code> del proyecto).`;
+  if (!en.obras.length && !en.pdfsSueltos.length) te += `<br><span>Vacía.</span>`;
+  for (const o of en.obras) te += `<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(o.xml)}">${esc(o.xml)}<br><span>${o.pdf ? 'con ' + esc(o.pdf) : 'sin PDF (se buscará en pdf/)'}</span></span><button class="mini" data-xml="${esc(o.xml)}">Cargar</button></div>`;
+  for (const p of en.pdfsSueltos) te += `<div style="margin-top:6px">${esc(p)}: PDF sin XML del mismo nombre; falta el XML del escáner.</div>`;
   $('entrada').innerHTML = te;
+  for (const b of $('entrada').querySelectorAll('button[data-xml]')) b.onclick = async () => {
+    b.disabled = true;
+    try { const r = await api('/api/entrada/cargar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ xml: b.dataset.xml }) }); await refrescar(); seleccionar(r.id); }
+    catch (e) { alert(e.message); b.disabled = false; }
+  };
   const ul = $('borradores'); ul.innerHTML = '';
   for (const b of estado.borradores) {
     const li = document.createElement('li');
@@ -364,10 +370,9 @@ async function retirar(o) {
 }
 
 refrescar().then(() => { if (estado.publicando) abrirVelo('Publicación en marcha…'); }).catch(e => { $('panel').innerHTML = '<div class="vacio">No se puede hablar con el gestor: ' + esc(e.message) + '</div>'; });
-// Avisos generales del gestor (p. ej. un borrador nuevo recogido de la carpeta Entrada) y refresco periódico de las listas
-const avisosGestor = new EventSource('/api/gestor/eventos');
-avisosGestor.onmessage = ev => { const m = JSON.parse(ev.data); if (m.tipo === 'nuevo') { refrescar(); if (!seleccionado) seleccionar(m.id); } };
-setInterval(() => { if (document.visibilityState === 'visible' && !$('velo').classList.contains('ver')) refrescar().catch(() => {}); }, 5000);
+// Refresco de las listas (carpeta Entrada, borradores) al volver a la pestaña y cada 15 s mientras se ve
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refrescar().catch(() => {}); });
+setInterval(() => { if (document.visibilityState === 'visible' && !$('velo').classList.contains('ver')) refrescar().catch(() => {}); }, 15000);
 </script>
 </body>
 </html>
