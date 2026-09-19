@@ -72,6 +72,10 @@
   @keyframes girar { to { transform: rotate(360deg); } }
   .ayuda { font-size: 13px; color: var(--muted); }
   .revision { display: grid; grid-template-columns: minmax(280px, 420px) 1fr; gap: 16px; align-items: start; }
+  .barraNota { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 8px 10px; margin-bottom: 8px; background: #fff7e6; border: 1px solid #f3dcae; border-radius: 10px; font-size: 14px; }
+  .barraNota .botones { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+  .barraNota .botones button { min-width: 32px; font-size: 15px; padding: 3px 7px; }
+  .barraNota select { padding: 3px 6px; }
   table.editor { border-collapse: collapse; width: 100%; }
   table.editor th { font-size: 12px; color: var(--muted); font-weight: 600; text-align: left; padding: 2px 6px; }
   table.editor td { padding: 3px 6px 3px 0; white-space: nowrap; }
@@ -245,8 +249,8 @@ function pintarPanel() {
     // Avisos
     html += `<div class="tarjeta"><h4>Comprobaciones</h4>`;
     for (const a of b.avisos) html += `<div class="aviso">${esc(a)}</div>`;
-    if (b.sospechosos.length) html += `<div class="aviso">Compases que no cuadran (las figuras no suman lo que marca el compás). Toca uno para revisarlo: <span class="compases">${b.sospechosos.map(c => `<a data-compas="${esc(c)}">${esc(c)}</a>`).join('')}</span></div>`;
-    else html += `<div class="aviso bien">Todos los compases cuadran.</div>`;
+    if (b.sospechosos.length) html += `<div class="aviso" id="chipsSospechosos">Compases que no cuadran (las figuras no suman lo que marca el compás). Toca uno para revisarlo: <span class="compases">${b.sospechosos.map(c => `<a data-compas="${esc(c)}">${esc(c)}</a>`).join('')}</span></div>`;
+    else html += `<div class="aviso bien" id="chipsSospechosos">Todos los compases cuadran.</div>`;
     if (b.entrada.paginas) html += `<div class="aviso bien">Letra y página original sacadas del PDF (${b.entrada.paginas.length} página(s)). Comprueba en la vista «PDF original» que la marca del compás cae donde debe.</div>`;
     else html += `<div class="aviso">Sin PDF: la obra irá sin letra y sin vista de página original.</div>`;
     html += `</div>`;
@@ -259,7 +263,7 @@ function pintarPanel() {
     html += `<div id="revision"></div>`;
 
     html += `<div class="acciones"><button class="principal" id="publicar">Publicar para el coro</button><span class="ayuda">Se guarda en la app, se sube a internet y los móviles la reciben solos.</span><span class="hueco"></span><button class="peligro" id="descartar">Descartar borrador</button></div>`;
-    html += `<div class="tarjeta" style="padding:8px"><iframe class="previa" id="previa" src="/borrador/${b.id}/?t=${Date.now()}"></iframe></div>`;
+    html += `<div class="tarjeta" style="padding:8px"><div id="barraNota"></div><iframe class="previa" id="previa" src="/borrador/${b.id}/?editor=1&t=${Date.now()}"></iframe></div>`;
   }
 
   html += `<details ${b.estado === 'listo' ? '' : 'open'}><summary>Registro del proceso</summary><pre class="log" id="log">${esc((b.log || []).join('\n'))}\n</pre></details>`;
@@ -277,7 +281,118 @@ function pintarPanel() {
   $('revisarAnt') && ($('revisarAnt').onclick = () => { const n = Math.max(1, (+$('revisarNum').value || 1) - 1); $('revisarNum').value = n; revisarCompas(n); });
   $('revisarSig') && ($('revisarSig').onclick = () => { const n = (+$('revisarNum').value || 0) + 1; $('revisarNum').value = n; revisarCompas(n); });
   if (compasEnRevision && b.estado === 'listo') revisarCompas(compasEnRevision, true);
+  notaSel = null; pintarBarraNota();
+  if ($('previa')) $('previa').onload = () => { try { $('previa').contentDocument.addEventListener('keydown', teclaEditor); } catch {} };
 }
+
+// ---------- Edición visual: nota seleccionada en la previsualización + teclas ----------
+let notaSel = null;      // { compas, staff, indice, voz (id), nombre, esperado, notas: [...] }
+let guardadoPendiente = null, guardando = false;
+const PASOS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const NOMBRE_NOTA = { C: 'Do', D: 'Re', E: 'Mi', F: 'Fa', G: 'Sol', A: 'La', B: 'Si' };
+const NOMBRE_FIGURA = { whole: 'redonda', half: 'blanca', quarter: 'negra', eighth: 'corchea', '16th': 'semicorchea', '32nd': 'fusa' };
+const describir = n => n.silencio ? (n.compasEntero ? 'silencio de compás' : 'silencio de ' + NOMBRE_FIGURA[n.type]) : `${NOMBRE_NOTA[n.step]}${n.alter > 0 ? '♯'.repeat(n.alter) : n.alter < 0 ? '♭'.repeat(-n.alter) : ''}${n.octave} ${NOMBRE_FIGURA[n.type] || n.type}${n.dot ? ' con puntillo' : ''}${n.ligaEmpieza ? ' ~' : ''}${n.letra ? ' «' + n.letra + '»' : ''}`;
+// La app avisa aquí al tocar una nota (o null al tocar fuera)
+window.notaElegida = async sel => {
+  if (!sel || !borradorActual || borradorActual.estado !== 'listo') { notaSel = null; pintarBarraNota(); return; }
+  try {
+    const d = await api(`/api/borradores/${borradorActual.id}/compas/${sel.compas}`);
+    const ed = d.edicion[sel.staff];
+    if (!ed) { notaSel = null; pintarBarraNota(); return; }
+    notaSel = { compas: sel.compas, staff: sel.staff, indice: sel.indice, voz: ed.id, nombre: ed.nombre, esperado: ed.esperado, editable: ed.editable, notas: ed.notas };
+    for (const n of notaSel.notas) if (!NEGRAS[n.type]) n.type = n.compasEntero ? 'whole' : 'quarter';
+    pintarBarraNota();
+  } catch (e) { alert(e.message); }
+};
+function sumaVoz(s) { return s.notas.reduce((t, n) => t + (n.acorde && !n.silencio ? 0 : (n.silencio && n.compasEntero ? s.esperado : NEGRAS[n.type] * (n.dot === 1 ? 1.5 : n.dot === 2 ? 1.75 : 1))), 0); }
+function pintarBarraNota() {
+  const barra = $('barraNota'); if (!barra) return;
+  const s = notaSel;
+  if (!s) { barra.innerHTML = `<div class="ayuda" style="padding:4px 6px">Toca una nota en la partitura para seleccionarla y corregirla con el teclado: ↑ ↓ altura · Mayús+↑↓ sostenido/bemol · 1 a 6 figura (redonda… fusa) · . puntillo · S silencio · L ligadura · Supr borrar · + añadir detrás · ← → otra nota · Esc soltar.</div>`; return; }
+  const n = s.notas[s.indice];
+  if (!s.editable || !n) { barra.innerHTML = `<div class="aviso" style="margin:0 0 6px">${esc(s.nombre)}, compás ${s.compas}: esta voz no se puede editar aquí (tresillos, adornos o dos voces en el pentagrama). Corrígela en MuseScore.</div>`; return; }
+  const suma = sumaVoz(s), cuadra = Math.abs(suma - s.esperado) < 0.001;
+  const b = (t, tit, accion) => `<button class="mini" data-accion="${accion}" title="${tit}">${t}</button>`;
+  barra.innerHTML = `<div class="barraNota"><span><strong>${esc(s.nombre)}</strong> · compás ${s.compas} · figura ${s.indice + 1} de ${s.notas.length}: <strong>${esc(describir(n))}</strong> · <span style="${cuadra ? '' : 'color:var(--bad);font-weight:600'}">suma ${suma} de ${s.esperado}${cuadra ? ' ✓' : ''}</span>${guardando || guardadoPendiente ? ' · <span class="progreso" style="width:11px;height:11px;border-width:2px"></span>' : ''}</span>
+    <span class="botones">${b('↑', 'Subir (flecha arriba)', 'arriba')}${b('↓', 'Bajar (flecha abajo)', 'abajo')}${b('♯', 'Sostenido (Mayús+↑)', 'sost')}${b('♭', 'Bemol (Mayús+↓)', 'bemol')}
+      <select data-accion="figura" title="Figura (teclas 1 a 6)">${Object.entries(NOMBRE_FIGURA).map(([v, t]) => `<option value="${v}" ${v === n.type ? 'selected' : ''}>${t}</option>`).join('')}</select>
+      ${b('·', 'Puntillo (tecla .)', 'puntillo')}${b('𝄽', 'Nota ↔ silencio (tecla S)', 'silencio')}${b('~', 'Ligadura (tecla L)', 'liga')}${b('✕', 'Borrar (Supr)', 'borrar')}${b('+', 'Añadir una figura detrás (tecla +)', 'anadir')}${b('←', 'Figura anterior', 'izq')}${b('→', 'Figura siguiente', 'der')}</span></div>`;
+  for (const el of barra.querySelectorAll('[data-accion]')) el.onclick = ev => { if (el.tagName === 'SELECT') return; accionNota(el.dataset.accion); ev.preventDefault(); };
+  const sel = barra.querySelector('select[data-accion=figura]'); sel.onchange = () => { n.type = sel.value; n.compasEntero = false; cambiado(); };
+}
+function accionNota(a, extra) {
+  const s = notaSel; if (!s || !s.editable) return;
+  const n = s.notas[s.indice];
+  if (a === 'izq' || a === 'der') return moverSeleccion(a === 'izq' ? -1 : 1);
+  if (!n) return;
+  if (a === 'arriba' || a === 'abajo') {
+    if (n.silencio) return;
+    let i = PASOS.indexOf(n.step) + (a === 'arriba' ? 1 : -1);
+    if (i > 6) { i = 0; n.octave = Math.min(8, n.octave + 1); } else if (i < 0) { i = 6; n.octave = Math.max(1, n.octave - 1); }
+    n.step = PASOS[i]; n.alter = 0;
+  } else if (a === 'sost' || a === 'bemol') { if (n.silencio) return; n.alter = Math.max(-1, Math.min(1, n.alter + (a === 'sost' ? 1 : -1))); }
+  else if (a === 'figura') { n.type = extra; n.compasEntero = false; }
+  else if (a === 'puntillo') { n.dot = n.dot ? 0 : 1; n.compasEntero = false; }
+  else if (a === 'silencio') { n.silencio = !n.silencio; n.compasEntero = false; if (n.silencio) { n.ligaEmpieza = n.ligaTermina = false; } }
+  else if (a === 'liga') { if (n.silencio) return; const e = n.ligaEmpieza, t = n.ligaTermina; [n.ligaEmpieza, n.ligaTermina] = !e && !t ? [true, false] : e && !t ? [false, true] : !e && t ? [true, true] : [false, false]; }
+  else if (a === 'borrar') { s.notas.splice(s.indice, 1); if (s.indice >= s.notas.length) s.indice = s.notas.length - 1; }
+  else if (a === 'anadir') { const c = JSON.parse(JSON.stringify(n)); c.letra = ''; c.ligaEmpieza = c.ligaTermina = false; c.compasEntero = false; s.notas.splice(s.indice + 1, 0, c); s.indice++; }
+  else return;
+  cambiado();
+}
+function cambiado() { pintarBarraNota(); clearTimeout(guardadoPendiente); guardadoPendiente = setTimeout(guardarSeleccion, 450); }
+async function guardarSeleccion() {
+  guardadoPendiente = null;
+  const s = notaSel; if (!s) return;
+  if (guardando) { guardadoPendiente = setTimeout(guardarSeleccion, 300); return; }
+  guardando = true; pintarBarraNota();
+  try {
+    const r = await api(`/api/borradores/${borradorActual.id}/compas/${s.compas}/notas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voz: s.voz, notas: s.notas }) });
+    borradorActual.sospechosos = r.sospechosos; pintarChips();
+    const w = $('previa').contentWindow;
+    await w.recargarObra();
+    if (notaSel === s) w.seleccionarNota(s.compas, s.staff, s.indice);
+    if (compasEnRevision === s.compas) revisarCompas(s.compas, true);
+  } catch (e) { alert(e.message); }
+  guardando = false; pintarBarraNota();
+}
+async function moverSeleccion(delta) {
+  const s = notaSel; if (!s) return;
+  let i = s.indice + delta;
+  if (i >= 0 && i < s.notas.length) { s.indice = i; }
+  else {
+    const compas = s.compas + delta; if (compas < 1) return;
+    try {
+      const d = await api(`/api/borradores/${borradorActual.id}/compas/${compas}`);
+      const ed = d.edicion[s.staff]; if (!ed || !ed.notas.length) return;
+      Object.assign(s, { compas, esperado: ed.esperado, editable: ed.editable, notas: ed.notas, indice: delta > 0 ? 0 : ed.notas.length - 1 });
+    } catch { return; }
+  }
+  $('previa').contentWindow.seleccionarNota(s.compas, s.staff, s.indice);
+  pintarBarraNota();
+}
+function pintarChips() {
+  const c = $('chipsSospechosos'); if (!c) return;
+  c.innerHTML = borradorActual.sospechosos.length ? `Compases que no cuadran. Toca uno para revisarlo: <span class="compases">${borradorActual.sospechosos.map(x => `<a data-compas="${esc(x)}">${esc(x)}</a>`).join('')}</span>` : 'Todos los compases cuadran.';
+  c.className = 'aviso' + (borradorActual.sospechosos.length ? '' : ' bien');
+  for (const a of c.querySelectorAll('a')) a.onclick = () => revisarCompas(+a.dataset.compas);
+}
+function teclaEditor(e) {
+  if (!notaSel) return;
+  const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
+  const k = e.key;
+  let a = null, extra;
+  if (k === 'ArrowUp') a = e.shiftKey ? 'sost' : 'arriba'; else if (k === 'ArrowDown') a = e.shiftKey ? 'bemol' : 'abajo';
+  else if (k === 'ArrowLeft') a = 'izq'; else if (k === 'ArrowRight') a = 'der';
+  else if (/^[1-6]$/.test(k)) { a = 'figura'; extra = ['whole', 'half', 'quarter', 'eighth', '16th', '32nd'][+k - 1]; }
+  else if (k === '.') a = 'puntillo'; else if (k === 's' || k === 'S') a = 'silencio'; else if (k === 'l' || k === 'L') a = 'liga';
+  else if (k === 'Delete' || k === 'Backspace') a = 'borrar'; else if (k === '+' || k === 'Insert') a = 'anadir';
+  else if (k === 'Escape') { notaSel = null; pintarBarraNota(); try { $('previa').contentWindow.seleccionarNota(0, 0, 0); } catch {} return; }
+  if (!a) return;
+  e.preventDefault();
+  accionNota(a, extra);
+}
+document.addEventListener('keydown', teclaEditor);
 
 function irACompas(n) {
   const marco = $('previa'); if (!marco) return;
