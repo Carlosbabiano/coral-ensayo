@@ -465,6 +465,7 @@ if ("serviceWorker" in navigator) {
   let recargado = false; const habiaControlador = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (recargado || !habiaControlador) return; recargado = true; if (!reproduciendo) location.reload(); });
 }
+window.irACompas = irACompas; // para el Gestor de obras (previsualización): saltar a un compás desde fuera
 cargarLista().catch(e => { $('cargando').textContent = 'Error al cargar: ' + e.message; console.error(e); });
 </script>
 </body>
