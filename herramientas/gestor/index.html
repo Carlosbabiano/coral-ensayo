@@ -246,7 +246,7 @@ function pintarPanel() {
       <label style="align-self:start">Voces</label><table class="voces">`;
     for (const p of b.partes) {
       const opciones = [...new Set([...VOCES, p.nombre])].map(v => `<option ${v === p.nombre ? 'selected' : ''}>${esc(v)}</option>`).join('');
-      html += `<tr><td><select data-id="${esc(p.id)}" class="ajVoz">${opciones}</select></td><td class="d">tesitura media ${esc(p.tesitura)}, clave ${esc(p.clave)}${p.nombreActual && p.nombreActual !== p.nombre ? `, en el archivo: "${esc(p.nombreActual)}"` : ''}</td><td><label class="ayuda"><input type="checkbox" class="ajQuitar" data-id="${esc(p.id)}"> quitar</label></td></tr>`;
+      html += `<tr><td><select data-id="${esc(p.id)}" class="ajVoz">${opciones}</select></td><td class="d">${p.tesitura ? `tesitura media ${esc(p.tesitura)}, clave ${esc(p.clave)}` : ''}${p.nombreActual && p.nombreActual !== p.nombre ? `, en el archivo: "${esc(p.nombreActual)}"` : ''}</td><td><label class="ayuda"><input type="checkbox" class="ajQuitar" data-id="${esc(p.id)}"> quitar</label></td></tr>`;
     }
     html += `</table><label></label><span><button id="aplicar">Aplicar cambios</button> <span class="ayuda">La previsualización se recarga con los cambios.</span></span></div></div>`;
 
