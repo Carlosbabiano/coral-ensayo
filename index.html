@@ -25,6 +25,15 @@
   .voces button { flex: 1; padding: 10px 0; border: 1px solid var(--line); background: #fff; border-radius: 10px; font: inherit; font-weight: 600; color: var(--fg); }
   .voces button.activa { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
   #partitura { padding: 8px 4px 220px; min-height: 60vh; position: relative; }
+  /* Modo Corregir (para el director): barra dentro de la cabecera, que ya es fija */
+  #barraCorregir { flex-basis: 100%; background: #fff7e6; border: 1px solid #f3dcae; border-radius: 10px; padding: 6px 10px; font-size: 14px; }
+  #barraCorregir .fila { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+  #barraCorregir .fila + .fila { margin-top: 6px; }
+  #barraCorregir button { padding: 6px 10px; min-width: 40px; font-size: 16px; border-radius: 8px; border: 1px solid var(--line); background: #fff; }
+  #barraCorregir button.principal { background: var(--accent); color: #fff; border-color: var(--accent); font-size: 14px; }
+  #barraCorregir button.peligro { color: #b3261e; border-color: #e6b8b5; }
+  #barraCorregir select { padding: 6px; font-size: 14px; border-radius: 8px; border: 1px solid var(--line); }
+  #barraCorregir .cuadra-mal { color: #b3261e; font-weight: 600; }
   #notaSel { position: absolute; border: 2px solid #e39b2c; border-radius: 50%; background: rgba(227,155,44,.28); pointer-events: none; z-index: 3; box-shadow: 0 0 0 3px rgba(227,155,44,.25); }
   #partitura svg { max-width: 100%; height: auto; }
   #estado { color: var(--muted); font-size: 13px; padding: 4px 12px; }
@@ -54,6 +63,7 @@
   <h1><img src="icono-192.png" alt="">Coral Villa de Mengíbar</h1>
   <span id="pantalla" title="Pantalla" style="cursor:pointer;font-size:18px;opacity:.7">🌙</span>
   <select id="obra" title="Obra"></select>
+  <div id="barraCorregir" style="display:none"></div>
 </header>
 
 <div style="padding: 8px 12px 0">
@@ -96,6 +106,7 @@
 <div id="cargando">Cargando partitura…</div>
 
 <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1/build/opensheetmusicdisplay.min.js"></script>
+<script src="compases.js"></script>
 <script type="module">
 import { Soundfont } from "https://cdn.jsdelivr.net/npm/smplr/+esm";
 
@@ -129,7 +140,7 @@ async function cargarObra(archivo) {
       followCursor: false, cursorsOptions: [{ type: 0, color: '#e39b2c', alpha: 0.55, follow: false }],
     });
   }
-  await osmd.load('partituras/' + archivo);
+  if (modoCorregir) await cargarParaCorregir(archivo); else await osmd.load('partituras/' + archivo);
   osmd.Zoom = window.innerWidth < 600 ? 0.55 : 0.8;
   crearBotonesVoces();
   osmd.render();
@@ -387,8 +398,9 @@ $('tempo').oninput = () => { mostrarTempo(); try { localStorage.setItem('tempo:'
 $('mezcla').oninput = () => $('mezclaVal').textContent = $('mezcla').value + '%';
 $('timbre').onchange = () => { if (reproduciendo) { pausar(); reproducir(); } };
 
-// ---------- Modo editor (solo dentro del Gestor de obras, con ?editor=1): tocar una nota la selecciona ----------
-const modoEditor = new URLSearchParams(location.search).has('editor');
+// ---------- Modo editor (dentro del Gestor de obras, con ?editor=1) y modo Corregir (para el director, con ?corregir=1): tocar una nota la selecciona ----------
+const modoCorregir = new URLSearchParams(location.search).has('corregir');
+const modoEditor = new URLSearchParams(location.search).has('editor') || modoCorregir;
 let notaSel = null; // { compas (1..), staff (0..), indice (0.. dentro de la voz en ese compás), nota (gráfica) }
 // Notas gráficas de un compás y un pentagrama, en el mismo orden en que van en el MusicXML
 function notasGraficas(mi, si) {
@@ -468,6 +480,7 @@ $('partitura').addEventListener('click', ev => {
   if (modoEditor) {
     const sel = buscarNota(x, y);
     notaSel = sel; marcarNota(sel); sonarSeleccion(sel);
+    if (modoCorregir) corregirElegida(sel);
     try { window.parent.notaElegida && window.parent.notaElegida(sel ? { compas: sel.compas, staff: sel.staff, indice: sel.indice } : null); } catch {}
     if (sel) { irACompas(sel.compas - 1); avisarCompasElegido(sel.compas); return; }
   }
@@ -551,6 +564,111 @@ if ("serviceWorker" in navigator) {
   let recargado = false; const habiaControlador = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (recargado || !habiaControlador) return; recargado = true; if (!reproduciendo) location.reload(); });
 }
+// ---------- Modo Corregir: el director corrige notas en el móvil y envía el XML corregido ----------
+let xmlActual = null, corr = null, cambiosCorr = 0, redibujoPendiente = null;
+const NEGRAS_C = { whole: 4, half: 2, quarter: 1, eighth: 0.5, '16th': 0.25, '32nd': 0.125 };
+const PASOS_C = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const claveGuardado = () => 'correccion:' + (obraActual && obraActual.archivo || $('obra').value);
+async function cargarParaCorregir(archivo) {
+  const resp = await fetch('partituras/' + archivo + '?t=' + Date.now());
+  xmlActual = await resp.text();
+  cambiosCorr = 0; corr = null;
+  let guardado = null; try { guardado = localStorage.getItem('correccion:' + archivo); } catch {}
+  if (guardado && confirm('Hay una corrección de esta obra sin enviar. ¿Quieres recuperarla?')) { xmlActual = guardado; cambiosCorr = 1; }
+  else { try { localStorage.removeItem('correccion:' + archivo); } catch {} }
+  await osmd.load(xmlActual);
+  pintarBarraCorregir();
+}
+function corregirElegida(sel) {
+  if (!sel) { corr = null; pintarBarraCorregir(); return; }
+  const partes = Compases.leerPartes(xmlActual);
+  const voz = partes[sel.staff]; const ed = voz && Compases.notasCompas(xmlActual, sel.compas).find(v => v.id === voz.id);
+  if (!ed) { corr = null; pintarBarraCorregir(); return; }
+  for (const n of ed.notas) if (!NEGRAS_C[n.type]) n.type = n.compasEntero ? 'whole' : 'quarter';
+  corr = { compas: sel.compas, staff: sel.staff, indice: sel.indice, voz: voz.id, nombre: voz.nombre, esperado: ed.esperado, editable: ed.editable, notas: ed.notas };
+  pintarBarraCorregir();
+}
+const describirC = n => n.silencio ? (n.compasEntero ? 'silencio de compás' : 'silencio de ' + Compases.FIGURAS[n.type]) : `${Compases.NOMBRES_NOTAS[n.step]}${n.alter > 0 ? '♯' : n.alter < 0 ? '♭' : ''}${n.octave} ${Compases.FIGURAS[n.type] || n.type}${n.dot ? ' con puntillo' : ''}${n.ligaEmpieza ? ' ~' : ''}${n.letra ? ' «' + n.letra + '»' : ''}`;
+function sumaCorr(s) { return s.notas.reduce((t, n) => t + (n.acorde && !n.silencio ? 0 : (n.silencio && n.compasEntero ? s.esperado : NEGRAS_C[n.type] * (n.dot === 1 ? 1.5 : n.dot === 2 ? 1.75 : 1))), 0); }
+function pintarBarraCorregir() {
+  const b = $('barraCorregir'); if (!modoCorregir) return;
+  b.style.display = '';
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const btn = (t, accion, tit, clase = '') => `<button data-accion="${accion}" title="${tit}" class="${clase}">${t}</button>`;
+  let html = '';
+  if (!corr) html += `<div class="fila"><strong>Modo corregir.</strong> Toca una nota de la partitura para seleccionarla.</div>`;
+  else if (!corr.editable) html += `<div class="fila"><strong>${esc(corr.nombre)}, compás ${corr.compas}</strong>: esta voz tiene tresillos o adornos y no se puede corregir aquí.</div>`;
+  else {
+    const n = corr.notas[corr.indice], suma = sumaCorr(corr), cuadra = Math.abs(suma - corr.esperado) < 0.001;
+    html += `<div class="fila"><span><strong>${esc(corr.nombre)}</strong> · compás ${corr.compas} · figura ${corr.indice + 1} de ${corr.notas.length}: <strong>${n ? esc(describirC(n)) : '—'}</strong> · <span class="${cuadra ? '' : 'cuadra-mal'}">suma ${suma} de ${corr.esperado}${cuadra ? ' ✓' : ''}</span></span></div>`;
+    html += `<div class="fila">${btn('↑', 'arriba', 'Subir')}${btn('↓', 'abajo', 'Bajar')}${btn('♯', 'sost', 'Sostenido')}${btn('♭', 'bemol', 'Bemol')}
+      <select data-accion="figura" title="Figura">${Object.entries(Compases.FIGURAS).filter(([v]) => NEGRAS_C[v]).map(([v, t]) => `<option value="${v}" ${n && v === n.type ? 'selected' : ''}>${t}</option>`).join('')}</select>
+      ${btn('·', 'puntillo', 'Puntillo')}${btn('𝄽', 'silencio', 'Nota ↔ silencio')}${btn('~', 'liga', 'Ligadura')}${btn('✕', 'borrar', 'Borrar', 'peligro')}${btn('+', 'anadir', 'Añadir una figura detrás')}${btn('←', 'izq', 'Figura anterior')}${btn('→', 'der', 'Figura siguiente')}</div>`;
+  }
+  html += `<div class="fila"><span>${cambiosCorr ? cambiosCorr + ' cambio' + (cambiosCorr > 1 ? 's' : '') + ' sin enviar' : 'Sin cambios'}</span>${cambiosCorr ? btn('Enviar corrección', 'enviar', 'Comparte el XML corregido (Drive, WhatsApp, correo…)', 'principal') + btn('Deshacer todo', 'deshacer', 'Vuelve a la obra publicada', 'peligro') : ''}</div>`;
+  b.innerHTML = html;
+  for (const el of b.querySelectorAll('button[data-accion]')) el.onclick = ev => { ev.preventDefault(); accionCorr(el.dataset.accion); };
+  const sel = b.querySelector('select[data-accion=figura]'); if (sel) sel.onchange = () => accionCorr('figura', sel.value);
+}
+function accionCorr(a, extra) {
+  if (a === 'enviar') return enviarCorreccion();
+  if (a === 'deshacer') { if (confirm('¿Descartar todos los cambios y volver a la obra publicada?')) { try { localStorage.removeItem(claveGuardado()); } catch {} cargarObra(obraActual.archivo); } return; }
+  const s = corr; if (!s || !s.editable) return;
+  if (a === 'izq' || a === 'der') { const i = s.indice + (a === 'izq' ? -1 : 1); if (i < 0 || i >= s.notas.length) return; s.indice = i; window.seleccionarNota(s.compas, s.staff, s.indice); sonarSeleccion(notaSel); pintarBarraCorregir(); return; }
+  const n = s.notas[s.indice]; if (!n) return;
+  let suena = true;
+  if (a === 'arriba' || a === 'abajo') { if (n.silencio) return; let i = PASOS_C.indexOf(n.step) + (a === 'arriba' ? 1 : -1); if (i > 6) { i = 0; n.octave = Math.min(8, n.octave + 1); } else if (i < 0) { i = 6; n.octave = Math.max(1, n.octave - 1); } n.step = PASOS_C[i]; n.alter = 0; }
+  else if (a === 'sost' || a === 'bemol') { if (n.silencio) return; n.alter = Math.max(-1, Math.min(1, n.alter + (a === 'sost' ? 1 : -1))); }
+  else if (a === 'figura') { n.type = extra; n.compasEntero = false; }
+  else if (a === 'puntillo') { n.dot = n.dot ? 0 : 1; n.compasEntero = false; }
+  else if (a === 'silencio') { n.silencio = !n.silencio; n.compasEntero = false; if (n.silencio) n.ligaEmpieza = n.ligaTermina = false; suena = !n.silencio; }
+  else if (a === 'liga') { if (n.silencio) return; const e = n.ligaEmpieza, t = n.ligaTermina; [n.ligaEmpieza, n.ligaTermina] = !e && !t ? [true, false] : e && !t ? [false, true] : !e && t ? [true, true] : [false, false]; suena = false; }
+  else if (a === 'borrar') { s.notas.splice(s.indice, 1); if (s.indice >= s.notas.length) s.indice = s.notas.length - 1; suena = false; }
+  else if (a === 'anadir') { const c = JSON.parse(JSON.stringify(n)); c.letra = ''; c.ligaEmpieza = c.ligaTermina = false; c.compasEntero = false; s.notas.splice(s.indice + 1, 0, c); s.indice++; }
+  else return;
+  try { xmlActual = Compases.escribirCompas(xmlActual, s.voz, s.compas, s.notas); } catch (e) { alert(e.message); return; }
+  cambiosCorr++;
+  try { localStorage.setItem(claveGuardado(), xmlActual); } catch {}
+  const nn = s.notas[s.indice]; if (suena && nn && !nn.silencio) window.sonarNota(nn.step, nn.alter, nn.octave, Math.min(1.6, Math.max(0.35, NEGRAS_C[nn.type] * 0.5)));
+  pintarBarraCorregir();
+  clearTimeout(redibujoPendiente); redibujoPendiente = setTimeout(redibujarCorreccion, 400);
+}
+async function redibujarCorreccion() {
+  const s = corr, y = window.scrollY;
+  parar();
+  await osmd.load(xmlActual);
+  osmd.render();
+  construirEventos();
+  osmd.cursor.show();
+  irACompas(Math.max(0, (s ? s.compas : 1) - 1));
+  window.scrollTo(0, y);
+  if (s) window.seleccionarNota(s.compas, s.staff, s.indice);
+}
+async function enviarCorreccion() {
+  const nombre = obraActual.archivo;
+  const xml = xmlActual.replace(/<score-partwise[^>]*>/, m => m + `\n<!-- Corregido en la app el ${new Date().toLocaleString('es-ES')} (${cambiosCorr} cambios) -->`);
+  const archivo = new File([xml], nombre, { type: 'application/xml' });
+  if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [archivo] }))) {
+    try { await navigator.share({ files: [archivo], title: 'Corrección de ' + obraActual.titulo }); return; } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  const url = URL.createObjectURL(archivo); const a = document.createElement('a'); a.href = url; a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  alert('Se ha descargado ' + nombre + '. Mándaselo a Carlos (o déjalo en la carpeta Entrada de Google Drive).');
+}
+if (modoCorregir) document.addEventListener('keydown', e => {
+  if (!corr) return;
+  const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
+  const k = e.key; let a = null, extra;
+  if (k === 'ArrowUp') a = e.shiftKey ? 'sost' : 'arriba'; else if (k === 'ArrowDown') a = e.shiftKey ? 'bemol' : 'abajo';
+  else if (k === 'ArrowLeft') a = 'izq'; else if (k === 'ArrowRight') a = 'der';
+  else if (/^[1-6]$/.test(k)) { a = 'figura'; extra = ['whole', 'half', 'quarter', 'eighth', '16th', '32nd'][+k - 1]; }
+  else if (k === '.' || e.code === 'Period') a = 'puntillo'; else if (k === 's' || k === 'S') a = 'silencio'; else if (k === 'l' || k === 'L') a = 'liga';
+  else if (k === 'Delete' || k === 'Backspace') a = 'borrar'; else if (k === '+' || k === 'Insert') a = 'anadir';
+  else if (k === 'Escape') { corr = null; notaSel = null; marcarNota(null); pintarBarraCorregir(); return; }
+  if (!a) return;
+  e.preventDefault(); accionCorr(a, extra);
+});
+
 window.irACompas = irACompas; // para el Gestor de obras (previsualización): saltar a un compás desde fuera
 // Dentro del Gestor de obras, tocar un compás abre su tarjeta de revisión
 function avisarCompasElegido(numero) { try { if (window.parent !== window && window.parent.compasElegido) window.parent.compasElegido(numero); } catch {} }
