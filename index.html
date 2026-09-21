@@ -462,6 +462,7 @@ window.recargarObra = async () => {
   const y = window.scrollY, compas = compasActual();
   parar();
   await osmd.load('partituras/' + obraActual.archivo + '?t=' + Date.now());
+  osmd.Zoom = window.innerWidth < 600 ? 0.55 : 0.8;
   osmd.render();
   construirEventos();
   osmd.cursor.show();
@@ -637,6 +638,7 @@ async function redibujarCorreccion() {
   const s = corr, y = window.scrollY;
   parar();
   await osmd.load(xmlActual);
+  osmd.Zoom = window.innerWidth < 600 ? 0.55 : 0.8;
   osmd.render();
   construirEventos();
   osmd.cursor.show();
