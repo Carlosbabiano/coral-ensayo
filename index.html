@@ -402,25 +402,40 @@ $('timbre').onchange = () => { if (reproduciendo) { pausar(); reproducir(); } };
 const modoCorregir = new URLSearchParams(location.search).has('corregir');
 const modoEditor = new URLSearchParams(location.search).has('editor') || modoCorregir;
 let notaSel = null; // { compas (1..), staff (0..), indice (0.. dentro de la voz en ese compás), nota (gráfica) }
-// Notas gráficas de un compás y un pentagrama, en el mismo orden en que van en el MusicXML
+// Notas gráficas de un compás y un pentagrama, con su voz (1, 2…), su "entrada" (golpe dentro de la voz; las notas
+// de un acorde la comparten, los adornos no cuentan) y su midi. Así se localiza la misma nota en el MusicXML.
 function notasGraficas(mi, si) {
   const gm = osmd.GraphicSheet.MeasureList[mi] && osmd.GraphicSheet.MeasureList[mi][si];
   const out = [];
   if (!gm) return out;
-  for (const se of gm.staffEntries) for (const ve of se.graphicalVoiceEntries) for (const n of ve.notes) out.push(n);
+  const cont = {};
+  for (const se of gm.staffEntries) for (const ve of se.graphicalVoiceEntries) {
+    const pve = ve.parentVoiceEntry;
+    const voz = (pve && pve.ParentVoice && pve.ParentVoice.VoiceId) || 1;
+    const adorno = !!(pve && pve.IsGrace);
+    let entrada = -1;
+    if (!adorno) { cont[voz] = (cont[voz] || 0) + 1; entrada = cont[voz] - 1; }
+    for (const n of ve.notes) { const sn = n.sourceNote; out.push({ nota: n, voz, entrada, adorno, midi: sn && !sn.isRest() && sn.Pitch ? sn.Pitch.halfTone + 12 : null }); }
+  }
   return out;
 }
 function buscarNota(x, y) {
   let mejor = null, dmin = 2.2;
   osmd.GraphicSheet.MeasureList.forEach((fila, mi) => fila.forEach((gm, si) => {
     if (!gm) return;
-    notasGraficas(mi, si).forEach((n, i) => {
-      const p = n.PositionAndShape.AbsolutePosition;
+    for (const g of notasGraficas(mi, si)) {
+      const p = g.nota.PositionAndShape.AbsolutePosition;
       const d = Math.hypot((p.x + 0.6 - x) / 1.4, p.y - y);
-      if (d < dmin) { dmin = d; mejor = { compas: mi + 1, staff: si, indice: i, nota: n }; }
-    });
+      if (d < dmin) { dmin = d; mejor = { compas: mi + 1, staff: si, ...g }; }
+    }
   }));
   return mejor;
+}
+// Índice, dentro de la lista de notas de una voz (del MusicXML), de la nota con esa entrada (y ese midi si hay acorde)
+function indiceDeNota(notas, entrada, midi) {
+  const cands = notas.map((n, i) => ({ n, i })).filter(c => !c.n.adorno && c.n.entrada === entrada);
+  const c = (midi != null && cands.find(c => !c.n.silencio && Compases.midiDe(c.n) === midi)) || cands[0];
+  return c ? c.i : 0;
 }
 // El SVG se encoge con CSS para caber en la ventana (max-width: 100%): factor entre lo dibujado y lo mostrado
 function escalaSvg() {
@@ -465,9 +480,10 @@ function sonarSeleccion(sel) {
   const sn = sel && sel.nota.sourceNote;
   if (sn && !sn.isRest() && sn.Pitch) sonarMidi(sn.Pitch.halfTone + 12, Math.min(1.6, Math.max(0.35, sn.Length.RealValue * 4 * 0.5)));
 }
-window.seleccionarNota = (compas, staff, indice) => {
-  const n = notasGraficas(compas - 1, staff)[indice];
-  notaSel = n ? { compas, staff, indice, nota: n } : null;
+window.seleccionarNota = (compas, staff, voz, entrada, midi) => {
+  const cands = compas > 0 ? notasGraficas(compas - 1, staff).filter(g => g.voz === (voz || 1) && g.entrada === entrada) : [];
+  const g = (midi != null && cands.find(c => c.midi === midi)) || cands[0];
+  notaSel = g ? { compas, staff, ...g } : null;
   marcarNota(notaSel);
   if (notaSel) { const g = notaSel.nota.getSVGGElement && notaSel.nota.getSVGGElement(); enfocar(g || $('notaSel')); }
   return !!notaSel;
@@ -497,7 +513,7 @@ $('partitura').addEventListener('click', ev => {
     const sel = buscarNota(x, y);
     notaSel = sel; marcarNota(sel); sonarSeleccion(sel);
     if (modoCorregir) corregirElegida(sel);
-    try { window.parent.notaElegida && window.parent.notaElegida(sel ? { compas: sel.compas, staff: sel.staff, indice: sel.indice } : null); } catch {}
+    try { window.parent.notaElegida && window.parent.notaElegida(sel ? { compas: sel.compas, staff: sel.staff, voz: sel.voz, entrada: sel.entrada, midi: sel.midi } : null); } catch {}
     if (sel) { irACompas(sel.compas - 1); avisarCompasElegido(sel.compas); return; }
   }
   for (const fila of osmd.GraphicSheet.MeasureList) {
@@ -598,14 +614,15 @@ async function cargarParaCorregir(archivo) {
 function corregirElegida(sel) {
   if (!sel) { corr = null; pintarBarraCorregir(); return; }
   const partes = Compases.leerPartes(xmlActual);
-  const voz = partes[sel.staff]; const ed = voz && Compases.notasCompas(xmlActual, sel.compas).find(v => v.id === voz.id);
+  const parte = partes[sel.staff]; const ed = parte && Compases.notasCompas(xmlActual, sel.compas).find(v => v.id === parte.id && v.voz === (sel.voz || 1));
   if (!ed) { corr = null; pintarBarraCorregir(); return; }
-  for (const n of ed.notas) if (!NEGRAS_C[n.type]) n.type = n.compasEntero ? 'whole' : 'quarter';
-  corr = { compas: sel.compas, staff: sel.staff, indice: sel.indice, voz: voz.id, nombre: voz.nombre, esperado: ed.esperado, editable: ed.editable, notas: ed.notas };
+  for (const n of ed.notas) if (!NEGRAS_C[n.type] && !n.adorno && !(n.silencio && n.compasEntero)) n.type = 'quarter';
+  corr = { compas: sel.compas, staff: sel.staff, indice: indiceDeNota(ed.notas, sel.entrada, sel.midi), voz: parte.id, numVoz: ed.voz, nombre: ed.nombre, esperado: ed.esperado, editable: true, notas: ed.notas };
   pintarBarraCorregir();
 }
-const describirC = n => n.silencio ? (n.compasEntero ? 'silencio de compás' : 'silencio de ' + Compases.FIGURAS[n.type]) : `${Compases.NOMBRES_NOTAS[n.step]}${n.alter > 0 ? '♯' : n.alter < 0 ? '♭' : ''}${n.octave} ${Compases.FIGURAS[n.type] || n.type}${n.dot ? ' con puntillo' : ''}${n.ligaEmpieza ? ' ~' : ''}${n.letra ? ' «' + n.letra + '»' : ''}`;
-function sumaCorr(s) { return s.notas.reduce((t, n) => t + (n.acorde && !n.silencio ? 0 : (n.silencio && n.compasEntero ? s.esperado : NEGRAS_C[n.type] * (n.dot === 1 ? 1.5 : n.dot === 2 ? 1.75 : 1))), 0); }
+const describirC = n => (n.acorde ? '+ ' : '') + (n.silencio ? (n.compasEntero ? 'silencio de compás' : 'silencio de ' + Compases.FIGURAS[n.type]) : `${Compases.NOMBRES_NOTAS[n.step]}${n.alter > 0 ? '♯' : n.alter < 0 ? '♭' : ''}${n.octave} ${Compases.FIGURAS[n.type] || n.type}${n.dot ? ' con puntillo' : ''}${n.tresillo ? ' (' + n.tresillo.actual + ':' + n.tresillo.normal + ')' : ''}${n.adorno ? ' (adorno)' : ''}${n.ligaEmpieza ? ' ~' : ''}${n.letra ? ' «' + n.letra + '»' : ''}`);
+function sumaCorr(s) { return s.notas.reduce((t, n) => t + (n.acorde ? 0 : Compases.negrasDe(n, s.esperado)), 0); }
+const seleccionCorr = () => { const s = corr, n = s && s.notas[s.indice]; if (n) window.seleccionarNota(s.compas, s.staff, s.numVoz, n.entrada, n.silencio ? null : Compases.midiDe(n)); };
 function pintarBarraCorregir() {
   const b = $('barraCorregir'); if (!modoCorregir) return;
   b.style.display = '';
@@ -619,7 +636,7 @@ function pintarBarraCorregir() {
     html += `<div class="fila"><span><strong>${esc(corr.nombre)}</strong> · compás ${corr.compas} · figura ${corr.indice + 1} de ${corr.notas.length}: <strong>${n ? esc(describirC(n)) : '—'}</strong> · <span class="${cuadra ? '' : 'cuadra-mal'}">suma ${suma} de ${corr.esperado}${cuadra ? ' ✓' : ''}</span></span></div>`;
     html += `<div class="fila">${btn('↑', 'arriba', 'Subir')}${btn('↓', 'abajo', 'Bajar')}${btn('♯', 'sost', 'Sostenido')}${btn('♭', 'bemol', 'Bemol')}
       <select data-accion="figura" title="Figura">${Object.entries(Compases.FIGURAS).filter(([v]) => NEGRAS_C[v]).map(([v, t]) => `<option value="${v}" ${n && v === n.type ? 'selected' : ''}>${t}</option>`).join('')}</select>
-      ${btn('·', 'puntillo', 'Puntillo')}${btn('𝄽', 'silencio', 'Nota ↔ silencio')}${btn('~', 'liga', 'Ligadura')}${btn('✕', 'borrar', 'Borrar', 'peligro')}${btn('+', 'anadir', 'Añadir una figura detrás')}${btn('←', 'izq', 'Figura anterior')}${btn('→', 'der', 'Figura siguiente')}</div>`;
+      ${btn('·', 'puntillo', 'Puntillo')}${btn('𝄽', 'silencio', 'Nota ↔ silencio')}${btn('~', 'liga', 'Ligadura')}${btn('✕', 'borrar', 'Borrar', 'peligro')}${btn('+', 'anadir', 'Añadir una figura detrás')}${btn('♪♪', 'acorde', 'Añadir una nota a la vez (acorde)')}${btn('←', 'izq', 'Figura anterior')}${btn('→', 'der', 'Figura siguiente')}</div>`;
     if (n && !n.silencio) html += `<div class="fila"><label>Letra <input type="text" id="corrLetra" value="${esc(n.letra)}" placeholder="sílaba" style="width:100px;padding:6px;border:1px solid var(--line);border-radius:8px;font-size:15px"></label>
       <select id="corrSilaba" title="Tipo de sílaba">${[['single', 'palabra'], ['begin', 'inicio-'], ['middle', '-medio-'], ['end', '-final']].map(([v, t]) => `<option value="${v}" ${v === n.silaba ? 'selected' : ''}>${t}</option>`).join('')}</select></div>`;
   }
@@ -635,23 +652,28 @@ function accionCorr(a, extra) {
   if (a === 'enviar') return enviarCorreccion();
   if (a === 'deshacer') { if (confirm('¿Descartar todos los cambios y volver a la obra publicada?')) { try { localStorage.removeItem(claveGuardado()); } catch {} cargarObra(obraActual.archivo); } return; }
   const s = corr; if (!s || !s.editable) return;
-  if (a === 'izq' || a === 'der') { const i = s.indice + (a === 'izq' ? -1 : 1); if (i < 0 || i >= s.notas.length) return; s.indice = i; window.seleccionarNota(s.compas, s.staff, s.indice); sonarSeleccion(notaSel); pintarBarraCorregir(); return; }
+  if (a === 'izq' || a === 'der') { const i = s.indice + (a === 'izq' ? -1 : 1); if (i < 0 || i >= s.notas.length) return; s.indice = i; seleccionCorr(); sonarSeleccion(notaSel); pintarBarraCorregir(); return; }
   const n = s.notas[s.indice]; if (!n) return;
   let suena = true;
+  if (a === 'acorde') { if (n.silencio || n.adorno) return; const c = JSON.parse(JSON.stringify(n)); c.acorde = true; c.letra = ''; c.ligaEmpieza = c.ligaTermina = false; c.indiceXml = undefined; s.notas.splice(s.indice + 1, 0, c); s.indice++; Compases.renumerar(s.notas); }
+  else
   if (a === 'arriba' || a === 'abajo') { if (n.silencio) return; let i = PASOS_C.indexOf(n.step) + (a === 'arriba' ? 1 : -1); if (i > 6) { i = 0; n.octave = Math.min(8, n.octave + 1); } else if (i < 0) { i = 6; n.octave = Math.max(1, n.octave - 1); } n.step = PASOS_C[i]; n.alter = 0; }
   else if (a === 'sost' || a === 'bemol') { if (n.silencio) return; n.alter = Math.max(-1, Math.min(1, n.alter + (a === 'sost' ? 1 : -1))); }
   else if (a === 'figura') { n.type = extra; n.compasEntero = false; }
   else if (a === 'puntillo') { n.dot = n.dot ? 0 : 1; n.compasEntero = false; }
   else if (a === 'silencio') { n.silencio = !n.silencio; n.compasEntero = false; if (n.silencio) n.ligaEmpieza = n.ligaTermina = false; suena = !n.silencio; }
   else if (a === 'liga') { if (n.silencio) return; const e = n.ligaEmpieza, t = n.ligaTermina; [n.ligaEmpieza, n.ligaTermina] = !e && !t ? [true, false] : e && !t ? [false, true] : !e && t ? [true, true] : [false, false]; suena = false; }
-  else if (a === 'borrar') { s.notas.splice(s.indice, 1); if (s.indice >= s.notas.length) s.indice = s.notas.length - 1; suena = false; }
-  else if (a === 'anadir') { const c = JSON.parse(JSON.stringify(n)); c.letra = ''; c.ligaEmpieza = c.ligaTermina = false; c.compasEntero = false; s.notas.splice(s.indice + 1, 0, c); s.indice++; }
+  else if (a === 'borrar') { s.notas.splice(s.indice, 1); if (s.indice >= s.notas.length) s.indice = s.notas.length - 1; Compases.renumerar(s.notas); suena = false; }
+  else if (a === 'anadir') { const c = JSON.parse(JSON.stringify(n)); c.letra = ''; c.ligaEmpieza = c.ligaTermina = false; c.compasEntero = false; c.acorde = false; c.adorno = false; c.indiceXml = undefined; s.notas.splice(s.indice + 1, 0, c); s.indice++; Compases.renumerar(s.notas); }
   else if (a === 'letra') { n.letra = extra.letra; n.silaba = extra.silaba; suena = false; }
   else return;
-  try { xmlActual = Compases.escribirCompas(xmlActual, s.voz, s.compas, s.notas); } catch (e) { alert(e.message); return; }
+  try { xmlActual = Compases.escribirCompas(xmlActual, s.voz, s.compas, s.notas, s.numVoz); } catch (e) { alert(e.message); return; }
+  // tras guardar, las notas se releen del XML nuevo para que los índices sigan siendo válidos
+  const relectura = Compases.notasCompas(xmlActual, s.compas).find(v => v.id === s.voz && v.voz === s.numVoz);
+  if (relectura) { const actual = s.notas[s.indice]; s.notas = relectura.notas; s.indice = actual ? indiceDeNota(s.notas, actual.entrada, actual.silencio ? null : Compases.midiDe(actual)) : 0; }
   cambiosCorr++;
   try { localStorage.setItem(claveGuardado(), xmlActual); } catch {}
-  const nn = s.notas[s.indice]; if (suena && nn && !nn.silencio) window.sonarNota(nn.step, nn.alter, nn.octave, Math.min(1.6, Math.max(0.35, NEGRAS_C[nn.type] * 0.5)));
+  const nn = s.notas[s.indice]; if (suena && nn && !nn.silencio) window.sonarNota(nn.step, nn.alter, nn.octave, Math.min(1.6, Math.max(0.35, (NEGRAS_C[nn.type] || 1) * 0.5)));
   pintarBarraCorregir();
   clearTimeout(redibujoPendiente); redibujoPendiente = setTimeout(redibujarCorreccion, 400);
 }
@@ -665,7 +687,7 @@ async function redibujarCorreccion() {
   osmd.cursor.show();
   irACompas(Math.max(0, (s ? s.compas : 1) - 1));
   window.scrollTo(0, y);
-  if (s) window.seleccionarNota(s.compas, s.staff, s.indice);
+  seleccionCorr();
 }
 async function enviarCorreccion() {
   const nombre = obraActual.archivo;
@@ -685,7 +707,7 @@ if (modoCorregir) document.addEventListener('keydown', e => {
   if (k === 'ArrowUp') a = e.shiftKey ? 'sost' : 'arriba'; else if (k === 'ArrowDown') a = e.shiftKey ? 'bemol' : 'abajo';
   else if (k === 'ArrowLeft') a = 'izq'; else if (k === 'ArrowRight') a = 'der';
   else if (/^[1-6]$/.test(k)) { a = 'figura'; extra = ['whole', 'half', 'quarter', 'eighth', '16th', '32nd'][+k - 1]; }
-  else if (k === '.' || e.code === 'Period') a = 'puntillo'; else if (k === 's' || k === 'S') a = 'silencio'; else if (k === 'l' || k === 'L') a = 'liga';
+  else if (k === '.' || e.code === 'Period') a = 'puntillo'; else if (k === 's' || k === 'S') a = 'silencio'; else if (k === 'l' || k === 'L') a = 'liga'; else if (k === 'a' || k === 'A') a = 'acorde';
   else if (k === 'Delete' || k === 'Backspace') a = 'borrar'; else if (k === '+' || k === 'Insert') a = 'anadir';
   else if (k === 'Escape') { corr = null; notaSel = null; marcarNota(null); pintarBarraCorregir(); return; }
   if (!a) return;
