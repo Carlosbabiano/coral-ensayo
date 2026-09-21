@@ -168,6 +168,9 @@ async function refrescar() {
     const li = document.createElement('li');
     li.style.cursor = 'default';
     li.innerHTML = `<span class="t">${esc(o.titulo)}<br><span class="e">${o.paginas ? 'con página original' : 'solo partitura'}</span></span>`;
+    const e = document.createElement('button'); e.className = 'mini'; e.textContent = 'Editar'; e.title = 'Crea un borrador a partir de la obra publicada para retocarla y volverla a publicar';
+    e.onclick = async () => { e.disabled = true; try { const r = await api(`/api/publicadas/${encodeURIComponent(o.archivo)}/borrador`, { method: 'POST' }); await refrescar(); seleccionar(r.id); } catch (err) { alert(err.message); e.disabled = false; } };
+    li.appendChild(e);
     const b = document.createElement('button'); b.className = 'mini peligro'; b.textContent = 'Retirar';
     b.onclick = () => retirar(o);
     li.appendChild(b);

@@ -167,6 +167,24 @@ function publicarBorrador(id) {
   } catch (e) { publicando = false; throw e; }
   subirAInternet(() => { fs.rmSync(dirDe(id), { recursive: true, force: true }); });
 }
+// Crea un borrador a partir de una obra ya publicada (para retocarla y volver a publicarla encima)
+function borradorDesdePublicada(archivo) {
+  const o = obra.leerLista().find(x => x.archivo === archivo);
+  if (!o) throw new Error('Esa obra no está en la app: ' + archivo);
+  const id = nuevoId();
+  const dirSalida = path.join(dirDe(id), 'partituras');
+  fs.mkdirSync(path.join(dirDe(id), 'entrada'), { recursive: true });
+  fs.mkdirSync(dirSalida, { recursive: true });
+  for (const f of [o.archivo, o.posiciones, ...(o.paginas || [])].filter(Boolean)) fs.copyFileSync(path.join(obra.DIR_PARTITURAS, f), path.join(dirSalida, f));
+  const xml = fs.readFileSync(path.join(dirSalida, o.archivo), 'utf8');
+  const partes = obra.leerPartes(xml).map(p => ({ id: p.id, nombre: p.nombre, nombreActual: p.nombre, tesitura: '', clave: '' }));
+  const entrada = { titulo: o.titulo, archivo: o.archivo };
+  if (o.posiciones && o.paginas) { entrada.posiciones = o.posiciones; entrada.paginas = o.paginas; }
+  const pdf = obra.pdfPara(path.join(obra.DIR_PDF, o.archivo.replace(/\.xml$/, '.pdf')));
+  const b = { id, creado: new Date().toISOString(), estado: 'listo', archivos: [o.archivo], origen: 'publicada', entrada, avisos: [], partes, sospechosos: obra.sospechososDe(xml), tempo: obra.tempoDe(xml), pdf: pdf ? path.basename(pdf) : null, log: ['Borrador creado a partir de la obra publicada «' + o.titulo + '». Al publicar, la sustituirá.'] };
+  guardarBorrador(b);
+  return id;
+}
 function retirarObra(archivo) {
   empezarPublicacion();
   try {
@@ -301,6 +319,9 @@ const servidor = http.createServer(async (req, res) => {
       const id = m[1]; if (!idValido(id) || trabajando.has(id)) return json(res, { error: 'No se puede borrar ahora' }, 400);
       fs.rmSync(dirDe(id), { recursive: true, force: true });
       return json(res, { ok: true });
+    }
+    if ((m = ruta.match(/^\/api\/publicadas\/([^/]+)\/borrador$/)) && req.method === 'POST') {
+      try { return json(res, { id: borradorDesdePublicada(decodeURIComponent(m[1])) }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/publicadas\/([^/]+)\/retirar$/)) && req.method === 'POST') {
       try { retirarObra(m[1]); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }
