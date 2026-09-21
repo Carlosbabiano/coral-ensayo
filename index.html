@@ -428,10 +428,25 @@ function escalaSvg() {
   const w = +svg.getAttribute('width') || (svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width);
   return w ? svg.getBoundingClientRect().width / w : 1;
 }
+// Colorea la propia nota (cabeza, plica, corchetes) en el dibujo; si no se encuentra su grupo SVG, usa el círculo de antes
+let coloreados = [];
+function colorearNota(sel) {
+  for (const { el, fill, stroke } of coloreados) { el.style.fill = fill; el.style.stroke = stroke; }
+  coloreados = [];
+  const g = sel && sel.nota.getSVGGElement && sel.nota.getSVGGElement();
+  if (!g) return false;
+  for (const el of [g, ...g.querySelectorAll('*')]) {
+    if (!(el instanceof SVGElement)) continue;
+    coloreados.push({ el, fill: el.style.fill, stroke: el.style.stroke });
+    if (el.getAttribute('fill') !== 'none') el.style.fill = '#e0782a';
+    if (el.getAttribute('stroke') && el.getAttribute('stroke') !== 'none') el.style.stroke = '#e0782a';
+  }
+  return true;
+}
 function marcarNota(sel) {
   let el = $('notaSel');
   if (!el) { el = document.createElement('div'); el.id = 'notaSel'; $('partitura').appendChild(el); }
-  if (!sel) { el.style.display = 'none'; return; }
+  if (colorearNota(sel) || !sel) { el.style.display = 'none'; return; }
   const svg = $('partitura').querySelector('svg'); if (!svg) return;
   const rs = svg.getBoundingClientRect(), rc = $('partitura').getBoundingClientRect();
   const k = UNIT * osmd.Zoom * escalaSvg(), p = sel.nota.PositionAndShape.AbsolutePosition;
@@ -454,7 +469,7 @@ window.seleccionarNota = (compas, staff, indice) => {
   const n = notasGraficas(compas - 1, staff)[indice];
   notaSel = n ? { compas, staff, indice, nota: n } : null;
   marcarNota(notaSel);
-  if (notaSel) enfocar($('notaSel'));
+  if (notaSel) { const g = notaSel.nota.getSVGGElement && notaSel.nota.getSVGGElement(); enfocar(g || $('notaSel')); }
   return !!notaSel;
 };
 // Vuelve a cargar la obra desde el servidor (tras una corrección) sin recargar la página
