@@ -29,6 +29,14 @@ Publicada en: https://carlosbabiano.github.io/coral-ensayo/
 
 La lectura de cada PDF con Audiveris se guarda en `herramientas/cache/`, así que repetir una obra es instantáneo.
 
+## Modo corregir (para el director)
+Abrir la app con `?corregir=1` al final de la dirección (https://carlosbabiano.github.io/coral-ensayo/?corregir=1).
+Tocar una nota la selecciona y suena; con la barra (o el teclado en el PC) se sube o baja, se cambia la figura, el puntillo,
+la alteración o la ligadura, se borra o se añade otra detrás. Los cambios se guardan en el navegador hasta pulsar
+«Enviar corrección», que comparte el XML corregido (Google Drive → carpeta `Entrada/`, WhatsApp, correo…). En el gestor,
+«Cargar» esa corrección la prepara conservando su letra; se revisa y se publica. La lógica de compases está en
+`app/compases.js`, compartida entre el gestor (Node) y la app (navegador).
+
 ## Añadir una obra sin previsualizar (el método antiguo)
 Arrastrar el `.xml` y el `.pdf` sobre `Añadir y publicar.cmd` (o `Añadir obra.cmd` y después `Publicar.cmd`).
 
