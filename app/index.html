@@ -605,11 +605,16 @@ function pintarBarraCorregir() {
     html += `<div class="fila">${btn('↑', 'arriba', 'Subir')}${btn('↓', 'abajo', 'Bajar')}${btn('♯', 'sost', 'Sostenido')}${btn('♭', 'bemol', 'Bemol')}
       <select data-accion="figura" title="Figura">${Object.entries(Compases.FIGURAS).filter(([v]) => NEGRAS_C[v]).map(([v, t]) => `<option value="${v}" ${n && v === n.type ? 'selected' : ''}>${t}</option>`).join('')}</select>
       ${btn('·', 'puntillo', 'Puntillo')}${btn('𝄽', 'silencio', 'Nota ↔ silencio')}${btn('~', 'liga', 'Ligadura')}${btn('✕', 'borrar', 'Borrar', 'peligro')}${btn('+', 'anadir', 'Añadir una figura detrás')}${btn('←', 'izq', 'Figura anterior')}${btn('→', 'der', 'Figura siguiente')}</div>`;
+    if (n && !n.silencio) html += `<div class="fila"><label>Letra <input type="text" id="corrLetra" value="${esc(n.letra)}" placeholder="sílaba" style="width:100px;padding:6px;border:1px solid var(--line);border-radius:8px;font-size:15px"></label>
+      <select id="corrSilaba" title="Tipo de sílaba">${[['single', 'palabra'], ['begin', 'inicio-'], ['middle', '-medio-'], ['end', '-final']].map(([v, t]) => `<option value="${v}" ${v === n.silaba ? 'selected' : ''}>${t}</option>`).join('')}</select></div>`;
   }
   html += `<div class="fila"><span>${cambiosCorr ? cambiosCorr + ' cambio' + (cambiosCorr > 1 ? 's' : '') + ' sin enviar' : 'Sin cambios'}</span>${cambiosCorr ? btn('Enviar corrección', 'enviar', 'Comparte el XML corregido (Drive, WhatsApp, correo…)', 'principal') + btn('Deshacer todo', 'deshacer', 'Vuelve a la obra publicada', 'peligro') : ''}</div>`;
   b.innerHTML = html;
   for (const el of b.querySelectorAll('button[data-accion]')) el.onclick = ev => { ev.preventDefault(); accionCorr(el.dataset.accion); };
   const sel = b.querySelector('select[data-accion=figura]'); if (sel) sel.onchange = () => accionCorr('figura', sel.value);
+  const li = $('corrLetra'), si = $('corrSilaba');
+  if (li) { li.onchange = () => accionCorr('letra', { letra: li.value.trim(), silaba: si.value }); li.onkeydown = e => { if (e.key === 'Enter') li.blur(); }; }
+  if (si) si.onchange = () => accionCorr('letra', { letra: li.value.trim(), silaba: si.value });
 }
 function accionCorr(a, extra) {
   if (a === 'enviar') return enviarCorreccion();
@@ -626,6 +631,7 @@ function accionCorr(a, extra) {
   else if (a === 'liga') { if (n.silencio) return; const e = n.ligaEmpieza, t = n.ligaTermina; [n.ligaEmpieza, n.ligaTermina] = !e && !t ? [true, false] : e && !t ? [false, true] : !e && t ? [true, true] : [false, false]; suena = false; }
   else if (a === 'borrar') { s.notas.splice(s.indice, 1); if (s.indice >= s.notas.length) s.indice = s.notas.length - 1; suena = false; }
   else if (a === 'anadir') { const c = JSON.parse(JSON.stringify(n)); c.letra = ''; c.ligaEmpieza = c.ligaTermina = false; c.compasEntero = false; s.notas.splice(s.indice + 1, 0, c); s.indice++; }
+  else if (a === 'letra') { n.letra = extra.letra; n.silaba = extra.silaba; suena = false; }
   else return;
   try { xmlActual = Compases.escribirCompas(xmlActual, s.voz, s.compas, s.notas); } catch (e) { alert(e.message); return; }
   cambiosCorr++;

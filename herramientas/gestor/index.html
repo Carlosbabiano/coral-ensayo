@@ -317,9 +317,13 @@ function pintarBarraNota() {
   barra.innerHTML = `<div class="barraNota"><span><strong>${esc(s.nombre)}</strong> · compás ${s.compas} · figura ${s.indice + 1} de ${s.notas.length}: <strong>${esc(describir(n))}</strong> · <span style="${cuadra ? '' : 'color:var(--bad);font-weight:600'}">suma ${suma} de ${s.esperado}${cuadra ? ' ✓' : ''}</span>${guardando || guardadoPendiente ? ' · <span class="progreso" style="width:11px;height:11px;border-width:2px"></span>' : ''}</span>
     <span class="botones">${b('↑', 'Subir (flecha arriba)', 'arriba')}${b('↓', 'Bajar (flecha abajo)', 'abajo')}${b('♯', 'Sostenido (Mayús+↑)', 'sost')}${b('♭', 'Bemol (Mayús+↓)', 'bemol')}
       <select data-accion="figura" title="Figura (teclas 1 a 6)">${Object.entries(NOMBRE_FIGURA).map(([v, t]) => `<option value="${v}" ${v === n.type ? 'selected' : ''}>${t}</option>`).join('')}</select>
-      ${b('·', 'Puntillo (tecla .)', 'puntillo')}${b('𝄽', 'Nota ↔ silencio (tecla S)', 'silencio')}${b('~', 'Ligadura (tecla L)', 'liga')}${b('✕', 'Borrar (Supr)', 'borrar')}${b('+', 'Añadir una figura detrás (tecla +)', 'anadir')}${b('←', 'Figura anterior', 'izq')}${b('→', 'Figura siguiente', 'der')}</span></div>`;
+      ${b('·', 'Puntillo (tecla .)', 'puntillo')}${b('𝄽', 'Nota ↔ silencio (tecla S)', 'silencio')}${b('~', 'Ligadura (tecla L)', 'liga')}${b('✕', 'Borrar (Supr)', 'borrar')}${b('+', 'Añadir una figura detrás (tecla +)', 'anadir')}${b('←', 'Figura anterior', 'izq')}${b('→', 'Figura siguiente', 'der')}</span>
+    ${n.silencio ? '' : `<span class="botones"><label class="ayuda">Letra <input type="text" class="eLetraSel" value="${esc(n.letra)}" placeholder="sílaba" style="width:90px"></label>
+      <select class="eSilabaSel" title="Tipo de sílaba: pone los guiones entre partes de una palabra">${[['single', 'palabra'], ['begin', 'inicio-'], ['middle', '-medio-'], ['end', '-final']].map(([v, t]) => `<option value="${v}" ${v === n.silaba ? 'selected' : ''}>${t}</option>`).join('')}</select></span>`}</div>`;
   for (const el of barra.querySelectorAll('[data-accion]')) el.onclick = ev => { if (el.tagName === 'SELECT') return; accionNota(el.dataset.accion); ev.preventDefault(); };
   const sel = barra.querySelector('select[data-accion=figura]'); sel.onchange = () => { n.type = sel.value; n.compasEntero = false; cambiado(true); };
+  const li = barra.querySelector('.eLetraSel'); if (li) { li.onchange = () => { n.letra = li.value.trim(); cambiado(false); }; li.onkeydown = e => { if (e.key === 'Enter') li.blur(); }; }
+  const si = barra.querySelector('.eSilabaSel'); if (si) si.onchange = () => { n.silaba = si.value; cambiado(false); };
 }
 function accionNota(a, extra) {
   const s = notaSel; if (!s || !s.editable) return;
