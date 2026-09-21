@@ -432,9 +432,10 @@ function buscarNota(x, y) {
   return mejor;
 }
 // Índice, dentro de la lista de notas de una voz (del MusicXML), de la nota con esa entrada (y ese midi si hay acorde)
-function indiceDeNota(notas, entrada, midi) {
+function indiceDeNota(notas, entrada, midi, acorde) {
   const cands = notas.map((n, i) => ({ n, i })).filter(c => !c.n.adorno && c.n.entrada === entrada);
-  const c = (midi != null && cands.find(c => !c.n.silencio && Compases.midiDe(c.n) === midi)) || cands[0];
+  const mismoMidi = c => midi != null && !c.n.silencio && Compases.midiDe(c.n) === midi;
+  const c = (acorde !== undefined && cands.find(c => mismoMidi(c) && !!c.n.acorde === !!acorde)) || cands.find(mismoMidi) || cands[0];
   return c ? c.i : 0;
 }
 // El SVG se encoge con CSS para caber en la ventana (max-width: 100%): factor entre lo dibujado y lo mostrado
@@ -670,7 +671,7 @@ function accionCorr(a, extra) {
   try { xmlActual = Compases.escribirCompas(xmlActual, s.voz, s.compas, s.notas, s.numVoz); } catch (e) { alert(e.message); return; }
   // tras guardar, las notas se releen del XML nuevo para que los índices sigan siendo válidos
   const relectura = Compases.notasCompas(xmlActual, s.compas).find(v => v.id === s.voz && v.voz === s.numVoz);
-  if (relectura) { const actual = s.notas[s.indice]; s.notas = relectura.notas; s.indice = actual ? indiceDeNota(s.notas, actual.entrada, actual.silencio ? null : Compases.midiDe(actual)) : 0; }
+  if (relectura) { const actual = s.notas[s.indice]; s.notas = relectura.notas; s.indice = actual ? indiceDeNota(s.notas, actual.entrada, actual.silencio ? null : Compases.midiDe(actual), !!actual.acorde) : 0; }
   cambiosCorr++;
   try { localStorage.setItem(claveGuardado(), xmlActual); } catch {}
   const nn = s.notas[s.indice]; if (suena && nn && !nn.silencio) window.sonarNota(nn.step, nn.alter, nn.octave, Math.min(1.6, Math.max(0.35, (NEGRAS_C[nn.type] || 1) * 0.5)));

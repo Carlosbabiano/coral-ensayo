@@ -308,12 +308,13 @@ function negrasDe(n, esperado) {
 // Renumera las "entradas" (golpes) tras insertar o borrar notas; los acordes comparten entrada, los adornos no cuentan
 function renumerar(notas) { let e = -1; for (const n of notas) { if (n.adorno) { n.entrada = -1; continue; } if (!n.acorde) e++; n.entrada = Math.max(0, e); } return notas; }
 // Índice de la nota de una voz a partir de su entrada (y su midi si es un acorde)
-function indiceDeNota(notas, entrada, midi) {
+function indiceDeNota(notas, entrada, midi, acorde) {
   const cands = notas.map((n, i) => ({ n, i })).filter(c => !c.n.adorno && c.n.entrada === entrada);
-  const c = (midi != null && cands.find(c => !c.n.silencio && midiDe(c.n) === midi)) || cands[0];
+  const mismoMidi = c => midi != null && !c.n.silencio && midiDe(c.n) === midi;
+  const c = (acorde !== undefined && cands.find(c => mismoMidi(c) && !!c.n.acorde === !!acorde)) || cands.find(mismoMidi) || cands[0];
   return c ? c.i : 0;
 }
-const entradaDe = s => { const n = s.notas[s.indice]; return n ? [n.entrada, n.silencio ? null : midiDe(n)] : [0, null]; };
+const entradaDe = s => { const n = s.notas[s.indice]; return n ? [n.entrada, n.silencio ? null : midiDe(n), !!n.acorde] : [0, null, false]; };
 // La app avisa aquí al tocar una nota (o null al tocar fuera)
 window.notaElegida = async sel => {
   if (!sel || !borradorActual || borradorActual.estado !== 'listo') { notaSel = null; pintarBarraNota(); return; }
@@ -382,11 +383,11 @@ async function guardarSeleccion() {
   if (guardando) { guardadoPendiente = setTimeout(guardarSeleccion, 300); return; }
   guardando = true; pintarBarraNota();
   try {
-    const [entrada, midi] = entradaDe(s);
+    const [entrada, midi, acorde] = entradaDe(s);
     const r = await api(`/api/borradores/${borradorActual.id}/compas/${s.compas}/notas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voz: s.voz, numVoz: s.numVoz, notas: s.notas }) });
     borradorActual.sospechosos = r.sospechosos; pintarChips();
     // releer las notas del XML guardado para que los índices sigan siendo válidos
-    try { const d = await api(`/api/borradores/${borradorActual.id}/compas/${s.compas}`); const ed = d.edicion.find(e => e.id === s.voz && e.voz === s.numVoz); if (ed && notaSel === s) { s.notas = ed.notas; s.indice = indiceDeNota(ed.notas, entrada, midi); } } catch {}
+    try { const d = await api(`/api/borradores/${borradorActual.id}/compas/${s.compas}`); const ed = d.edicion.find(e => e.id === s.voz && e.voz === s.numVoz); if (ed && notaSel === s) { s.notas = ed.notas; s.indice = indiceDeNota(ed.notas, entrada, midi, acorde); } } catch {}
     const w = $('previa').contentWindow;
     await w.recargarObra();
     if (notaSel === s) w.seleccionarNota(s.compas, s.staff, s.numVoz, entrada, midi);
