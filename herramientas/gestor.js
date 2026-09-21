@@ -299,7 +299,12 @@ const servidor = http.createServer(async (req, res) => {
       try { procesar(m[1]); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/eventos$/)) && req.method === 'GET') return suscribir(m[1], res);
-    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)$/)) && req.method === 'GET') { const b = leerBorrador(m[1]); return b ? json(res, b) : json(res, { error: 'No existe' }, 404); }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)$/)) && req.method === 'GET') {
+      const b = leerBorrador(m[1]); if (!b) return json(res, { error: 'No existe' }, 404);
+      // Recalcular los compases sospechosos con el motor actual (los borradores preparados con versiones anteriores pueden traer una lista vieja)
+      if (b.estado === 'listo' && b.entrada) { try { const nuevos = obra.sospechososDe(xmlDe(b)); if (JSON.stringify(nuevos) !== JSON.stringify(b.sospechosos)) { b.sospechosos = nuevos; guardarBorrador(b); } } catch {} }
+      return json(res, b);
+    }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/ajustes$/)) && req.method === 'POST') {
       try { return json(res, resumen(ajustar(m[1], JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}')))); } catch (e) { return json(res, { error: e.message }, 400); }
     }

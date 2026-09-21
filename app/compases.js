@@ -121,7 +121,7 @@ function detalleCompas(xml, numero) {
     const sumas = sumasPorVoz(c.cuerpo, c.div);
     const vozNums = Object.keys(porVoz).map(Number).sort((a, b) => a - b);
     if (!vozNums.length) vozNums.push(1);
-    for (const v of vozNums) voces.push({ id: c.id, voz: v, nombre: c.nombre + (v > 1 ? ' (voz ' + v + ')' : ''), beats: c.beats, bt: c.bt, cambio: c.cambio, esperado: 4 * c.beats / c.bt, suma: sumas[v] || 0, notas: porVoz[v] || [] });
+    vozNums.forEach((v, k) => voces.push({ id: c.id, voz: v, nombre: c.nombre + (vozNums.length > 1 ? ' (voz ' + (k + 1) + ')' : ''), beats: c.beats, bt: c.bt, cambio: c.cambio, esperado: 4 * c.beats / c.bt, suma: sumas[v] || 0, notas: porVoz[v] || [] }));
   });
   return voces;
 }
@@ -144,7 +144,7 @@ function notasCompas(xml, numero) {
     });
     const vozNums = Object.keys(porVoz).map(Number).sort((a, b) => a - b);
     if (!vozNums.length) vozNums.push(1);
-    for (const v of vozNums) voces.push({ id: c.id, voz: v, nombre: c.nombre + (v > 1 ? ' (voz ' + v + ')' : ''), beats: c.beats, bt: c.bt, esperado: 4 * c.beats / c.bt, editable: true, notas: porVoz[v] || [] });
+    vozNums.forEach((v, k) => voces.push({ id: c.id, voz: v, nombre: c.nombre + (vozNums.length > 1 ? ' (voz ' + (k + 1) + ')' : ''), beats: c.beats, bt: c.bt, esperado: 4 * c.beats / c.bt, editable: true, notas: porVoz[v] || [] }));
   });
   return voces;
 }
