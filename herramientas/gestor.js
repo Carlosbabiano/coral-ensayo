@@ -116,12 +116,12 @@ function detalleCompas(id, numero) {
   }
   return { numero: +numero, voces, edicion: obra.notasCompas(xmlDe(b), numero), posicion, pagina, sospechoso: b.sospechosos.includes(String(numero)) };
 }
-function guardarNotas(id, numero, { voz, notas }) {
+function guardarNotas(id, numero, { voz, numVoz, notas }) {
   const b = leerBorrador(id);
   if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
-  if (!Array.isArray(notas) || !notas.length || notas.length > 64) throw new Error('Notas no válidas');
+  if (!Array.isArray(notas) || notas.length > 64) throw new Error('Notas no válidas');
   const ruta = path.join(dirDe(id), 'partituras', b.entrada.archivo);
-  const xml = obra.escribirCompas(fs.readFileSync(ruta, 'utf8'), voz, numero, notas);
+  const xml = obra.escribirCompas(fs.readFileSync(ruta, 'utf8'), voz, numero, notas, +numVoz || 1);
   fs.writeFileSync(ruta, xml);
   b.sospechosos = obra.sospechososDe(xml);
   const nombre = (b.partes.find(p => p.id === voz) || {}).nombre || voz;

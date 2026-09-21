@@ -295,24 +295,43 @@ let guardadoPendiente = null, guardando = false;
 const PASOS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const NOMBRE_NOTA = { C: 'Do', D: 'Re', E: 'Mi', F: 'Fa', G: 'Sol', A: 'La', B: 'Si' };
 const NOMBRE_FIGURA = { whole: 'redonda', half: 'blanca', quarter: 'negra', eighth: 'corchea', '16th': 'semicorchea', '32nd': 'fusa' };
-const describir = n => n.silencio ? (n.compasEntero ? 'silencio de compás' : 'silencio de ' + NOMBRE_FIGURA[n.type]) : `${NOMBRE_NOTA[n.step]}${n.alter > 0 ? '♯'.repeat(n.alter) : n.alter < 0 ? '♭'.repeat(-n.alter) : ''}${n.octave} ${NOMBRE_FIGURA[n.type] || n.type}${n.dot ? ' con puntillo' : ''}${n.ligaEmpieza ? ' ~' : ''}${n.letra ? ' «' + n.letra + '»' : ''}`;
+const describir = n => (n.acorde ? '+ ' : '') + (n.silencio ? (n.compasEntero ? 'silencio de compás' : 'silencio de ' + NOMBRE_FIGURA[n.type]) : `${NOMBRE_NOTA[n.step]}${n.alter > 0 ? '♯'.repeat(n.alter) : n.alter < 0 ? '♭'.repeat(-n.alter) : ''}${n.octave} ${NOMBRE_FIGURA[n.type] || n.type}${n.dot ? ' con puntillo' : ''}${n.tresillo ? ' (' + n.tresillo.actual + ':' + n.tresillo.normal + ')' : ''}${n.adorno ? ' (adorno)' : ''}${n.ligaEmpieza ? ' ~' : ''}${n.letra ? ' «' + n.letra + '»' : ''}`);
+const SEMITONO = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const midiDe = n => 12 * (+n.octave + 1) + SEMITONO[n.step] + (+n.alter || 0);
+// Duración en negras de una figura (puntillos y tresillos incluidos); los adornos no cuentan
+function negrasDe(n, esperado) {
+  if (n.adorno) return 0;
+  if (n.silencio && n.compasEntero) return esperado;
+  const base = NEGRAS[n.type]; if (!base) return +n.negras || 0;
+  return base * (n.dot === 2 ? 1.75 : n.dot === 1 ? 1.5 : 1) * (n.tresillo ? n.tresillo.normal / n.tresillo.actual : 1);
+}
+// Renumera las "entradas" (golpes) tras insertar o borrar notas; los acordes comparten entrada, los adornos no cuentan
+function renumerar(notas) { let e = -1; for (const n of notas) { if (n.adorno) { n.entrada = -1; continue; } if (!n.acorde) e++; n.entrada = Math.max(0, e); } return notas; }
+// Índice de la nota de una voz a partir de su entrada (y su midi si es un acorde)
+function indiceDeNota(notas, entrada, midi) {
+  const cands = notas.map((n, i) => ({ n, i })).filter(c => !c.n.adorno && c.n.entrada === entrada);
+  const c = (midi != null && cands.find(c => !c.n.silencio && midiDe(c.n) === midi)) || cands[0];
+  return c ? c.i : 0;
+}
+const entradaDe = s => { const n = s.notas[s.indice]; return n ? [n.entrada, n.silencio ? null : midiDe(n)] : [0, null]; };
 // La app avisa aquí al tocar una nota (o null al tocar fuera)
 window.notaElegida = async sel => {
   if (!sel || !borradorActual || borradorActual.estado !== 'listo') { notaSel = null; pintarBarraNota(); return; }
   try {
     const d = await api(`/api/borradores/${borradorActual.id}/compas/${sel.compas}`);
-    const ed = d.edicion[sel.staff];
+    const parte = borradorActual.partes[sel.staff];
+    const ed = parte && d.edicion.find(e => e.id === parte.id && e.voz === (sel.voz || 1));
     if (!ed) { notaSel = null; pintarBarraNota(); return; }
-    notaSel = { compas: sel.compas, staff: sel.staff, indice: sel.indice, voz: ed.id, nombre: ed.nombre, esperado: ed.esperado, editable: ed.editable, notas: ed.notas };
-    for (const n of notaSel.notas) if (!NEGRAS[n.type]) n.type = n.compasEntero ? 'whole' : 'quarter';
+    for (const n of ed.notas) if (!NEGRAS[n.type] && !n.adorno && !(n.silencio && n.compasEntero)) n.type = 'quarter';
+    notaSel = { compas: sel.compas, staff: sel.staff, indice: indiceDeNota(ed.notas, sel.entrada, sel.midi), voz: ed.id, numVoz: ed.voz, nombre: ed.nombre, esperado: ed.esperado, editable: ed.editable, notas: ed.notas };
     pintarBarraNota();
   } catch (e) { alert(e.message); }
 };
-function sumaVoz(s) { return s.notas.reduce((t, n) => t + (n.acorde && !n.silencio ? 0 : (n.silencio && n.compasEntero ? s.esperado : NEGRAS[n.type] * (n.dot === 1 ? 1.5 : n.dot === 2 ? 1.75 : 1))), 0); }
+function sumaVoz(s) { return s.notas.reduce((t, n) => t + (n.acorde ? 0 : negrasDe(n, s.esperado)), 0); }
 function pintarBarraNota() {
   const barra = $('barraNota'); if (!barra) return;
   const s = notaSel;
-  if (!s) { barra.innerHTML = `<div class="ayuda" style="padding:4px 6px">Toca una nota en la partitura para seleccionarla y corregirla con el teclado: ↑ ↓ altura · Mayús+↑↓ sostenido/bemol · 1 a 6 figura (redonda… fusa) · . puntillo · S silencio · L ligadura · Supr borrar · + añadir detrás · ← → otra nota · Esc soltar.</div>`; return; }
+  if (!s) { barra.innerHTML = `<div class="ayuda" style="padding:4px 6px">Toca una nota en la partitura para seleccionarla y corregirla con el teclado: ↑ ↓ altura · Mayús+↑↓ sostenido/bemol · 1 a 6 figura (redonda… fusa) · . puntillo · S silencio · L ligadura · A nota a la vez (acorde) · Supr borrar · + añadir detrás · ← → otra nota · Esc soltar. Acentos, calderones, tresillos y ligaduras de expresión se conservan.</div>`; return; }
   const n = s.notas[s.indice];
   if (!s.editable || !n) { barra.innerHTML = `<div class="aviso" style="margin:0 0 6px">${esc(s.nombre)}, compás ${s.compas}: esta voz no se puede editar aquí (tresillos, adornos o dos voces en el pentagrama). Corrígela en MuseScore.</div>`; return; }
   const suma = sumaVoz(s), cuadra = Math.abs(suma - s.esperado) < 0.001;
@@ -320,7 +339,7 @@ function pintarBarraNota() {
   barra.innerHTML = `<div class="barraNota"><span><strong>${esc(s.nombre)}</strong> · compás ${s.compas} · figura ${s.indice + 1} de ${s.notas.length}: <strong>${esc(describir(n))}</strong> · <span style="${cuadra ? '' : 'color:var(--bad);font-weight:600'}">suma ${suma} de ${s.esperado}${cuadra ? ' ✓' : ''}</span>${guardando || guardadoPendiente ? ' · <span class="progreso" style="width:11px;height:11px;border-width:2px"></span>' : ''}</span>
     <span class="botones">${b('↑', 'Subir (flecha arriba)', 'arriba')}${b('↓', 'Bajar (flecha abajo)', 'abajo')}${b('♯', 'Sostenido (Mayús+↑)', 'sost')}${b('♭', 'Bemol (Mayús+↓)', 'bemol')}
       <select data-accion="figura" title="Figura (teclas 1 a 6)">${Object.entries(NOMBRE_FIGURA).map(([v, t]) => `<option value="${v}" ${v === n.type ? 'selected' : ''}>${t}</option>`).join('')}</select>
-      ${b('·', 'Puntillo (tecla .)', 'puntillo')}${b('𝄽', 'Nota ↔ silencio (tecla S)', 'silencio')}${b('~', 'Ligadura (tecla L)', 'liga')}${b('✕', 'Borrar (Supr)', 'borrar')}${b('+', 'Añadir una figura detrás (tecla +)', 'anadir')}${b('←', 'Figura anterior', 'izq')}${b('→', 'Figura siguiente', 'der')}</span>
+      ${b('·', 'Puntillo (tecla .)', 'puntillo')}${b('𝄽', 'Nota ↔ silencio (tecla S)', 'silencio')}${b('~', 'Ligadura (tecla L)', 'liga')}${b('✕', 'Borrar (Supr)', 'borrar')}${b('+', 'Añadir una figura detrás (tecla +)', 'anadir')}${b('♪♪', 'Añadir una nota a la vez, acorde (tecla A)', 'acorde')}${b('←', 'Figura anterior', 'izq')}${b('→', 'Figura siguiente', 'der')}</span>
     ${n.silencio ? '' : `<span class="botones"><label class="ayuda">Letra <input type="text" class="eLetraSel" value="${esc(n.letra)}" placeholder="sílaba" style="width:90px"></label>
       <select class="eSilabaSel" title="Tipo de sílaba: pone los guiones entre partes de una palabra">${[['single', 'palabra'], ['begin', 'inicio-'], ['middle', '-medio-'], ['end', '-final']].map(([v, t]) => `<option value="${v}" ${v === n.silaba ? 'selected' : ''}>${t}</option>`).join('')}</select></span>`}</div>`;
   for (const el of barra.querySelectorAll('[data-accion]')) el.onclick = ev => { if (el.tagName === 'SELECT') return; accionNota(el.dataset.accion); ev.preventDefault(); };
@@ -343,10 +362,11 @@ function accionNota(a, extra) {
   else if (a === 'puntillo') { n.dot = n.dot ? 0 : 1; n.compasEntero = false; }
   else if (a === 'silencio') { n.silencio = !n.silencio; n.compasEntero = false; if (n.silencio) { n.ligaEmpieza = n.ligaTermina = false; } }
   else if (a === 'liga') { if (n.silencio) return; const e = n.ligaEmpieza, t = n.ligaTermina; [n.ligaEmpieza, n.ligaTermina] = !e && !t ? [true, false] : e && !t ? [false, true] : !e && t ? [true, true] : [false, false]; }
-  else if (a === 'borrar') { s.notas.splice(s.indice, 1); if (s.indice >= s.notas.length) s.indice = s.notas.length - 1; }
-  else if (a === 'anadir') { const c = JSON.parse(JSON.stringify(n)); c.letra = ''; c.ligaEmpieza = c.ligaTermina = false; c.compasEntero = false; s.notas.splice(s.indice + 1, 0, c); s.indice++; }
+  else if (a === 'borrar') { s.notas.splice(s.indice, 1); if (s.indice >= s.notas.length) s.indice = s.notas.length - 1; renumerar(s.notas); }
+  else if (a === 'anadir') { const c = JSON.parse(JSON.stringify(n)); c.letra = ''; c.ligaEmpieza = c.ligaTermina = false; c.compasEntero = false; c.acorde = false; c.adorno = false; c.indiceXml = undefined; s.notas.splice(s.indice + 1, 0, c); s.indice++; renumerar(s.notas); }
+  else if (a === 'acorde') { if (n.silencio || n.adorno) return; const c = JSON.parse(JSON.stringify(n)); c.acorde = true; c.letra = ''; c.ligaEmpieza = c.ligaTermina = false; c.indiceXml = undefined; s.notas.splice(s.indice + 1, 0, c); s.indice++; renumerar(s.notas); }
   else return;
-  cambiado(['arriba', 'abajo', 'sost', 'bemol', 'figura', 'puntillo', 'silencio', 'anadir'].includes(a));
+  cambiado(['arriba', 'abajo', 'sost', 'bemol', 'figura', 'puntillo', 'silencio', 'anadir', 'acorde'].includes(a));
 }
 // Hace sonar la nota seleccionada con el sonido de la app (duración según la figura)
 function sonarSeleccion() {
@@ -362,11 +382,14 @@ async function guardarSeleccion() {
   if (guardando) { guardadoPendiente = setTimeout(guardarSeleccion, 300); return; }
   guardando = true; pintarBarraNota();
   try {
-    const r = await api(`/api/borradores/${borradorActual.id}/compas/${s.compas}/notas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voz: s.voz, notas: s.notas }) });
+    const [entrada, midi] = entradaDe(s);
+    const r = await api(`/api/borradores/${borradorActual.id}/compas/${s.compas}/notas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voz: s.voz, numVoz: s.numVoz, notas: s.notas }) });
     borradorActual.sospechosos = r.sospechosos; pintarChips();
+    // releer las notas del XML guardado para que los índices sigan siendo válidos
+    try { const d = await api(`/api/borradores/${borradorActual.id}/compas/${s.compas}`); const ed = d.edicion.find(e => e.id === s.voz && e.voz === s.numVoz); if (ed && notaSel === s) { s.notas = ed.notas; s.indice = indiceDeNota(ed.notas, entrada, midi); } } catch {}
     const w = $('previa').contentWindow;
     await w.recargarObra();
-    if (notaSel === s) w.seleccionarNota(s.compas, s.staff, s.indice);
+    if (notaSel === s) w.seleccionarNota(s.compas, s.staff, s.numVoz, entrada, midi);
     if (compasEnRevision === s.compas) revisarCompas(s.compas, true);
   } catch (e) { alert(e.message); }
   guardando = false; pintarBarraNota();
@@ -379,11 +402,12 @@ async function moverSeleccion(delta) {
     const compas = s.compas + delta; if (compas < 1) return;
     try {
       const d = await api(`/api/borradores/${borradorActual.id}/compas/${compas}`);
-      const ed = d.edicion[s.staff]; if (!ed || !ed.notas.length) return;
+      const ed = d.edicion.find(e => e.id === s.voz && e.voz === s.numVoz); if (!ed || !ed.notas.length) return;
       Object.assign(s, { compas, esperado: ed.esperado, editable: ed.editable, notas: ed.notas, indice: delta > 0 ? 0 : ed.notas.length - 1 });
     } catch { return; }
   }
-  $('previa').contentWindow.seleccionarNota(s.compas, s.staff, s.indice);
+  const [entrada, midi] = entradaDe(s);
+  $('previa').contentWindow.seleccionarNota(s.compas, s.staff, s.numVoz, entrada, midi);
   sonarSeleccion();
   pintarBarraNota();
 }
@@ -401,7 +425,7 @@ function teclaEditor(e) {
   if (k === 'ArrowUp') a = e.shiftKey ? 'sost' : 'arriba'; else if (k === 'ArrowDown') a = e.shiftKey ? 'bemol' : 'abajo';
   else if (k === 'ArrowLeft') a = 'izq'; else if (k === 'ArrowRight') a = 'der';
   else if (/^[1-6]$/.test(k)) { a = 'figura'; extra = ['whole', 'half', 'quarter', 'eighth', '16th', '32nd'][+k - 1]; }
-  else if (k === '.' || e.code === 'Period' || e.code === 'NumpadDecimal') a = 'puntillo'; else if (k === 's' || k === 'S') a = 'silencio'; else if (k === 'l' || k === 'L') a = 'liga';
+  else if (k === '.' || e.code === 'Period' || e.code === 'NumpadDecimal') a = 'puntillo'; else if (k === 's' || k === 'S') a = 'silencio'; else if (k === 'l' || k === 'L') a = 'liga'; else if (k === 'a' || k === 'A') a = 'acorde';
   else if (k === 'Delete' || k === 'Backspace') a = 'borrar'; else if (k === '+' || k === 'Insert') a = 'anadir';
   else if (k === 'Escape') { notaSel = null; pintarBarraNota(); try { $('previa').contentWindow.seleccionarNota(0, 0, 0); } catch {} return; }
   if (!a) return;
@@ -432,8 +456,8 @@ async function revisarCompas(n, silencioso) {
   html += `<div><div class="aviso ${cuadra ? 'bien' : 'mal'}">Compás de <strong>${v0.beats}/${v0.bt}</strong>${v0.cambio ? ' (cambia aquí)' : ''}: caben ${v0.esperado} negras.` + (cuadra ? ' Todas las voces cuadran.' : ` No cuadra en: <strong>${malas.map(esc).join(', ')}</strong>.`) + `</div><table class="voces">`;
   for (const v of d.voces) {
     const bien = Math.abs(v.suma - v.esperado) < 0.01;
-    const ed = (d.edicion || []).find(e => e.id === v.id);
-    const botonEditar = ed && ed.editable ? `<button class="mini" data-editar="${esc(v.id)}">Editar</button>` : `<span class="ayuda" title="Tiene tresillos, adornos o dos voces en el pentagrama">no editable aquí</span>`;
+    const ed = (d.edicion || []).find(e => e.id === v.id && e.voz === (v.voz || 1));
+    const botonEditar = ed ? `<button class="mini" data-editar="${esc(v.id)}|${v.voz || 1}">Editar</button>` : '';
     html += `<tr${bien ? '' : ' style="background:#fdecec"'}><td><strong>${esc(v.nombre)}</strong><br>${bien ? '<span class="ayuda">cuadra</span>' : `<span style="color:var(--bad);font-weight:600">no cuadra: suma ${v.suma} de ${v.esperado}</span>`}<br>${botonEditar}</td><td>${v.notas.map(esc).join('<br>') || '<i>vacío</i>'}</td></tr>`;
   }
   html += `</table><div id="editorCompas"></div>
@@ -460,23 +484,24 @@ const NOTAS_ES = [['C', 'Do'], ['D', 'Re'], ['E', 'Mi'], ['F', 'Fa'], ['G', 'Sol
 const FIGURAS = [['whole', 'redonda'], ['half', 'blanca'], ['quarter', 'negra'], ['eighth', 'corchea'], ['16th', 'semicorchea'], ['32nd', 'fusa']];
 const NEGRAS = { whole: 4, half: 2, quarter: 1, eighth: 0.5, '16th': 0.25, '32nd': 0.125 };
 let editor = null; // { voz, esperado, notas: [...] }
-function abrirEditor(d, vozId) {
-  const v = d.edicion.find(e => e.id === vozId);
-  editor = { numero: d.numero, voz: vozId, nombre: v.nombre, esperado: v.esperado, notas: JSON.parse(JSON.stringify(v.notas)) };
-  for (const n of editor.notas) if (!NEGRAS[n.type]) n.type = n.compasEntero ? 'whole' : 'quarter';
+function abrirEditor(d, clave) {
+  const [vozId, numVoz] = clave.split('|');
+  const v = d.edicion.find(e => e.id === vozId && e.voz === (+numVoz || 1));
+  editor = { numero: d.numero, voz: vozId, numVoz: +numVoz || 1, nombre: v.nombre, esperado: v.esperado, notas: JSON.parse(JSON.stringify(v.notas)) };
+  for (const n of editor.notas) if (!NEGRAS[n.type] && !n.adorno && !(n.silencio && n.compasEntero)) n.type = 'quarter';
   pintarEditor();
 }
-function duracion(n) { return n.silencio && n.compasEntero ? editor.esperado : NEGRAS[n.type] * (n.dot === 1 ? 1.5 : n.dot === 2 ? 1.75 : 1); }
+function duracion(n) { return negrasDe(n, editor.esperado); }
 function pintarEditor() {
   const e = editor; if (!e) return;
-  const suma = e.notas.reduce((s, n) => s + (n.acorde && !n.silencio ? 0 : duracion(n)), 0);
+  const suma = e.notas.reduce((s, n) => s + (n.acorde ? 0 : duracion(n)), 0);
   const cuadra = Math.abs(suma - e.esperado) < 0.001;
   const sel = (clase, i, opciones, valor) => `<select class="${clase}" data-i="${i}">${opciones.map(([v, t]) => `<option value="${v}" ${String(v) === String(valor) ? 'selected' : ''}>${t}</option>`).join('')}</select>`;
   let html = `<div class="tarjeta" style="margin:10px 0 0;background:var(--soft)"><h4>Editar ${esc(e.nombre)}, compás ${e.numero}</h4><table class="editor">
     <tr class="cabecera"><th></th><th>Nota</th><th>Alt.</th><th>Oct.</th><th>Figura</th><th>Puntillo</th><th>Ligadura</th><th>Letra</th><th></th></tr>`;
   e.notas.forEach((n, i) => {
     html += `<tr>
-      <td>${sel('eTipo', i, [['nota', '♪ nota'], ['silencio', '𝄽 silencio'], ['compas', '𝄻 compás entero']], n.silencio ? (n.compasEntero ? 'compas' : 'silencio') : 'nota')}</td>
+      <td>${n.adorno ? '<span class="ayuda">adorno</span> ' : ''}${sel('eTipo', i, [['nota', '♪ nota'], ['acorde', '♪♪ a la vez'], ['silencio', '𝄽 silencio'], ['compas', '𝄻 compás entero']], n.silencio ? (n.compasEntero ? 'compas' : 'silencio') : n.acorde ? 'acorde' : 'nota')}${n.tresillo ? ` <span class="ayuda" title="Grupo irregular: ${n.tresillo.actual} en el tiempo de ${n.tresillo.normal}">(${n.tresillo.actual}:${n.tresillo.normal})</span>` : ''}</td>
       <td>${n.silencio ? '' : sel('eStep', i, NOTAS_ES, n.step)}</td>
       <td>${n.silencio ? '' : sel('eAlter', i, [[-1, '♭'], [0, '♮'], [1, '♯']], n.alter)}</td>
       <td>${n.silencio ? '' : sel('eOct', i, [2, 3, 4, 5, 6].map(o => [o, o]), n.octave)}</td>
@@ -494,7 +519,7 @@ function pintarEditor() {
   const leer = () => {
     for (const s of cont.querySelectorAll('select, input')) {
       const i = +s.dataset.i, n = e.notas[i]; if (!n) continue;
-      if (s.classList.contains('eTipo')) { n.silencio = s.value !== 'nota'; n.compasEntero = s.value === 'compas'; }
+      if (s.classList.contains('eTipo')) { n.silencio = s.value === 'silencio' || s.value === 'compas'; n.compasEntero = s.value === 'compas'; n.acorde = s.value === 'acorde'; }
       if (s.classList.contains('eStep')) n.step = s.value;
       if (s.classList.contains('eAlter')) n.alter = +s.value;
       if (s.classList.contains('eOct')) n.octave = +s.value;
@@ -509,14 +534,14 @@ function pintarEditor() {
   for (const bt of cont.querySelectorAll('button[data-quita]')) bt.onclick = () => { leer(); e.notas.splice(+bt.dataset.quita, 1); pintarEditor(); };
   for (const bt of cont.querySelectorAll('button[data-sube]')) bt.onclick = () => { leer(); const i = +bt.dataset.sube; if (i > 0) { [e.notas[i - 1], e.notas[i]] = [e.notas[i], e.notas[i - 1]]; } pintarEditor(); };
   for (const bt of cont.querySelectorAll('button[data-baja]')) bt.onclick = () => { leer(); const i = +bt.dataset.baja; if (i < e.notas.length - 1) { [e.notas[i + 1], e.notas[i]] = [e.notas[i], e.notas[i + 1]]; } pintarEditor(); };
-  const nueva = silencio => { leer(); const ult = [...e.notas].reverse().find(n => !n.silencio); e.notas.push({ silencio, compasEntero: false, step: ult ? ult.step : 'G', alter: ult ? ult.alter : 0, octave: ult ? ult.octave : 4, type: 'quarter', dot: 0, acorde: false, ligaEmpieza: false, ligaTermina: false, letra: '', silaba: 'single' }); pintarEditor(); };
+  const nueva = silencio => { leer(); const ult = [...e.notas].reverse().find(n => !n.silencio); e.notas.push({ silencio, compasEntero: false, step: ult ? ult.step : 'G', alter: ult ? ult.alter : 0, octave: ult ? ult.octave : 4, type: 'quarter', dot: 0, acorde: false, adorno: false, ligaEmpieza: false, ligaTermina: false, letra: '', silaba: 'single' }); pintarEditor(); };
   $('eMasNota').onclick = () => nueva(false);
   $('eMasSilencio').onclick = () => nueva(true);
   $('eCancelar').onclick = () => { editor = null; cont.innerHTML = ''; };
   $('eGuardar').onclick = async () => {
     leer();
     try {
-      await api(`/api/borradores/${borradorActual.id}/compas/${e.numero}/notas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voz: e.voz, notas: e.notas }) });
+      await api(`/api/borradores/${borradorActual.id}/compas/${e.numero}/notas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voz: e.voz, numVoz: e.numVoz, notas: renumerar(e.notas) }) });
       editor = null;
       await seleccionar(borradorActual.id);
     } catch (err) { alert(err.message); }
