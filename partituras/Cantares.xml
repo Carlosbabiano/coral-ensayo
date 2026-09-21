@@ -53,9 +53,8 @@
 		</score-part>
 	</part-list>
 	<part id="P1">
-		<measure number="1">
-			<attributes>
-				<divisions>2</divisions>
+		<measure number="1"><attributes>
+				<divisions>8</divisions>
 				<key>
 					<fifths>1</fifths>
 				</key>
@@ -67,8 +66,7 @@
 					<sign>G</sign>
 					<line>2</line>
 				</clef>
-			</attributes>
-			<direction placement="above">
+			</attributes><direction placement="above">
 				<direction-type>
 					<metronome>
 						<beat-unit>quarter</beat-unit>
@@ -76,97 +74,7 @@
 					</metronome>
 				</direction-type>
 				<sound tempo="120"/>
-			</direction>
-			<note>
-				<pitch>
-					<step>G</step>
-					<alter>0</alter>
-					<octave>4</octave>
-				</pitch>
-				<duration>3</duration>
-				<voice>1</voice>
-				<type>quarter</type>
-				<dot />
-				<stem>up</stem>
-				<staff>1</staff>
-			<lyric number="1" placement="below">
-          <syllabic>begin</syllabic>
-          <text>To</text>
-        </lyric></note>
-			<note>
-				<pitch>
-					<step>A</step>
-					<alter>0</alter>
-					<octave>4</octave>
-				</pitch>
-				<duration>1</duration>
-				<voice>1</voice>
-				<type>eighth</type>
-				<stem>up</stem>
-				<staff>1</staff>
-			<lyric number="1" placement="below">
-          <syllabic>end</syllabic>
-          <text>do</text>
-        </lyric></note>
-			<note>
-				<pitch>
-					<step>B</step>
-					<alter>0</alter>
-					<octave>4</octave>
-				</pitch>
-				<duration>1</duration>
-				<voice>1</voice>
-				<type>eighth</type>
-				<stem>down</stem>
-				<staff>1</staff>
-				<beam number="1">begin</beam>
-			</note>
-			<note>
-				<pitch>
-					<step>B</step>
-					<alter>0</alter>
-					<octave>4</octave>
-				</pitch>
-				<duration>1</duration>
-				<voice>1</voice>
-				<type>eighth</type>
-				<stem>down</stem>
-				<staff>1</staff>
-				<beam number="1">continue</beam>
-			<lyric number="1" placement="below">
-          <syllabic>single</syllabic>
-          <text>pasa</text>
-        </lyric></note>
-			<note>
-				<pitch>
-					<step>B</step>
-					<alter>0</alter>
-					<octave>4</octave>
-				</pitch>
-				<duration>1</duration>
-				<voice>1</voice>
-				<type>eighth</type>
-				<stem>down</stem>
-				<staff>1</staff>
-				<beam number="1">continue</beam>
-			</note>
-			<note>
-				<pitch>
-					<step>B</step>
-					<alter>0</alter>
-					<octave>4</octave>
-				</pitch>
-				<duration>1</duration>
-				<voice>1</voice>
-				<type>eighth</type>
-				<stem>down</stem>
-				<staff>1</staff>
-				<beam number="1">end</beam>
-			<lyric number="1" placement="below">
-          <syllabic>single</syllabic>
-          <text>y</text>
-        </lyric></note>
-		</measure>
+			</direction><note><pitch><step>G</step><alter>0</alter><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/><staff>1</staff><lyric number="1" placement="below"><syllabic>begin</syllabic><text>To</text></lyric></note><note><pitch><step>A</step><alter>0</alter><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>eighth</type><staff>1</staff><lyric number="1" placement="below"><syllabic>end</syllabic><text>do</text></lyric></note><note><pitch><step>B</step><alter>0</alter><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>eighth</type><staff>1</staff><lyric number="1" placement="below"><syllabic>single</syllabic><text>pasa</text></lyric></note><note><pitch><step>B</step><alter>0</alter><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>eighth</type><staff>1</staff><lyric number="1" placement="below"><syllabic>single</syllabic><text>y</text></lyric></note><note><pitch><step>B</step><alter>0</alter><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>eighth</type><staff>1</staff><lyric number="1" placement="below"><syllabic>middle</syllabic><text>to</text></lyric></note><note><pitch><step>B</step><alter>0</alter><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>eighth</type><staff>1</staff><lyric number="1" placement="below"><syllabic>single</syllabic><text>do</text></lyric></note></measure>
 		<measure number="2">
 			<attributes>
 				<divisions>2</divisions>
@@ -228,7 +136,7 @@
 		<measure number="3">
 			<attributes>
 				<divisions>6</divisions>
-			</attributes>
+			<time><beats>4</beats><beat-type>4</beat-type></time></attributes>
 			<note>
 				<rest />
 				<duration>3</duration>
@@ -345,7 +253,7 @@
 		<measure number="4">
 			<attributes>
 				<divisions>1</divisions>
-			</attributes>
+			<time><beats>4</beats><beat-type>4</beat-type></time></attributes>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -4641,7 +4549,7 @@
 		<measure number="3">
 			<attributes>
 				<divisions>3</divisions>
-			</attributes>
+			<time><beats>4</beats><beat-type>4</beat-type></time></attributes>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -4724,7 +4632,7 @@
 		<measure number="4">
 			<attributes>
 				<divisions>2</divisions>
-			</attributes>
+			<time><beats>4</beats><beat-type>4</beat-type></time></attributes>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -9022,7 +8930,7 @@
 		<measure number="3">
 			<attributes>
 				<divisions>6</divisions>
-			</attributes>
+			<time><beats>4</beats><beat-type>4</beat-type></time></attributes>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -9134,7 +9042,7 @@
 		<measure number="4">
 			<attributes>
 				<divisions>1</divisions>
-			</attributes>
+			<time><beats>4</beats><beat-type>4</beat-type></time></attributes>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -13557,7 +13465,7 @@
 		<measure number="3">
 			<attributes>
 				<divisions>3</divisions>
-			</attributes>
+			<time><beats>4</beats><beat-type>4</beat-type></time></attributes>
 			<note>
 				<pitch>
 					<step>C</step>
@@ -13640,7 +13548,7 @@
 		<measure number="4">
 			<attributes>
 				<divisions>1</divisions>
-			</attributes>
+			<time><beats>4</beats><beat-type>4</beat-type></time></attributes>
 			<note>
 				<pitch>
 					<step>G</step>
