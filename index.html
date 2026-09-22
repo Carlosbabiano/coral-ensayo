@@ -134,6 +134,42 @@ async function cargarLista() {
   await cargarObra(lista[0].archivo);
 }
 
+// Carga la obra en OSMD desde una dirección o desde el texto del MusicXML, y arregla las casillas de repetición
+async function cargarEnOsmd(fuente) {
+  const texto = fuente.trimStart().startsWith('<') ? fuente : await (await fetch(fuente)).text();
+  await osmd.load(texto);
+  arreglarCasillas(texto);
+}
+// OSMD solo se queda con el primer número de una casilla ("1, 2" → 1) y no cuenta las estrofas, así que una
+// repetición con casillas "1, 2" y "3" la tocaría dos veces en vez de tres. Leemos los números del XML y
+// completamos lo que falta en cada repetición.
+function arreglarCasillas(texto) {
+  let casillas = [];
+  try {
+    const doc = new DOMParser().parseFromString(texto, 'application/xml');
+    const parte = doc.querySelector('part'); if (!parte) return;
+    [...parte.querySelectorAll('measure')].forEach((m, i) => {
+      for (const e of m.querySelectorAll('barline > ending[type="start"]')) {
+        const nums = (e.getAttribute('number') || '').split(/[^0-9]+/).map(Number).filter(n => n > 0);
+        if (nums.length > 1) casillas.push({ compas: i, nums });
+      }
+    });
+  } catch (e) { console.warn('No se pudieron leer las casillas', e); return; }
+  if (!casillas.length) return;
+  for (const rep of osmd.Sheet.Repetitions) {
+    const dict = rep.EndingIndexDict; let cambiado = false;
+    for (const c of casillas) {
+      if (c.compas < rep.StartIndex || c.compas > rep.EndIndex) continue;
+      const parte = dict[c.nums[0]]; if (!parte) continue;
+      for (const n of c.nums) if (!dict[n]) { dict[n] = parte; parte.endingIndices.push(n); cambiado = true; }
+    }
+    if (cambiado) {
+      const max = Math.max(...Object.keys(dict).map(Number));
+      if (rep.UserNumberOfRepetitions < max) rep.UserNumberOfRepetitions = max;
+    }
+  }
+}
+
 async function cargarObra(archivo) {
   parar();
   $('cargando').style.display = 'grid';
@@ -143,7 +179,7 @@ async function cargarObra(archivo) {
       followCursor: false, cursorsOptions: [{ type: 0, color: '#e39b2c', alpha: 0.55, follow: false }],
     });
   }
-  if (modoCorregir) await cargarParaCorregir(archivo); else await osmd.load('partituras/' + archivo);
+  if (modoCorregir) await cargarParaCorregir(archivo); else await cargarEnOsmd('partituras/' + archivo);
   osmd.Zoom = window.innerWidth < 600 ? 0.55 : 0.8;
   osmd.render();
   construirEventos(); // también crea los botones de las voces (necesita saber dónde hay desdobles)
@@ -546,7 +582,7 @@ window.seleccionarNota = (compas, staff, voz, entrada, midi) => {
 window.recargarObra = async () => {
   const y = window.scrollY, compas = compasActual();
   parar();
-  await osmd.load('partituras/' + obraActual.archivo + '?t=' + Date.now());
+  await cargarEnOsmd('partituras/' + obraActual.archivo + '?t=' + Date.now());
   osmd.Zoom = window.innerWidth < 600 ? 0.55 : 0.8;
   osmd.render();
   construirEventos();
@@ -662,7 +698,7 @@ async function cargarParaCorregir(archivo) {
   let guardado = null; try { guardado = localStorage.getItem('correccion:' + archivo); } catch {}
   if (guardado && confirm('Hay una corrección de esta obra sin enviar. ¿Quieres recuperarla?')) { xmlActual = guardado; cambiosCorr = 1; }
   else { try { localStorage.removeItem('correccion:' + archivo); } catch {} }
-  await osmd.load(xmlActual);
+  await cargarEnOsmd(xmlActual);
   pintarBarraCorregir();
 }
 function corregirElegida(sel) {
@@ -734,7 +770,7 @@ function accionCorr(a, extra) {
 async function redibujarCorreccion() {
   const s = corr, y = window.scrollY;
   parar();
-  await osmd.load(xmlActual);
+  await cargarEnOsmd(xmlActual);
   osmd.Zoom = window.innerWidth < 600 ? 0.55 : 0.8;
   osmd.render();
   construirEventos();
