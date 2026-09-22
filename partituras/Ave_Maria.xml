@@ -870,7 +870,7 @@
 				<beam number="1">end</beam>
 			</note>
 		</measure>
-		<measure number="31">
+		<measure number="31"><barline location="left"><ending number="1" type="start"/></barline>
 			<attributes>
 				<divisions>1</divisions>
 			</attributes>
@@ -885,7 +885,7 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>single</syllabic><text>men,</text></lyric></note>
 			<note>
 				<pitch>
 					<step>E</step>
@@ -897,7 +897,7 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>begin</syllabic><text>a</text></lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -926,10 +926,10 @@
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>end</syllabic><text>men.</text></lyric></note>
 		</measure>
-		<measure number="33"><attributes><divisions>1</divisions></attributes><note><rest measure="yes" /><duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff></note><barline location="right"><bar-style>light-heavy</bar-style></barline></measure>
-		<measure number="34">
+		<measure number="33"><attributes><divisions>1</divisions></attributes><note><rest measure="yes" /><duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff></note><barline location="right"><bar-style>light-heavy</bar-style><ending number="1" type="stop"/><repeat direction="backward"/></barline></measure>
+		<measure number="34"><barline location="left"><ending number="2" type="start"/></barline>
 			<attributes>
 				<divisions>1</divisions>
 			</attributes>
@@ -944,7 +944,7 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>single</syllabic><text>men,</text></lyric></note>
 			<note>
 				<pitch>
 					<step>D</step>
@@ -957,10 +957,10 @@
 				<accidental>sharp</accidental>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>begin</syllabic><text>a</text></lyric></note>
 		</measure>
 		<measure number="35"><attributes><divisions>1</divisions></attributes><note><pitch><step>E</step><alter>0</alter><octave>4</octave></pitch><duration>4</duration><tie type="start" /><voice>1</voice><type>whole</type><staff>1</staff><notations><tied type="start" /></notations><lyric number="1" placement="below"><syllabic>end</syllabic><text>men.</text></lyric></note></measure>
-		<measure number="36"><attributes><divisions>1</divisions></attributes><note><pitch><step>E</step><alter>0</alter><octave>4</octave></pitch><duration>4</duration><tie type="stop" /><voice>1</voice><type>whole</type><staff>1</staff><notations><tied type="stop" /></notations></note><barline location="right"><bar-style>light-heavy</bar-style></barline></measure>
+		<measure number="36"><attributes><divisions>1</divisions></attributes><note><pitch><step>E</step><alter>0</alter><octave>4</octave></pitch><duration>4</duration><tie type="stop" /><voice>1</voice><type>whole</type><staff>1</staff><notations><tied type="stop" /></notations></note><barline location="right"><bar-style>light-heavy</bar-style><ending number="2" type="discontinue"/></barline></measure>
 	</part>
 	<part id="P2">
 		<measure number="1"><barline location="left">
@@ -1327,7 +1327,7 @@
 				<staff>1</staff>
 			</note>
 		</measure>
-		<measure number="31">
+		<measure number="31"><barline location="left"><ending number="1" type="start"/></barline>
 			<attributes>
 				<divisions>1</divisions>
 			</attributes>
@@ -1342,7 +1342,7 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>single</syllabic><text>men,</text></lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -1354,7 +1354,7 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>begin</syllabic><text>a</text></lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -1382,10 +1382,10 @@
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>end</syllabic><text>men.</text></lyric></note>
 		</measure>
-		<measure number="33"><attributes><divisions>1</divisions></attributes><note><rest measure="yes" /><duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff></note><barline location="right"><bar-style>light-heavy</bar-style></barline></measure>
-		<measure number="34">
+		<measure number="33"><attributes><divisions>1</divisions></attributes><note><rest measure="yes" /><duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff></note><barline location="right"><bar-style>light-heavy</bar-style><ending number="1" type="stop"/><repeat direction="backward"/></barline></measure>
+		<measure number="34"><barline location="left"><ending number="2" type="start"/></barline>
 			<attributes>
 				<divisions>1</divisions>
 			</attributes>
@@ -1400,7 +1400,7 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>single</syllabic><text>men,</text></lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -1412,10 +1412,10 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>begin</syllabic><text>a</text></lyric></note>
 		</measure>
 		<measure number="35"><attributes><divisions>1</divisions></attributes><note><pitch><step>E</step><alter>0</alter><octave>4</octave></pitch><duration>4</duration><tie type="start" /><voice>1</voice><type>whole</type><staff>1</staff><notations><tied type="start" /></notations><lyric number="1" placement="below"><syllabic>end</syllabic><text>men.</text></lyric></note></measure>
-		<measure number="36"><attributes><divisions>1</divisions></attributes><note><pitch><step>E</step><alter>0</alter><octave>4</octave></pitch><duration>4</duration><tie type="stop" /><voice>1</voice><type>whole</type><staff>1</staff><notations><tied type="stop" /></notations></note><barline location="right"><bar-style>light-heavy</bar-style></barline></measure>
+		<measure number="36"><attributes><divisions>1</divisions></attributes><note><pitch><step>E</step><alter>0</alter><octave>4</octave></pitch><duration>4</duration><tie type="stop" /><voice>1</voice><type>whole</type><staff>1</staff><notations><tied type="stop" /></notations></note><barline location="right"><bar-style>light-heavy</bar-style><ending number="2" type="discontinue"/></barline></measure>
 	</part>
 	<part id="P3">
 		<measure number="1"><barline location="left">
@@ -1787,7 +1787,7 @@
 				<staff>1</staff>
 			</note>
 		</measure>
-		<measure number="31">
+		<measure number="31"><barline location="left"><ending number="1" type="start"/></barline>
 			<attributes>
 				<divisions>1</divisions>
 			</attributes>
@@ -1802,7 +1802,7 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>single</syllabic><text>men,</text></lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -1814,7 +1814,7 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>begin</syllabic><text>a</text></lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -1829,8 +1829,8 @@
 			</note>
 		</measure>
 		<measure number="32"><attributes><divisions>1</divisions></attributes><note><pitch><step>B</step><alter>0</alter><octave>3</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff><lyric number="1" placement="below"><syllabic>end</syllabic><text>men.</text></lyric></note></measure>
-		<measure number="33"><attributes><divisions>1</divisions></attributes><note><rest measure="yes" /><duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff></note><barline location="right"><bar-style>light-heavy</bar-style></barline></measure>
-		<measure number="34">
+		<measure number="33"><attributes><divisions>1</divisions></attributes><note><rest measure="yes" /><duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff></note><barline location="right"><bar-style>light-heavy</bar-style><ending number="1" type="stop"/><repeat direction="backward"/></barline></measure>
+		<measure number="34"><barline location="left"><ending number="2" type="start"/></barline>
 			<attributes>
 				<divisions>1</divisions>
 			</attributes>
@@ -1845,7 +1845,7 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>single</syllabic><text>men,</text></lyric></note>
 			<note>
 				<pitch>
 					<step>G</step>
@@ -1857,7 +1857,7 @@
 				<type>quarter</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>begin</syllabic><text>a</text></lyric></note>
 			<note>
 				<pitch>
 					<step>F</step>
@@ -1884,7 +1884,7 @@
 			</note>
 		</measure>
 		<measure number="35"><attributes><divisions>1</divisions></attributes><note><pitch><step>G</step><alter>0</alter><octave>3</octave></pitch><duration>4</duration><tie type="start" /><voice>1</voice><type>whole</type><staff>1</staff><notations><tied type="start" /></notations><lyric number="1" placement="below"><syllabic>end</syllabic><text>men.</text></lyric></note></measure>
-		<measure number="36"><attributes><divisions>1</divisions></attributes><note><pitch><step>G</step><alter>0</alter><octave>3</octave></pitch><duration>4</duration><tie type="stop" /><voice>1</voice><type>whole</type><staff>1</staff><notations><tied type="stop" /></notations></note><barline location="right"><bar-style>light-heavy</bar-style></barline></measure>
+		<measure number="36"><attributes><divisions>1</divisions></attributes><note><pitch><step>G</step><alter>0</alter><octave>3</octave></pitch><duration>4</duration><tie type="stop" /><voice>1</voice><type>whole</type><staff>1</staff><notations><tied type="stop" /></notations></note><barline location="right"><bar-style>light-heavy</bar-style><ending number="2" type="discontinue"/></barline></measure>
 	</part>
 	<part id="P4">
 		<measure number="1"><barline location="left">
@@ -2233,7 +2233,7 @@
 				<staff>1</staff>
 			</note>
 		</measure>
-		<measure number="31">
+		<measure number="31"><barline location="left"><ending number="1" type="start"/></barline>
 			<attributes>
 				<divisions>1</divisions>
 			</attributes>
@@ -2248,7 +2248,7 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>single</syllabic><text>men,</text></lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -2260,7 +2260,7 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>begin</syllabic><text>a</text></lyric></note>
 		</measure>
 		<measure number="32">
 			<attributes>
@@ -2276,7 +2276,7 @@
 				<voice>1</voice>
 				<type>whole</type>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>end</syllabic><text>men.</text></lyric></note>
 		</measure>
 		<measure number="33">
 			<attributes>
@@ -2289,11 +2289,8 @@
 				<type>whole</type>
 				<staff>1</staff>
 			</note>
-			<barline location="right">
-				<bar-style>light-heavy</bar-style>
-			</barline>
-		</measure>
-		<measure number="34">
+		<barline location="right"><bar-style>light-heavy</bar-style><ending number="1" type="stop"/><repeat direction="backward"/></barline></measure>
+		<measure number="34"><barline location="left"><ending number="2" type="start"/></barline>
 			<attributes>
 				<divisions>1</divisions>
 			</attributes>
@@ -2308,7 +2305,7 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>single</syllabic><text>men,</text></lyric></note>
 			<note>
 				<pitch>
 					<step>B</step>
@@ -2320,9 +2317,9 @@
 				<type>half</type>
 				<stem>up</stem>
 				<staff>1</staff>
-			</note>
+			<lyric number="1" placement="below"><syllabic>begin</syllabic><text>a</text></lyric></note>
 		</measure>
 		<measure number="35"><attributes><divisions>1</divisions></attributes><note><pitch><step>E</step><alter>0</alter><octave>3</octave></pitch><duration>4</duration><tie type="start" /><voice>1</voice><type>whole</type><staff>1</staff><notations><tied type="start" /></notations><lyric number="1" placement="below"><syllabic>end</syllabic><text>men.</text></lyric></note></measure>
-		<measure number="36"><attributes><divisions>1</divisions></attributes><note><pitch><step>E</step><alter>0</alter><octave>3</octave></pitch><duration>4</duration><tie type="stop" /><voice>1</voice><type>whole</type><staff>1</staff><notations><tied type="stop" /></notations></note><barline location="right"><bar-style>light-heavy</bar-style></barline></measure>
+		<measure number="36"><attributes><divisions>1</divisions></attributes><note><pitch><step>E</step><alter>0</alter><octave>3</octave></pitch><duration>4</duration><tie type="stop" /><voice>1</voice><type>whole</type><staff>1</staff><notations><tied type="stop" /></notations></note><barline location="right"><bar-style>light-heavy</bar-style><ending number="2" type="discontinue"/></barline></measure>
 	</part>
 </score-partwise>
