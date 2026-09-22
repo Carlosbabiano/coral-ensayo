@@ -55,7 +55,7 @@
   .pagina { position: relative; margin: 0 auto 10px; box-shadow: 0 1px 6px rgba(0,0,0,.15); background: #fff; }
   .pagina img { display: block; width: 100%; height: auto; }
   .pagina .capa { position: absolute; inset: 0; }
-  .pdfCursor { position: absolute; background: rgba(227,155,44,.35); border-left: 2px solid #e39b2c; pointer-events: none; transition: left .08s linear; }
+  .pdfCursor { position: absolute; background: rgba(227,155,44,.35); border-left: 2px solid #e39b2c; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -196,16 +196,27 @@ async function cargarPdf() {
   pdfCargado = true;
 }
 
-function moverCursorPdf(ev) {
+// Barra sobre la página: en el compás del evento, a la fracción indicada (si no se da, la del propio evento)
+function moverCursorPdf(ev, frac, centrar) {
   if (!posiciones || !paginasPdf.length || !ev) return;
   const c = posiciones.compases[ev.compas]; if (!c) return;
   paginasPdf.forEach((pg, i) => { if (i !== c.p) pg.cursor.style.display = 'none'; });
   const pg = paginasPdf[c.p]; if (!pg) return;
-  const frac = Math.max(0, Math.min(1, ev.frac || 0));
+  frac = Math.max(0, Math.min(1, frac ?? ev.frac ?? 0));
   const s = pg.cursor.style;
   s.display = 'block'; s.left = ((c.x0 + frac * (c.x1 - c.x0)) * 100) + '%'; s.width = '1.6%';
   s.top = (c.y0 * 100) + '%'; s.height = ((c.y1 - c.y0) * 100) + '%';
-  enfocar(pg.cursor);
+  if (centrar) enfocar(pg.cursor);
+}
+// Fracción del compás en la que va la barra en el instante "ahora" (segundos reales): entre el evento i y el
+// siguiente se desliza de forma continua, hasta el final del compás si el siguiente evento ya es de otro compás
+function fraccionPdf(i, ahora, f) {
+  const e = eventos[i], n = eventos[i + 1];
+  if (!e) return 0;
+  if (!n || n.seg <= e.seg) return e.frac;
+  const destino = n.compas === e.compas ? n.frac : 1;
+  const t = Math.max(0, Math.min(1, (ahora - e.seg / f) / ((n.seg - e.seg) / f)));
+  return e.frac + (destino - e.frac) * t;
 }
 // Lleva el cursor a la vista desplazando SOLO esta página (scrollIntoView arrastraría también a la página
 // que nos contiene cuando la app va dentro del Gestor de obras)
@@ -296,7 +307,7 @@ function construirEventos() {
       if (sm && tsm && sm.Duration.RealValue > 0) frac = (tsm.RealValue - sm.AbsoluteTimestamp.RealValue) / sm.Duration.RealValue;
     } catch {}
     eventos.push({ paso, seg: segundos, compas: it.CurrentMeasureIndex, frac, notas });
-    osmd.cursor.next(); paso++;
+    it.moveToNextVisibleVoiceEntry(false); paso++; // mismo avance que cursor.next(), pero sin redibujar el cursor a cada paso
   }
   osmd.cursor.reset();
   if (eventos.length) console.log('Eventos:', eventos.length, 'duración', segundos.toFixed(1), 's · primera nota midi', eventos.find(e => e.notas.length)?.notas[0].midi, '· desdobles', divisi.map(d => d.size).join('/'));
@@ -310,15 +321,23 @@ function irACompas(compas) {
   indiceEvento = i; compasInicio = i;
   moverCursor(i);
 }
-function moverCursor(i) {
-  osmd.cursor.reset();
-  for (let k = 0; k < i; k++) osmd.cursor.next();
-  osmd.cursor.update();
+// Cursor de OSMD en el paso i. Avanza desde donde estaba (cada paso es un movimiento del iterador, sin redibujar)
+// y solo vuelve al principio si hay que retroceder o si OSMD ha creado otro iterador (reset, nueva carga…).
+let cursorPos = 0, cursorIt = null;
+function situarCursor(i, dibujar) {
+  if (osmd.cursor.iterator !== cursorIt || i < cursorPos) { osmd.cursor.reset(); cursorIt = osmd.cursor.iterator; cursorPos = 0; }
+  while (cursorPos < i && !cursorIt.EndReached) { cursorIt.moveToNextVisibleVoiceEntry(false); cursorPos++; }
+  if (dibujar) osmd.cursor.update();
+}
+function moverCursor(i, frac) {
+  situarCursor(i, !modoPdf);
   $('compas').textContent = (eventos[i]?.compas ?? 0) + 1;
-  if (modoPdf) { moverCursorPdf(eventos[i]); return; }
+  if (modoPdf) { moverCursorPdf(eventos[i], frac, true); return; }
   const el = osmd.cursor.cursorElement;
   if (el) enfocar(el);
 }
+// Segundos reales entre el reloj del audio y lo que se oye por el altavoz (en el móvil puede ser apreciable)
+const latenciaAudio = () => (ctx && (ctx.outputLatency || ctx.baseLatency)) || 0;
 
 // ---------- Audio ----------
 async function prepararAudio() {
@@ -401,13 +420,15 @@ let cursorEn = -1;
 function seguirCursor() {
   if (!reproduciendo) return;
   const f = factorTempo();
-  const ahora = ctx.currentTime - tInicio + tOffset;
+  // lo que se oye ahora mismo: el reloj del audio menos lo que tarda el sonido en salir por el altavoz
+  const ahora = ctx.currentTime - latenciaAudio() - tInicio + tOffset;
   // último evento cuyo tiempo ya ha pasado, dentro del tramo en curso
   let i = cursorEn < 0 ? 0 : cursorEn;
   const b = rangoBucle(); const fin = b ? b.fin : eventos.length; const ini = b ? b.ini : 0;
   if (i < ini || i >= fin) i = ini;
   while (i + 1 < fin && eventos[i + 1].seg / f <= ahora) i++;
-  if (i !== cursorEn) { cursorEn = i; moverCursor(i); }
+  if (i !== cursorEn) { cursorEn = i; moverCursor(i, modoPdf ? fraccionPdf(i, ahora, f) : undefined); }
+  else if (modoPdf) moverCursorPdf(eventos[i], fraccionPdf(i, ahora, f), false); // en el PDF la barra se desliza entre evento y evento
   raf = requestAnimationFrame(seguirCursor);
 }
 
