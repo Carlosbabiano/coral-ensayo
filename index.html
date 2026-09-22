@@ -24,7 +24,9 @@
   .voces { display: flex; flex-wrap: wrap; gap: 6px; }
   .voces button { flex: 1 1 auto; min-width: 4.5em; padding: 10px 6px; border: 1px solid var(--line); background: #fff; border-radius: 10px; font: inherit; font-weight: 600; color: var(--fg); white-space: nowrap; }
   .voces button.activa { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
-  #partitura { padding: 8px 4px 220px; min-height: 60vh; position: relative; }
+  /* Sin relleno lateral: OSMD dibuja el SVG al ancho del contenedor (relleno incluido) y el cursor se coloca en esos
+     píxeles; si el SVG se encogiera para caber (max-width), el cursor se iría descuadrando hacia abajo y a la derecha */
+  #partitura { padding: 8px 0 220px; min-height: 60vh; position: relative; }
   /* Modo Corregir (para el director): barra dentro de la cabecera, que ya es fija */
   #barraCorregir { flex-basis: 100%; background: #fff7e6; border: 1px solid #f3dcae; border-radius: 10px; padding: 6px 10px; font-size: 14px; }
   #barraCorregir .fila { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
@@ -53,7 +55,7 @@
   .vista button.activa { background: var(--soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
   #pdfVista { display: none; padding: 8px 4px 220px; }
   .pagina { position: relative; margin: 0 auto 10px; box-shadow: 0 1px 6px rgba(0,0,0,.15); background: #fff; }
-  .pagina img { display: block; width: 100%; height: auto; }
+  .pagina img { display: block; width: 100%; height: auto; aspect-ratio: auto 1 / 1.414; } /* hueco A4 mientras carga */
   .pagina .capa { position: absolute; inset: 0; }
   .pdfCursor { position: absolute; background: rgba(227,155,44,.35); border-left: 2px solid #e39b2c; pointer-events: none; }
 </style>
@@ -217,7 +219,9 @@ async function cargarPdf() {
   const anchoCss = Math.min(cont.clientWidth - 8, 900);
   obraActual.paginas.forEach((archivo, n) => {
     const div = document.createElement('div'); div.className = 'pagina'; div.style.width = anchoCss + 'px';
-    const img = document.createElement('img'); img.src = 'partituras/' + archivo; img.alt = 'Página ' + (n + 1); img.decoding = 'async'; img.loading = n < 2 ? 'eager' : 'lazy';
+    // Todas las páginas se cargan ya: si una página de más abajo aún no tiene imagen, mide 0 de alto y la barra
+    // (que se coloca en % de la página) cae en cualquier sitio; además, al cargarse después desplaza lo demás
+    const img = document.createElement('img'); img.src = 'partituras/' + archivo; img.alt = 'Página ' + (n + 1); img.decoding = 'async';
     const capa = document.createElement('div'); capa.className = 'capa'; capa.dataset.pagina = n;
     capa.addEventListener('click', ev => {
       const r = capa.getBoundingClientRect(); const fx = (ev.clientX - r.left) / r.width, fy = (ev.clientY - r.top) / r.height;
