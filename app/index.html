@@ -102,6 +102,7 @@
         <option value="flute">Flauta</option>
       </select>
     </label>
+    <span id="version" title="Versión de la app instalada en este dispositivo" style="margin-left:auto;font-size:12px;opacity:.55;align-self:center"></span>
   </div>
 </div>
 
@@ -684,8 +685,18 @@ for (const ev of ['touchend', 'pointerup', 'click']) document.addEventListener(e
 $('pantalla').onclick = () => setTimeout(() => { if (!pantallaActiva()) alert('No se puede mantener la pantalla encendida.\n\n' + (errorPantalla || 'Esperando respuesta del sistema… vuelve a tocar el icono.') + '\n\nSi el móvil está en modo de bajo consumo, desactívalo y vuelve a tocar el icono.'); }, 800);
 mantenerPantalla();
 
+// Versión de la app que tiene este dispositivo: el nombre de la caché del service worker ("coral-vNN"); si aún no
+// hay caché (primera visita, o navegador sin service worker), la que dice el sw.js del servidor
+async function mostrarVersion() {
+  let v = '';
+  try { const ks = (await caches.keys()).map(k => (k.match(/^coral-v(\d+)$/) || [])[1]).filter(Boolean).map(Number); if (ks.length) v = 'v' + Math.max(...ks); } catch {}
+  if (!v) { try { v = ((await (await fetch('sw.js', { cache: 'no-store' })).text()).match(/coral-v(\d+)/) || [])[1]; v = v ? 'v' + v : ''; } catch {} }
+  $('version').textContent = v;
+}
+mostrarVersion();
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").then(reg => { try { reg.update(); } catch {} }).catch(e => console.warn("Sin modo offline:", e));
+  navigator.serviceWorker.addEventListener("controllerchange", () => setTimeout(mostrarVersion, 1500));
   // Cuando se instala una versión nueva de la app, recargar una vez para usarla
   let recargado = false; const habiaControlador = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (recargado || !habiaControlador) return; recargado = true; if (!reproduciendo) location.reload(); });
