@@ -6864,12 +6864,27 @@
 				<accidental>sharp</accidental>
 				<stem>up</stem>
 				<staff>1</staff>
+				<tie type="start" />
+				<notations><tied type="start" /></notations>
 			</note>
 		</measure>
 		<measure number="45">
 			<attributes>
 				<divisions>1</divisions>
 			</attributes>
+			<note>
+				<pitch>
+					<step>A</step>
+					<alter>1</alter>
+					<octave>4</octave>
+				</pitch>
+				<duration>4</duration>
+				<voice>1</voice>
+				<type>whole</type>
+				<staff>1</staff>
+				<tie type="stop" />
+				<notations><tied type="stop" /><fermata /></notations>
+			</note>
 			<barline location="right">
 				<bar-style>light-heavy</bar-style>
 			</barline>
