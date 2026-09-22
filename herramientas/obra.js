@@ -12,6 +12,7 @@ const CACHE_AUDIVERIS = path.join(__dirname, 'cache', 'audiveris');
 
 const { transplantar } = require('./letra.js');
 const { posiciones } = require('./posiciones.js');
+const { posicionesImagen } = require('./posiciones-imagen.js');
 const { generarPaginas } = require('./paginas.js');
 const AUDIVERIS = 'C:\\Program Files\\Audiveris\\Audiveris.exe';
 const IDIOMA_OCR = process.env.LETRA_IDIOMA || 'spa+eng'; // idiomas para leer la letra (spa, ita, fra, lat, eng)
@@ -277,9 +278,13 @@ function prepararObra({ xml: rutaXml, pdf: rutaPdf = null, dirSalida, log = cons
         xml = r.salida;
         for (const l of r.informe) log('  letra ' + l);
       }
-      const pos = posiciones(xml, audXml);
-      fs.writeFileSync(path.join(dirSalida, base + '.pos.json'), JSON.stringify(pos));
       entrada.paginas = generarPaginas(pdf, dirSalida, base);
+      // Dónde está cada compás en la página: mirando la imagen (exacto); si no cuadra con el XML, con la
+      // maquetación aproximada de Audiveris
+      let pos;
+      try { pos = posicionesImagen(xml, entrada.paginas.map(p => path.join(dirSalida, p)), log); log('  Compases localizados en la imagen de cada página.'); }
+      catch (e) { log('  ! No se han podido localizar los compases en la imagen (' + e.message + '): se usa la maquetación de Audiveris, menos exacta.'); pos = posiciones(xml, audXml); }
+      fs.writeFileSync(path.join(dirSalida, base + '.pos.json'), JSON.stringify(pos));
       entrada.posiciones = base + '.pos.json';
       log(`  Página original incorporada (${entrada.paginas.length} imagen(es)); vista "PDF original" disponible.`);
     } catch (e) { log('  ! No se ha podido sacar la letra del PDF: ' + e.message.split('\n')[0]); }
