@@ -3247,6 +3247,10 @@
 			</barline>
 		</measure>
 		<measure number="46">
+			<barline location="left">
+				<bar-style>heavy-light</bar-style>
+				<repeat direction="forward"/>
+			</barline>
 			<attributes>
 				<divisions>2</divisions>
 			</attributes>
@@ -4272,9 +4276,6 @@
 					<text>pe,</text>
 				</lyric>
 			</note>
-			<barline location="right">
-				<ending number="1, 2" type="stop"/>
-			</barline>
 		</measure>
 		<measure number="57">
 			<attributes>
@@ -4357,10 +4358,14 @@
 			</note>
 			<barline location="right">
 				<bar-style>light-heavy</bar-style>
+				<ending number="1, 2" type="stop"/>
 				<repeat direction="backward"/>
 			</barline>
 		</measure>
 		<measure number="59">
+			<barline location="left">
+				<ending number="3" type="start"/>
+			</barline>
 			<attributes>
 				<divisions>2</divisions>
 			</attributes>
@@ -4505,6 +4510,9 @@
 					<text>so,</text>
 				</lyric>
 			</note>
+			<barline location="right">
+				<ending number="3" type="stop"/>
+			</barline>
 		</measure>
 		<measure number="61">
 			<attributes>
@@ -7829,6 +7837,10 @@
 			</barline>
 		</measure>
 		<measure number="46">
+			<barline location="left">
+				<bar-style>heavy-light</bar-style>
+				<repeat direction="forward"/>
+			</barline>
 			<attributes>
 				<divisions>2</divisions>
 			</attributes>
@@ -8887,9 +8899,6 @@
 					<text>pe,</text>
 				</lyric>
 			</note>
-			<barline location="right">
-				<ending number="1, 2" type="stop"/>
-			</barline>
 		</measure>
 		<measure number="57">
 			<attributes>
@@ -8984,10 +8993,14 @@
 			</note>
 			<barline location="right">
 				<bar-style>light-heavy</bar-style>
+				<ending number="1, 2" type="stop"/>
 				<repeat direction="backward"/>
 			</barline>
 		</measure>
 		<measure number="59">
+			<barline location="left">
+				<ending number="3" type="start"/>
+			</barline>
 			<attributes>
 				<divisions>2</divisions>
 			</attributes>
@@ -9132,6 +9145,9 @@
 					<text>so,</text>
 				</lyric>
 			</note>
+			<barline location="right">
+				<ending number="3" type="stop"/>
+			</barline>
 		</measure>
 		<measure number="61">
 			<attributes>
@@ -12640,6 +12656,10 @@
 			</barline>
 		</measure>
 		<measure number="46">
+			<barline location="left">
+				<bar-style>heavy-light</bar-style>
+				<repeat direction="forward"/>
+			</barline>
 			<attributes>
 				<divisions>2</divisions>
 			</attributes>
@@ -13870,9 +13890,6 @@
 					<text>pe,</text>
 				</lyric>
 			</note>
-			<barline location="right">
-				<ending number="1, 2" type="stop"/>
-			</barline>
 		</measure>
 		<measure number="57">
 			<attributes>
@@ -13967,10 +13984,14 @@
 			</note>
 			<barline location="right">
 				<bar-style>light-heavy</bar-style>
+				<ending number="1, 2" type="stop"/>
 				<repeat direction="backward"/>
 			</barline>
 		</measure>
 		<measure number="59">
+			<barline location="left">
+				<ending number="3" type="start"/>
+			</barline>
 			<attributes>
 				<divisions>2</divisions>
 			</attributes>
@@ -14115,6 +14136,9 @@
 					<text>so,</text>
 				</lyric>
 			</note>
+			<barline location="right">
+				<ending number="3" type="stop"/>
+			</barline>
 		</measure>
 		<measure number="61">
 			<attributes>
@@ -17167,6 +17191,10 @@
 			</barline>
 		</measure>
 		<measure number="46">
+			<barline location="left">
+				<bar-style>heavy-light</bar-style>
+				<repeat direction="forward"/>
+			</barline>
 			<attributes>
 				<divisions>2</divisions>
 			</attributes>
@@ -18303,9 +18331,6 @@
 					<text>ver</text>
 				</lyric>
 			</note>
-			<barline location="right">
-				<ending number="1, 2" type="stop"/>
-			</barline>
 		</measure>
 		<measure number="57">
 			<attributes>
@@ -18404,10 +18429,14 @@
 			</note>
 			<barline location="right">
 				<bar-style>light-heavy</bar-style>
+				<ending number="1, 2" type="stop"/>
 				<repeat direction="backward"/>
 			</barline>
 		</measure>
 		<measure number="59">
+			<barline location="left">
+				<ending number="3" type="start"/>
+			</barline>
 			<attributes>
 				<divisions>2</divisions>
 			</attributes>
@@ -18575,6 +18604,9 @@
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff></note>
+			<barline location="right">
+				<ending number="3" type="stop"/>
+			</barline>
 		</measure>
 		<measure number="61">
 			<attributes>
