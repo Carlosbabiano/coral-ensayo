@@ -21,8 +21,8 @@
   header h1 { font-size: 16px; margin: 0; font-weight: 600; flex: 1 1 auto; display: flex; align-items: center; gap: 10px; }
   header h1 img { width: 40px; height: 40px; border-radius: 50%; }
   select, input[type=number] { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--fg); }
-  .voces { display: flex; gap: 6px; }
-  .voces button { flex: 1; padding: 10px 0; border: 1px solid var(--line); background: #fff; border-radius: 10px; font: inherit; font-weight: 600; color: var(--fg); }
+  .voces { display: flex; flex-wrap: wrap; gap: 6px; }
+  .voces button { flex: 1 1 auto; min-width: 4.5em; padding: 10px 6px; border: 1px solid var(--line); background: #fff; border-radius: 10px; font: inherit; font-weight: 600; color: var(--fg); white-space: nowrap; }
   .voces button.activa { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
   #partitura { padding: 8px 4px 220px; min-height: 60vh; position: relative; }
   /* Modo Corregir (para el director): barra dentro de la cabecera, que ya es fija */
@@ -115,6 +115,9 @@ const UNIT = 10; // OSMD dibuja en unidades de 10 px a zoom 1
 
 // ---------- Estado ----------
 let osmd, eventos = [], vozActiva = 0, instrumento = null, ctx = null;
+// Desdobles: subvoz activa (0 = el pentagrama entero, 1 = la de arriba, 2 = la de abajo) y, por pentagrama,
+// los compases en los que hay una segunda subvoz (acorde o voz 2 del MusicXML)
+let subActiva = 0, divisi = [];
 let reproduciendo = false, indiceEvento = 0, tInicio = 0, tOffset = 0, timerPlan = null, raf = null;
 let sonando = []; // notas en curso para poder cortarlas al parar
 let compasInicio = 0;
@@ -142,9 +145,8 @@ async function cargarObra(archivo) {
   }
   if (modoCorregir) await cargarParaCorregir(archivo); else await osmd.load('partituras/' + archivo);
   osmd.Zoom = window.innerWidth < 600 ? 0.55 : 0.8;
-  crearBotonesVoces();
   osmd.render();
-  construirEventos();
+  construirEventos(); // también crea los botones de las voces (necesita saber dónde hay desdobles)
   osmd.cursor.show();
   // ¿Tiene PDF original con posiciones de compases?
   obraActual = listaObras.find(o => o.archivo === archivo) || {};
@@ -216,17 +218,36 @@ $('vistaPartitura').onclick = async () => { if (!modoPdf) return; modoPdf = fals
 $('vistaPdf').onclick = async () => { if (modoPdf) return; modoPdf = true; await aplicarModo(); moverCursor(indiceEvento); };
 try { modoPdf = localStorage.getItem('modoPdf') === '1'; } catch {}
 
+// Un botón por pentagrama; si el pentagrama se desdobla en dos o más compases (Contralto 1 / Contralto 2…), dos botones
 function crearBotonesVoces() {
   const cont = $('voces'); cont.innerHTML = '';
-  osmd.Sheet.Instruments.forEach((ins, i) => {
-    const b = document.createElement('button');
-    b.textContent = ins.Name || ('Voz ' + (i + 1));
-    b.onclick = () => { vozActiva = i; marcarVoz(); };
-    cont.appendChild(b);
+  const instrumentos = osmd.Sheet.Instruments;
+  if (vozActiva >= instrumentos.length) vozActiva = 0;
+  instrumentos.forEach((ins, i) => {
+    const nombre = ins.Name || ('Voz ' + (i + 1));
+    const subs = seDesdobla(i) ? [1, 2] : [0];
+    for (const sub of subs) {
+      const b = document.createElement('button');
+      b.textContent = sub ? nombre + ' ' + sub : nombre;
+      b.dataset.parte = i; b.dataset.sub = sub;
+      b.onclick = () => { vozActiva = i; subActiva = sub; marcarVoz(); };
+      cont.appendChild(b);
+    }
   });
+  // que la selección siga siendo válida al cambiar de obra (o tras corregir notas)
+  if (seDesdobla(vozActiva)) { if (!subActiva) subActiva = 1; } else subActiva = 0;
   marcarVoz();
 }
-function marcarVoz() { [...$('voces').children].forEach((b, i) => b.classList.toggle('activa', i === vozActiva)); }
+const seDesdobla = parte => (divisi[parte] ? divisi[parte].size : 0) >= 2;
+function marcarVoz() { [...$('voces').children].forEach(b => b.classList.toggle('activa', +b.dataset.parte === vozActiva && +b.dataset.sub === subActiva)); }
+// ¿Esta nota es de la voz que se ensaya? En un pentagrama desdoblado, la subvoz 2 canta lo mismo que la 1 en los
+// compases sin desdoble (unísono), así que ahí también cuenta como suya.
+function esMia(n, compas) {
+  if (n.parte !== vozActiva) return false;
+  if (!subActiva) return true;
+  if (n.sub === subActiva) return true;
+  return subActiva === 2 && !divisi[n.parte].has(compas);
+}
 
 
 // ---------- Eventos musicales a partir del cursor de OSMD ----------
@@ -238,6 +259,11 @@ function construirEventos() {
   const it = osmd.cursor.iterator; // ojo: reset() crea un iterador nuevo
   let segundos = 0, tsAnterior = it.CurrentEnrolledTimestamp.RealValue;
   const bpmDefecto = osmd.Sheet.DefaultStartTempoInBpm || 80;
+  // Orden de las voces del MusicXML dentro de cada pentagrama (la primera es la de arriba, aunque el XML use otros números)
+  const ordenVoz = osmd.Sheet.Instruments.map(ins => {
+    const o = {}; [...new Set((ins.Voices || []).map(v => v.VoiceId))].sort((a, b) => a - b).forEach((id, k) => o[id] = k + 1); return o;
+  });
+  divisi = osmd.Sheet.Instruments.map(() => new Set());
   let paso = 0;
   let guarda = 0;
   while (!it.EndReached && guarda++ < 20000) {
@@ -249,12 +275,17 @@ function construirEventos() {
     for (const ve of it.CurrentVoiceEntries) {
       if (ve.IsGrace) continue;
       const parte = osmd.Sheet.Instruments.indexOf(ve.ParentVoice.Parent);
-      for (const n of ve.Notes) {
-        if (!n.Pitch || n.isRest()) continue;
+      const subVoz = Math.min(2, ordenVoz[parte][ve.ParentVoice.VoiceId] || 1);
+      // Subvoz de cada nota: la voz 2 del XML es la de abajo; en un acorde, la nota más aguda es la de arriba y el resto la de abajo
+      const sonoras = ve.Notes.filter(n => n.Pitch && !n.isRest());
+      const masAguda = sonoras.reduce((m, n) => (!m || n.Pitch.halfTone > m.Pitch.halfTone ? n : m), null);
+      for (const n of sonoras) {
+        const sub = subVoz === 2 ? 2 : (sonoras.length > 1 && n !== masAguda ? 2 : 1);
+        if (sub === 2) divisi[parte].add(it.CurrentMeasureIndex);
         if (n.NoteTie && n.NoteTie.StartNote !== n) continue; // nota ligada: no se vuelve a atacar
         let dur = n.Length.RealValue;
         if (n.NoteTie) dur = n.NoteTie.Notes.reduce((s, x) => s + x.Length.RealValue, 0);
-        notas.push({ parte, midi: n.Pitch.halfTone + 12, dur: dur * 4 * 60 / bpm });
+        notas.push({ parte, sub, midi: n.Pitch.halfTone + 12, dur: dur * 4 * 60 / bpm });
       }
     }
     // posición dentro del compás (0..1), para la marca en la vista PDF
@@ -268,7 +299,8 @@ function construirEventos() {
     osmd.cursor.next(); paso++;
   }
   osmd.cursor.reset();
-  if (eventos.length) console.log('Eventos:', eventos.length, 'duración', segundos.toFixed(1), 's · primera nota midi', eventos.find(e => e.notas.length)?.notas[0].midi);
+  if (eventos.length) console.log('Eventos:', eventos.length, 'duración', segundos.toFixed(1), 's · primera nota midi', eventos.find(e => e.notas.length)?.notas[0].midi, '· desdobles', divisi.map(d => d.size).join('/'));
+  crearBotonesVoces();
 }
 
 function irACompas(compas) {
@@ -347,7 +379,7 @@ function planificar() {
     const e = eventos[indiceEvento];
     const t = tInicio + e.seg / f - tOffset;
     for (const n of e.notas) {
-      const vel = n.parte === vozActiva ? 110 : Math.round(110 * mezcla);
+      const vel = esMia(n, e.compas) ? 110 : Math.round(110 * mezcla);
       if (vel <= 0) continue;
       const stop = instrumento.start({ note: n.midi, velocity: vel, time: t, duration: Math.max(0.05, n.dur / f - 0.03) });
       sonando.push(stop);
