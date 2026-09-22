@@ -1726,6 +1726,20 @@
           <text>mus</text>
         </lyric></note>
 			<note>
+				<chord />
+				<pitch>
+					<step>A</step>
+					<alter>0</alter>
+					<octave>4</octave>
+				</pitch>
+				<duration>1</duration>
+				<voice>1</voice>
+				<type>eighth</type>
+				<stem>up</stem>
+				<staff>1</staff>
+				<beam number="1">begin</beam>
+			</note>
+			<note>
 				<pitch>
 					<step>C</step>
 					<alter>1</alter>
@@ -1855,20 +1869,6 @@
 				<staff>1</staff>
 				<beam number="1">end</beam>
 			</note>
-			<backup>
-				<duration>6</duration>
-			</backup>
-			<note>
-				<pitch>
-					<step>A</step>
-					<alter>0</alter>
-					<octave>4</octave>
-				</pitch>
-				<duration>2</duration>
-				<voice>2</voice>
-				<type>quarter</type>
-				<stem>down</stem>
-				<staff>1</staff></note>
 		</measure>
 		<measure number="24">
 			<attributes>
@@ -2024,6 +2024,20 @@
           <text>mus</text>
         </lyric></note>
 			<note>
+				<chord />
+				<pitch>
+					<step>A</step>
+					<alter>0</alter>
+					<octave>4</octave>
+				</pitch>
+				<duration>1</duration>
+				<voice>1</voice>
+				<type>eighth</type>
+				<stem>up</stem>
+				<staff>1</staff>
+				<beam number="1">begin</beam>
+			</note>
+			<note>
 				<pitch>
 					<step>C</step>
 					<alter>1</alter>
@@ -2151,21 +2165,6 @@
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam>
-			</note>
-			<backup>
-				<duration>6</duration>
-			</backup>
-			<note>
-				<pitch>
-					<step>A</step>
-					<alter>0</alter>
-					<octave>4</octave>
-				</pitch>
-				<duration>2</duration>
-				<voice>2</voice>
-				<type>quarter</type>
-				<stem>down</stem>
-				<staff>1</staff>
 			</note>
 		</measure>
 		<measure number="26">
