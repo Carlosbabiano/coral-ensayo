@@ -2583,12 +2583,12 @@
 			<note>
 				<pitch>
 					<step>F</step>
-					<alter>1</alter>
+					<alter>2</alter>
 					<octave>4</octave>
 				</pitch>
 				<duration>2</duration>
 				<voice>1</voice>
-				<type>eighth</type>
+				<type>eighth</type><accidental>double-sharp</accidental>
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam><lyric number="1" placement="below">
@@ -11976,12 +11976,12 @@
 			<note>
 				<pitch>
 					<step>F</step>
-					<alter>1</alter>
+					<alter>2</alter>
 					<octave>3</octave>
 				</pitch>
 				<duration>1</duration>
 				<voice>1</voice>
-				<type>eighth</type>
+				<type>eighth</type><accidental>double-sharp</accidental>
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam><lyric number="1" placement="below">
