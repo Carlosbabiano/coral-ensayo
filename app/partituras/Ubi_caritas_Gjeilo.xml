@@ -2649,7 +2649,7 @@
 				</pitch>
 				<duration>2</duration>
 				<voice>1</voice>
-				<type>eighth</type>
+				<type>eighth</type><accidental>double-sharp</accidental>
 				<stem>up</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam><lyric number="1" placement="below">
@@ -12027,7 +12027,7 @@
 				</pitch>
 				<duration>1</duration>
 				<voice>1</voice>
-				<type>eighth</type>
+				<type>eighth</type><accidental>double-sharp</accidental>
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">begin</beam><lyric number="1" placement="below">
@@ -12042,7 +12042,7 @@
 				</pitch>
 				<duration>1</duration>
 				<voice>1</voice>
-				<type>eighth</type>
+				<type>eighth</type><accidental>double-sharp</accidental>
 				<stem>down</stem>
 				<staff>1</staff>
 				<beam number="1">end</beam><lyric number="1" placement="below">
