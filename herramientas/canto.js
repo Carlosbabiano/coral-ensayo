@@ -181,7 +181,58 @@ async function convertirAMp3(origen, destino) {
   return destino;
 }
 
+// ---------- Canto automático (DiffSinger, gratuito, sin programas externos) ----------
+const DIR_CACHE_VOCES = path.join(__dirname, 'cache', 'voces');
+let cantanteActual = null; // { voz, cantante } cargados una vez por proceso
+function estadoCantante() { return require('./cantante/instalar.js').estado(DIR_CACHE_VOCES); }
+function instalarCantante(log) { return require('./cantante/instalar.js').instalar(DIR_CACHE_VOCES, log); }
+// Idioma probable de la letra: latín si abundan palabras típicas
+function detectarIdioma(datos) {
+  const palabras = (datos.pistas || []).flatMap(p => p.notas.map(n => n.letra && n.letra.palabra).filter(Boolean)).map(w => String(w).toLowerCase().replace(/[^a-záéíóúñ]/g, ''));
+  if (!palabras.length) return 'es';
+  const latinas = new Set(['et', 'in', 'ubi', 'deus', 'deum', 'dei', 'dominus', 'domine', 'sanctus', 'gloria', 'ave', 'amen', 'kyrie', 'christe', 'eleison', 'agnus', 'caritas', 'est', 'nos', 'cum', 'qui', 'quae', 'tuum', 'tua', 'benedictus', 'hosanna', 'excelsis', 'pater', 'noster', 'maria', 'jesus', 'iesus', 'alleluia', 'gratia', 'plena', 'nobis', 'pacem', 'sicut', 'per', 'omnia', 'saecula', 'saeculorum', 'spiritus', 'sancti', 'filii', 'patris', 'laudamus', 'te', 'regina', 'caeli', 'coeli', 'mater', 'salve', 'vitae', 'mortis', 'nostrae', 'hora']);
+  let puntos = 0;
+  for (const w of palabras) { if (latinas.has(w)) puntos += 2; else if (/(us|um|orum|arum|ibus|tur|nt)$/.test(w)) puntos += 1; }
+  return puntos / palabras.length > 0.35 ? 'la' : 'es';
+}
+// Voz por cuerda: la voz es femenina; para tenores y bajos se bajan los formantes (parámetro "género" de DiffSinger)
+function ajustesDeVoz(nombrePista) {
+  const n = String(nombrePista).toLowerCase();
+  if (/bajo|bass|bar[ií]tono/.test(n)) return { genero: 65 };
+  if (/tenor/.test(n)) return { genero: 55 };
+  if (/contralto|alto|mezzo/.test(n)) return { genero: 12 };
+  return { genero: 0 };
+}
+// Canta todas las pistas de los datos en la carpeta (un WAV por pista, con el nombre del proyecto) y devuelve el estado
+async function cantarPistas(dir, datos, { idioma, log = () => {}, alAvanzar = () => {}, maxFrases = +process.env.CANTO_MAX_FRASES || 0 } = {}) {
+  const est = estadoCantante();
+  if (!est.voz || !est.diccionario) throw new Error('La voz del cantante no está instalada');
+  idioma = idioma || detectarIdioma(datos);
+  const estadoProyectos = prepararProyectos(dir, datos); // también deja los .svp/.mid por si se quieren usar
+  if (!cantanteActual) {
+    const { Voz } = require('./cantante/voz.js'); const { Cantante } = require('./cantante/diffsinger.js');
+    const voz = new Voz(est.dirVoz);
+    cantanteActual = { voz, cantante: new Cantante(voz, { rutaDiccionario: path.join(est.dirDiccionario, 'dict.txt'), log }) };
+  }
+  cantanteActual.cantante.log = log;
+  const { escribirWav } = require('./cantante/diffsinger.js');
+  const pistas = estadoProyectos.pistas;
+  log(`Cantando ${pistas.length} voces en ${idioma === 'la' ? 'latín' : 'castellano'} con la voz ${cantanteActual.voz.nombre}…`);
+  for (let i = 0; i < pistas.length; i++) {
+    const p = pistas[i];
+    const pista = datos.pistas.find(x => x.nombre === p.nombre);
+    let notas = pista.notas;
+    if (maxFrases) { const c = cantanteActual.cantante; const fr = c.frases(c.palabras(notas, datos.bpm)).slice(0, maxFrases); const fin = Math.max(...fr.flatMap(f => f.palabras.flatMap(x => x.notas.map(n => n.finMs)))); notas = notas.filter(n => n.q * 60000 / datos.bpm < fin - 1); }
+    log(`— ${p.nombre} (${notas.length} notas)`);
+    const t0 = Date.now();
+    const onda = await cantanteActual.cantante.cantarPista({ notas, bpm: datos.bpm, idioma, ...ajustesDeVoz(p.nombre), alAvanzar: f => alAvanzar((i + f) / pistas.length) });
+    escribirWav(path.join(dir, p.base + '.wav'), onda);
+    log(`  ${p.nombre} lista en ${((Date.now() - t0) / 1000).toFixed(0)} s`);
+  }
+  return estadoCarpeta(dir);
+}
+
 // Nombre del MP3 de una voz dentro de la obra: <base de la obra>.canto.<voz>.mp3
 const archivoCanto = (baseObra, nombrePista) => `${baseObra}.canto.${slug(nombrePista)}.mp3`;
 
-module.exports = { notasPista, svpDe, midiDe, prepararProyectos, estadoCarpeta, convertirAMp3, archivoCanto, slug, EXT_AUDIO };
+module.exports = { notasPista, svpDe, midiDe, prepararProyectos, estadoCarpeta, convertirAMp3, archivoCanto, slug, EXT_AUDIO, estadoCantante, instalarCantante, cantarPistas, detectarIdioma, ajustesDeVoz };

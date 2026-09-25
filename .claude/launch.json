@@ -31,6 +31,15 @@
         "set PUERTO=5181&& set GESTOR_SIN_INTERNET=1&& set GESTOR_SIN_NAVEGADOR=1&& node herramientas/gestor.js"
       ],
       "port": 5181
+    },
+    {
+      "name": "gestor-prueba-corto",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": [
+        "/c",
+        "set PUERTO=5182&& set GESTOR_SIN_INTERNET=1&& set GESTOR_SIN_NAVEGADOR=1&& set CANTO_MAX_FRASES=2&& node herramientas/gestor.js"
+      ],
+      "port": 5182
     }
   ]
 }

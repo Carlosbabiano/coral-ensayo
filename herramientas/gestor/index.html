@@ -270,18 +270,25 @@ function pintarPanel() {
     const c = b.canto || { actual: [], preparado: null };
     html += `<div class="tarjeta"><h4>Voces cantadas (canto sintético)</h4>`;
     if (c.actual.length) html += `<div class="aviso bien">La obra lleva voces cantadas: ${c.actual.map(x => esc(x.nombre)).join(', ')}. En la previsualización, elige el sonido «Voces cantadas» para oírlas.</div>`;
-    else html += `<div class="ayuda">Un programa de canto sintético (Synthesizer V) puede cantar la letra de cada voz. Aquí se preparan los proyectos, tú exportas el audio y luego se incorpora a la obra.</div>`;
+    const ct = estado.cantante || {};
+    if (b.cantando) html += `<div class="aviso"><span class="progreso"></span> Cantando la obra… tarda unos minutos por voz. <span id="cantoAvance"></span></div><pre class="log" id="cantoLog" style="max-height:160px"></pre>`;
+    else if (ct.voz && ct.diccionario) html += `<div class="ayuda">El cantante automático (gratuito, en este PC) canta la letra de cada voz con una voz sintética. Idioma de la letra:
+      <select id="cantoIdioma"><option value="es">Castellano</option><option value="la">Latín</option></select>
+      <button class="principal" id="cantoCantar" style="margin-left:8px">Cantar la obra</button> <span class="ayuda">(unos 3 minutos por cada minuto de música y voz)</span></div>`;
+    else if (ct.instalando) html += `<div class="aviso"><span class="progreso"></span> Instalando la voz del cantante… <pre class="log" id="cantanteLog" style="max-height:120px;margin-top:6px"></pre></div>`;
+    else html += `<div class="aviso">Para que el gestor cante la letra hace falta instalar la voz sintética (550 MB, gratuita, solo una vez): <button id="cantoInstalar">Instalar la voz</button></div>`;
     if (c.preparado) {
       html += `<table class="voces" style="margin-top:8px">`;
       for (const p of c.preparado.pistas) html += `<tr><td><strong>${esc(p.nombre)}</strong></td><td class="d">${p.notas} notas · ${esc(p.svp)}</td><td>${p.audio ? '<span style="color:var(--ok)">audio exportado: ' + esc(p.audio) + '</span>' : '<span style="color:var(--warn)">falta el audio (' + esc(p.base) + '.wav)</span>'}</td></tr>`;
       html += `</table><div class="ayuda" style="margin-top:6px">Carpeta: <code>${esc(c.carpeta)}</code> (dentro tienes LEEME.txt con los pasos).</div>`;
     }
-    html += `<div class="acciones" style="margin:10px 0 0">
+    html += `<details style="margin-top:8px"><summary class="ayuda">Otra opción: cantar con Synthesizer V (programa aparte)</summary><div class="acciones" style="margin:10px 0 0">
       <button id="cantoPreparar">${c.preparado ? 'Volver a preparar' : '1. Preparar para Synthesizer V'}</button>
       ${c.preparado ? '<button class="mini" id="cantoAbrir">Abrir la carpeta</button>' : ''}
       ${c.preparado ? '<button class="principal" id="cantoIncorporar"' + (c.preparado.pistas.some(p => p.audio) ? '' : ' disabled') + '>2. Incorporar las voces exportadas</button>' : ''}
-      ${c.actual.length ? '<span class="hueco"></span><button class="mini peligro" id="cantoQuitar">Quitar las voces cantadas</button>' : ''}
-    </div></div>`;
+    </div></details>
+    ${c.actual.length ? '<div class="acciones" style="margin:8px 0 0"><span class="hueco"></span><button class="mini peligro" id="cantoQuitar">Quitar las voces cantadas</button></div>' : ''}
+    </div>`;
 
     html += `<div class="acciones"><button class="principal" id="publicar">Publicar para el coro</button><span class="ayuda">Se guarda en la app, se sube a internet y los móviles la reciben solos.</span><span class="hueco"></span><button class="peligro" id="descartar">Descartar borrador</button></div>`;
     html += `<div class="tarjeta" style="padding:8px"><div id="barraNota"></div><iframe class="previa" id="previa" src="/borrador/${b.id}/?editor=1&t=${Date.now()}"></iframe></div>`;
@@ -299,6 +306,11 @@ function pintarPanel() {
   for (const a of panel.querySelectorAll('.compases a')) a.onclick = () => revisarCompas(+a.dataset.compas);
   $('revisarBtn') && ($('revisarBtn').onclick = () => { const n = +$('revisarNum').value; if (n) revisarCompas(n); });
   $('cantoPreparar') && ($('cantoPreparar').onclick = prepararCanto);
+  $('cantoCantar') && ($('cantoCantar').onclick = cantarObra);
+  $('cantoInstalar') && ($('cantoInstalar').onclick = instalarVoz);
+  if ($('cantoIdioma')) { const guardado = sessionStorage.getItem('cantoIdioma:' + b.id); if (guardado) $('cantoIdioma').value = guardado; else detectarIdiomaCanto(); }
+  if (b.cantando) seguirCanto(b.id);
+  if (estado.cantante && estado.cantante.instalando) seguirInstalacion();
   $('cantoAbrir') && ($('cantoAbrir').onclick = () => api(`/api/borradores/${b.id}/canto/abrir`, { method: 'POST' }).catch(e => alert(e.message)));
   $('cantoIncorporar') && ($('cantoIncorporar').onclick = () => accionCanto('incorporar', 'Convirtiendo el audio…'));
   $('cantoQuitar') && ($('cantoQuitar').onclick = () => { if (confirm('¿Quitar las voces cantadas de la obra?')) accionCanto('quitar'); });
@@ -599,6 +611,51 @@ async function prepararCanto() {
     borradorActual = await api(`/api/borradores/${b.id}/canto/preparar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
     pintarPanel();
   } catch (e) { alert(e.message); $('cantoPreparar').disabled = false; }
+}
+// El cantante automático: idioma probable de la letra, cantar la obra y seguir el avance
+function datosCantoDePrevia() {
+  const marco = $('previa');
+  try { return marco && marco.contentWindow && marco.contentWindow.datosCanto ? marco.contentWindow.datosCanto() : null; } catch (e) { console.warn(e); return null; }
+}
+async function detectarIdiomaCanto() {
+  const b = borradorActual; const marco = $('previa'); if (!marco || !b) return;
+  const intentar = async () => { const d = datosCantoDePrevia(); if (!d) return false; try { const r = await api(`/api/borradores/${b.id}/canto/idioma`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) }); if ($('cantoIdioma') && !sessionStorage.getItem('cantoIdioma:' + b.id)) $('cantoIdioma').value = r.idioma; } catch {} return true; };
+  if (!(await intentar())) marco.addEventListener('load', () => setTimeout(intentar, 1500), { once: true });
+  $('cantoIdioma').onchange = () => sessionStorage.setItem('cantoIdioma:' + b.id, $('cantoIdioma').value);
+}
+async function cantarObra() {
+  const b = borradorActual;
+  const datos = datosCantoDePrevia();
+  if (!datos) return alert('La previsualización todavía no está lista. Espera a que se vea la partitura y vuelve a intentarlo.');
+  const idioma = $('cantoIdioma').value;
+  $('cantoCantar').disabled = true;
+  try {
+    borradorActual = await api(`/api/borradores/${b.id}/canto/cantar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ datos, idioma }) });
+    pintarPanel();
+  } catch (e) { alert(e.message); $('cantoCantar').disabled = false; }
+}
+function seguirCanto(id) {
+  if (fuente) { fuente.close(); fuente = null; }
+  fuente = new EventSource(`/api/borradores/${id}/eventos`);
+  fuente.onmessage = ev => {
+    const m = JSON.parse(ev.data);
+    if (m.tipo === 'log') { const pre = $('cantoLog'); if (pre) { pre.textContent += m.linea + '\n'; pre.scrollTop = pre.scrollHeight; } }
+    if (m.tipo === 'avance' && $('cantoAvance')) $('cantoAvance').textContent = Math.round(m.fraccion * 100) + ' %';
+    if (m.tipo === 'estado') { fuente.close(); fuente = null; borradorActual = m.borrador; refrescar(); pintarPanel(); }
+  };
+}
+async function instalarVoz() {
+  $('cantoInstalar').disabled = true;
+  try { await api('/api/cantante/instalar', { method: 'POST' }); await refrescar(); pintarPanel(); }
+  catch (e) { alert(e.message); $('cantoInstalar').disabled = false; }
+}
+function seguirInstalacion() {
+  const f = new EventSource('/api/cantante/eventos');
+  f.onmessage = ev => {
+    const m = JSON.parse(ev.data);
+    if (m.tipo === 'log') { const pre = $('cantanteLog'); if (pre) { pre.textContent += m.linea + '\n'; pre.scrollTop = pre.scrollHeight; } }
+    if (m.tipo === 'fin') { f.close(); if (!m.ok) alert('No se pudo instalar la voz: ' + m.error); refrescar().then(pintarPanel); }
+  };
 }
 async function accionCanto(accion, mensaje) {
   const b = borradorActual;

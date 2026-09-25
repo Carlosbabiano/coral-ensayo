@@ -190,6 +190,41 @@ async function incorporarCanto(id) {
   guardarBorrador(b);
   return conCanto(b);
 }
+// El cantante automático: instalar la voz (una vez) y cantar un borrador, ambos en segundo plano con avisos por SSE
+let instalandoVoz = false, cantando = null; // cantando = id del borrador
+async function instalarVozCantante() {
+  if (instalandoVoz) throw new Error('Ya se está instalando la voz');
+  instalandoVoz = true;
+  const log = linea => emitir('cantante', { tipo: 'log', linea });
+  try { await canto.instalarCantante(log); emitir('cantante', { tipo: 'fin', ok: true, estado: canto.estadoCantante() }); }
+  catch (e) { log('X ' + e.message); emitir('cantante', { tipo: 'fin', ok: false, error: e.message }); }
+  finally { instalandoVoz = false; }
+}
+function cantarBorrador(id, datos, idioma) {
+  const b = leerBorrador(id);
+  if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
+  if (cantando) throw new Error('Ya se está cantando otra obra; espera a que termine');
+  const est = canto.estadoCantante();
+  if (!est.voz || !est.diccionario) throw new Error('Primero hay que instalar la voz del cantante');
+  datos.titulo = datos.titulo || b.entrada.titulo;
+  cantando = id;
+  b.cantando = true; b.log.push('Cantando la obra con el cantante automático (' + (idioma === 'la' ? 'latín' : 'castellano') + ')…'); guardarBorrador(b);
+  const registrar = linea => { const bb = leerBorrador(id); if (bb) { bb.log.push(linea); guardarBorrador(bb); } emitir(id, { tipo: 'log', linea }); };
+  (async () => {
+    try {
+      await canto.cantarPistas(dirCanto(id), datos, { idioma, log: registrar, alAvanzar: f => emitir(id, { tipo: 'avance', fraccion: f }) });
+      registrar('Convirtiendo a MP3 e incorporando a la obra…');
+      const bb = await incorporarCanto(id);
+      registrar('Voces cantadas listas: elige el sonido «Voces cantadas» en la previsualización.');
+      const fin = leerBorrador(id); fin.cantando = false; guardarBorrador(fin);
+      emitir(id, { tipo: 'estado', borrador: conCanto(fin) });
+    } catch (e) {
+      registrar('X No se pudo cantar: ' + e.message);
+      const fin = leerBorrador(id); if (fin) { fin.cantando = false; guardarBorrador(fin); emitir(id, { tipo: 'estado', borrador: conCanto(fin) }); }
+    } finally { cantando = null; }
+  })();
+  return conCanto(leerBorrador(id));
+}
 function quitarCanto(id) {
   const b = leerBorrador(id);
   if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
@@ -336,7 +371,7 @@ const servidor = http.createServer(async (req, res) => {
 
     // API
     if (ruta === '/api/estado' && req.method === 'GET') {
-      return json(res, { borradores: listarBorradores().map(resumen), publicadas: obra.leerLista(), publicando, version: obra.versionCache(), raiz: obra.RAIZ, preparando: [...trabajando], entrada: listarEntrada() });
+      return json(res, { borradores: listarBorradores().map(resumen), publicadas: obra.leerLista(), publicando, version: obra.versionCache(), raiz: obra.RAIZ, preparando: [...trabajando], entrada: listarEntrada(), cantante: { ...canto.estadoCantante(), instalando: instalandoVoz, cantando } });
     }
     if (ruta === '/api/borradores' && req.method === 'POST') {
       const id = nuevoId();
@@ -373,6 +408,16 @@ const servidor = http.createServer(async (req, res) => {
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/canto\/incorporar$/)) && req.method === 'POST') {
       try { return json(res, await incorporarCanto(m[1])); } catch (e) { return json(res, { error: e.message }, 400); }
+    }
+    if (ruta === '/api/cantante/instalar' && req.method === 'POST') {
+      try { instalarVozCantante(); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }
+    }
+    if (ruta === '/api/cantante/eventos' && req.method === 'GET') return suscribir('cantante', res);
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/canto\/cantar$/)) && req.method === 'POST') {
+      try { const cuerpo = JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'); return json(res, cantarBorrador(m[1], cuerpo.datos || {}, cuerpo.idioma)); } catch (e) { return json(res, { error: e.message }, 400); }
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/canto\/idioma$/)) && req.method === 'POST') {
+      try { const cuerpo = JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'); return json(res, { idioma: canto.detectarIdioma(cuerpo) }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/canto\/quitar$/)) && req.method === 'POST') {
       try { return json(res, quitarCanto(m[1])); } catch (e) { return json(res, { error: e.message }, 400); }
