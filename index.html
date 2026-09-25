@@ -474,7 +474,7 @@ function prepararCanto() {
   }
   const op = [...$('timbre').options].find(o => o.value === 'canto');
   op.hidden = !canto;
-  if (canto) { let pref = null; try { pref = localStorage.getItem('timbre'); } catch {} if (pref === 'canto') $('timbre').value = 'canto'; }
+  if (canto) { let pref = null; try { pref = localStorage.getItem('timbre'); } catch {} if (pref === 'canto' || new URLSearchParams(location.search).get('sonido') === 'canto') $('timbre').value = 'canto'; }
   else if ($('timbre').value === 'canto') $('timbre').value = 'choir_aahs';
 }
 const modoCanto = () => !!canto && $('timbre').value === 'canto';
