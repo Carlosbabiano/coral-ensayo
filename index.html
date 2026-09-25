@@ -470,7 +470,7 @@ function prepararCanto() {
     canto = { listo: false, cargando: null, pistas: lista.map(c => {
       const el = document.createElement('audio'); el.preload = 'auto'; el.setAttribute('playsinline', ''); el.playsInline = true;
       el.preservesPitch = true; el.webkitPreservesPitch = true;
-      return { parte: +c.parte, sub: +c.sub || 0, nombre: c.nombre, archivo: c.archivo, el, ganancia: null, url: null };
+      return { parte: +c.parte, sub: +c.sub || 0, nombre: c.nombre, archivo: c.archivo, consonantes: c.consonantes || null, tramos: null, el, ganancia: null, atenuacion: null, url: null };
     }) };
   }
   for (const op of $('timbre').options) if (op.value === 'canto' || op.value === 'cantoCoro') op.hidden = !canto;
@@ -492,6 +492,7 @@ function cargarCanto() {
     await Promise.all(c.pistas.map(async p => {
       const r = await fetch('partituras/' + p.archivo); if (!r.ok) throw new Error('No se pudo descargar ' + p.archivo);
       p.url = URL.createObjectURL(await r.blob()); p.el.src = p.url; p.el.load();
+      if (p.consonantes) { try { p.tramos = await (await fetch('partituras/' + p.consonantes)).json(); } catch { p.tramos = null; } }
       hechas++; if (canto === c) $('estado').textContent = 'Cargando las voces cantadas… ' + hechas + '/' + c.pistas.length;
     }));
     c.listo = true;
@@ -501,9 +502,9 @@ function cargarCanto() {
 }
 function conectarCanto() {
   for (const p of canto.pistas) if (!p.ganancia) {
-    p.ganancia = ctx.createGain();
-    try { ctx.createMediaElementSource(p.el).connect(p.ganancia); } catch (e) { console.warn('Sin nodo de audio para la pista', p.nombre, e); }
-    p.ganancia.connect(ctx.destination);
+    p.ganancia = ctx.createGain(); p.atenuacion = ctx.createGain(); // atenuación: baja las vocales cuando suena con el coro
+    try { ctx.createMediaElementSource(p.el).connect(p.atenuacion); } catch (e) { console.warn('Sin nodo de audio para la pista', p.nombre, e); }
+    p.atenuacion.connect(p.ganancia); p.ganancia.connect(ctx.destination);
   }
   ajustarVocesCanto();
 }
@@ -514,13 +515,39 @@ function ajustarVocesCanto() {
   for (const p of canto.pistas) if (p.ganancia) p.ganancia.gain.setTargetAtTime(esMiaPista(p) ? 1 : mezcla, ctx.currentTime, 0.02);
 }
 // Coloca todas las pistas en un instante (segundos de partitura al tempo escrito) y las pone a andar
+const VOCAL_CON_CORO = 0.2; // volumen de la voz cantada en las vocales cuando suena con el coro (las consonantes van a pleno)
 function arrancarCanto(seg, f) {
   for (const p of canto.pistas) {
     try { p.el.playbackRate = f; p.el.currentTime = seg; } catch {}
+    reiniciarAtenuacion(p, seg);
     p.el.play().catch(e => { console.warn('No se pudo reproducir', p.nombre, e); $('estado').textContent = 'Pulsa otra vez ▶ para oír las voces cantadas.'; });
   }
 }
-function situarCanto(seg) { for (const p of canto.pistas) { try { p.el.currentTime = seg; } catch {} } }
+function situarCanto(seg) { for (const p of canto.pistas) { try { p.el.currentTime = seg; } catch {} reiniciarAtenuacion(p, seg); } }
+// Deja la atenuación en su valor para el instante 'seg' y prepara el puntero de tramos; sin coro, todo a 1
+function reiniciarAtenuacion(p, seg) {
+  if (!p.atenuacion) return;
+  const g = p.atenuacion.gain; g.cancelScheduledValues(ctx.currentTime);
+  if (!conCoro() || !p.tramos) { g.setValueAtTime(1, ctx.currentTime); p.tramoIdx = -1; return; }
+  p.tramoIdx = p.tramos.findIndex(t => t[1] > seg);
+  const dentro = p.tramoIdx >= 0 && p.tramos[p.tramoIdx][0] <= seg;
+  g.setValueAtTime(dentro ? 1 : VOCAL_CON_CORO, ctx.currentTime);
+}
+// Programa las subidas (consonante) y bajadas (vocal) de la voz cantada que caen en los próximos 0,4 s; desfase = instante
+// del contexto que corresponde al 0 del audio; f = factor de tempo
+function programarAtenuacion(p, desfase, ahoraAudio, f) {
+  if (!p.atenuacion || !p.tramos || p.tramoIdx < 0) return;
+  const g = p.atenuacion.gain, RAMPA = 0.012;
+  while (p.tramoIdx < p.tramos.length && p.tramos[p.tramoIdx][0] <= ahoraAudio + 0.4 * f) {
+    const [t0, t1] = p.tramos[p.tramoIdx];
+    const c0 = desfase + t0 / f, c1 = desfase + t1 / f;
+    if (c1 > ctx.currentTime) {
+      g.setValueAtTime(VOCAL_CON_CORO, Math.max(ctx.currentTime, c0 - RAMPA)); g.linearRampToValueAtTime(1, Math.max(ctx.currentTime, c0));
+      g.setValueAtTime(1, Math.max(ctx.currentTime, c1 - RAMPA)); g.linearRampToValueAtTime(VOCAL_CON_CORO, Math.max(ctx.currentTime, c1));
+    }
+    p.tramoIdx++;
+  }
+}
 function pausarCanto() { if (canto) for (const p of canto.pistas) { try { p.el.pause(); } catch {} } }
 // Instante que se oye ahora (en segundos de partitura), según la primera pista
 function tiempoCanto() { return canto.pistas[0].el.currentTime; }
@@ -621,6 +648,7 @@ function planificar() {
     if (conCoro() && instrumento && instrumento.nombre === 'vocales') {
       // el coro de vocales se programa con el reloj de las pistas: instante del contexto que corresponde al 0 del audio
       const desfase = ctx.currentTime - tiempoCanto() / f;
+      for (const p of canto.pistas) programarAtenuacion(p, desfase, tiempoCanto(), f);
       while (indiceEvento < fin && eventos[indiceEvento].seg / f <= ahora + 0.4) {
         const e = eventos[indiceEvento], t = desfase + e.seg / f;
         if (t >= ctx.currentTime - 0.05) for (const n of e.notas) {

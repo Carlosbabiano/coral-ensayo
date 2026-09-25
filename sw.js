@@ -1,5 +1,5 @@
 // Service worker: guarda la app, las partituras y los sonidos para funcionar sin conexión.
-const VERSION = 'coral-v92';
+const VERSION = 'coral-v93';
 const BASE = ['./', './index.html', './compases.js', './manifest.json', './icono-192.png', './icono-512.png', './icono-512-maskable.png', './apple-touch-icon.png', './pantalla.mp4', './partituras/lista.json'];
 
 // Instalación: solo lo imprescindible (si un archivo fallara, la versión nueva no se instalaría nunca)
@@ -24,7 +24,7 @@ async function precargarObras() {
   try {
     const cache = await caches.open(VERSION);
     const lista = await (await fetch('./partituras/lista.json', { cache: 'no-store' })).json();
-    const archivos = lista.flatMap(o => [o.archivo, o.posiciones, ...(o.paginas || [])].filter(Boolean).map(a => './partituras/' + a));
+    const archivos = lista.flatMap(o => [o.archivo, o.posiciones, ...(o.paginas || []), ...(o.canto || []).flatMap(c => [c.archivo, c.consonantes])].filter(Boolean).map(a => './partituras/' + a));
     for (const f of archivos) {
       if (await cache.match(f)) continue;
       try { await cache.add(f); } catch (err) { console.warn('No se pudo precargar', f); }
