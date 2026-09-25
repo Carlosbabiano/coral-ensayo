@@ -227,11 +227,15 @@ async function cantarPistas(dir, datos, { idioma, estilo = 'exacta', log = () =>
     const pista = datos.pistas.find(x => x.nombre === p.nombre);
     let notas = pista.notas;
     if (maxFrases) { const c = cantanteActual.cantante; const fr = c.frases(c.palabras(notas, datos.bpm)).slice(0, maxFrases); const fin = Math.max(...fr.flatMap(f => f.palabras.flatMap(x => x.notas.map(n => n.finMs)))); notas = notas.filter(n => n.q * 60000 / datos.bpm < fin - 1); }
+    // Si esta voz ya se cantó con el mismo estilo e idioma (por ejemplo antes de una interrupción), no se repite
+    const marca = path.join(dir, p.base + '.hecho.json');
+    try { const m = JSON.parse(fs.readFileSync(marca, 'utf8')); if (m.estilo === estilo && m.idioma === idioma && m.notas === notas.length && fs.existsSync(path.join(dir, p.base + '.wav'))) { log(`— ${p.nombre}: ya estaba cantada con este estilo, se conserva`); alAvanzar((i + 1) / pistas.length); continue; } } catch {}
     log(`— ${p.nombre} (${notas.length} notas)`);
     const t0 = Date.now();
     if (cancelado()) throw new Error('Cancelado');
     const onda = await cantanteActual.cantante.cantarPista({ notas, bpm: datos.bpm, idioma, expresividad, ...ajustesDeVoz(p.nombre), alAvanzar: f => alAvanzar((i + f) / pistas.length), cancelado });
     escribirWav(path.join(dir, p.base + '.wav'), onda);
+    fs.writeFileSync(marca, JSON.stringify({ estilo, idioma, notas: notas.length, fecha: new Date().toISOString() }));
     log(`  ${p.nombre} lista en ${((Date.now() - t0) / 1000).toFixed(0)} s`);
   }
   return estadoCarpeta(dir);
