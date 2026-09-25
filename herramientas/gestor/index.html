@@ -157,7 +157,7 @@ async function refrescar() {
     const li = document.createElement('li');
     li.className = b.id === seleccionado ? 'activa' : '';
     const nombre = b.entrada?.titulo || b.archivos?.find(a => /\.xml$/i.test(a))?.replace(/\.[^.]+$/, '') || 'Borrador';
-    const textoEstado = { nuevo: 'sin preparar', preparando: 'preparando…', listo: 'lista para revisar', error: 'con errores' }[b.estado] || b.estado;
+    const textoEstado = ({ nuevo: 'sin preparar', preparando: 'preparando…', listo: 'lista para revisar', error: 'con errores' }[b.estado] || b.estado) + (b.cantando ? ' · cantando…' : (b.entrada && b.entrada.canto && b.entrada.canto.length) ? ' · con voces cantadas' : '') + ' · ' + new Date(b.creado).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     li.innerHTML = `<span class="punto ${b.estado}"></span><span class="t">${esc(nombre)}<br><span class="e">${textoEstado}</span></span>`;
     li.onclick = () => seleccionar(b.id);
     ul.appendChild(li);
