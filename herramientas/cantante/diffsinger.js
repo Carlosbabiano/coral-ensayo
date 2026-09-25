@@ -206,7 +206,7 @@ class Cantante {
       pitch = new Array(totalCuadros).fill(notas[0].midi);
       for (let i = 0; i < totalCuadros; i++) { const t = inicioMs + i * frameMs; const n = notas.find(n => t >= n.tMs && t < n.finMs) || (t < notas[0].tMs ? notas[0] : notas[notas.length - 1]); pitch[i] = n.midi; }
       // tono recto, como el de un coro afinado: solo una transición mínima (~20 ms) entre notas, sin vibrato
-      for (let i = 1; i < totalCuadros; i++) pitch[i] = pitch[i - 1] + (pitch[i] - pitch[i - 1]) * 0.6;
+      for (let i = 1; i < totalCuadros; i++) pitch[i] = pitch[i - 1] + (pitch[i] - pitch[i - 1]) * 0.85;
     }
     // en los cuadros de silencio (cabeza/cola/huecos) el tono no significa nada: se copia el del fonema vecino
     const real = []; segmentos.forEach((s, i) => { for (let k = 0; k < phDur[i]; k++) real.push(s.real); });

@@ -269,7 +269,7 @@ function pintarPanel() {
     // Voces cantadas (canto sintético)
     const c = b.canto || { actual: [], preparado: null };
     html += `<div class="tarjeta"><h4>Voces cantadas (canto sintético)</h4>`;
-    if (c.actual.length) html += `<div class="aviso bien">La obra lleva voces cantadas: ${c.actual.map(x => esc(x.nombre)).join(', ')}. En la previsualización, elige el sonido «Voces cantadas» o «Voces cantadas + coro» para oírlas.${c.actual.some(x => !x.consonantes) ? ' <button class="mini" id="cantoConsonantes" title="Calcula dónde caen las consonantes para que, con el coro, la voz cantada baje en las vocales">Añadir tramos de consonantes</button>' : ''}</div>`;
+    if (c.actual.length) html += `<div class="aviso bien">La obra lleva voces cantadas: ${c.actual.map(x => esc(x.nombre)).join(', ')}. En la previsualización, elige el sonido «Voces cantadas» para oírlas.${c.actual.some(x => !x.consonantes) ? ' <button class="mini" id="cantoConsonantes" title="Calcula dónde caen las consonantes para que, con el coro, la voz cantada baje en las vocales">Añadir tramos de consonantes</button>' : ''}</div>`;
     const ct = estado.cantante || {};
     if (b.cantando) html += `<div class="aviso"><span class="progreso"></span> Cantando la obra… unos 8 minutos por cada voz de 3 minutos; puedes seguir usando el gestor. <span id="cantoAvance"></span> <button class="mini peligro" id="cantoParar" style="margin-left:10px">Parar</button></div><pre class="log" id="cantoLog" style="max-height:160px"></pre>`;
     else if (ct.voz && ct.diccionario) html += `<div class="ayuda">El cantante automático (gratuito, en este PC) canta la letra de cada voz con una voz sintética. Idioma de la letra:
