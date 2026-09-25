@@ -1,6 +1,7 @@
 salida/
 node_modules/
 *.mp3
+!app/voces/**/*.mp3
 .DS_Store
 Thumbs.db
 borradores/

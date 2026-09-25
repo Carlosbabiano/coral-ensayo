@@ -1,0 +1,39 @@
+{
+ "descripcion": "Muestras de coro por vocal (a, e, i, o, u), una por nota MIDI; cada archivo lleva un tramo en bucle para notas largas",
+ "vocales": [
+  "a",
+  "e",
+  "i",
+  "o",
+  "u"
+ ],
+ "notas": [
+  48,
+  50,
+  52,
+  53,
+  55,
+  57,
+  59,
+  60,
+  62,
+  64,
+  65,
+  67,
+  69,
+  71,
+  72,
+  74,
+  76,
+  77,
+  79,
+  81,
+  83,
+  84
+ ],
+ "bucle": {
+  "inicio": 0.9,
+  "fin": 2.5
+ },
+ "creditos": "Vowel Ensemble Choir Pack de Mihai Sorohan (con Richard Osborn y Selcuk Bor; versión SFZ de bigcat Instruments). Cantantes: Citrina, Jelena, Roman, Dimitri, Jonny Zed y Mihai Sorohan. http://mihaisorohan.blogspot.com/2010/10/vowel-ensemble-free-vowel-ensemble.html"
+}
