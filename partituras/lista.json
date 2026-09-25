@@ -73,6 +73,43 @@
       "Ubi_caritas_Gjeilo-p4.jpg",
       "Ubi_caritas_Gjeilo-p5.jpg",
       "Ubi_caritas_Gjeilo-p6.jpg"
+    ],
+    "canto": [
+      {
+        "parte": 0,
+        "sub": 1,
+        "nombre": "Soprano 1",
+        "archivo": "Ubi_caritas_Gjeilo.canto.Soprano_1.mp3",
+        "consonantes": "Ubi_caritas_Gjeilo.canto.Soprano_1.json"
+      },
+      {
+        "parte": 0,
+        "sub": 2,
+        "nombre": "Soprano 2",
+        "archivo": "Ubi_caritas_Gjeilo.canto.Soprano_2.mp3",
+        "consonantes": "Ubi_caritas_Gjeilo.canto.Soprano_2.json"
+      },
+      {
+        "parte": 1,
+        "sub": 0,
+        "nombre": "Contralto",
+        "archivo": "Ubi_caritas_Gjeilo.canto.Contralto.mp3",
+        "consonantes": "Ubi_caritas_Gjeilo.canto.Contralto.json"
+      },
+      {
+        "parte": 2,
+        "sub": 0,
+        "nombre": "Tenor",
+        "archivo": "Ubi_caritas_Gjeilo.canto.Tenor.mp3",
+        "consonantes": "Ubi_caritas_Gjeilo.canto.Tenor.json"
+      },
+      {
+        "parte": 3,
+        "sub": 0,
+        "nombre": "Bajo",
+        "archivo": "Ubi_caritas_Gjeilo.canto.Bajo.mp3",
+        "consonantes": "Ubi_caritas_Gjeilo.canto.Bajo.json"
+      }
     ]
   }
 ]
