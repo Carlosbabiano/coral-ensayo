@@ -99,6 +99,7 @@
         <option value="choir_aahs">Coro (aah)</option>
         <option value="vocales">Coro (vocales de la letra)</option>
         <option value="canto" hidden>Voces cantadas</option>
+        <option value="cantoCoro" hidden>Voces cantadas + coro</option>
         <option value="acoustic_grand_piano">Piano</option>
         <option value="church_organ">Órgano</option>
         <option value="flute">Flauta</option>
@@ -472,12 +473,14 @@ function prepararCanto() {
       return { parte: +c.parte, sub: +c.sub || 0, nombre: c.nombre, archivo: c.archivo, el, ganancia: null, url: null };
     }) };
   }
-  const op = [...$('timbre').options].find(o => o.value === 'canto');
-  op.hidden = !canto;
-  if (canto) { let pref = null; try { pref = localStorage.getItem('timbre'); } catch {} if (pref === 'canto' || new URLSearchParams(location.search).get('sonido') === 'canto') $('timbre').value = 'canto'; }
-  else if ($('timbre').value === 'canto') $('timbre').value = 'choir_aahs';
+  for (const op of $('timbre').options) if (op.value === 'canto' || op.value === 'cantoCoro') op.hidden = !canto;
+  if (canto) { let pref = null; try { pref = localStorage.getItem('timbre'); } catch {} const pedido = new URLSearchParams(location.search).get('sonido'); if (pref === 'canto' || pref === 'cantoCoro') $('timbre').value = pref; if (pedido === 'canto' || pedido === 'cantoCoro') $('timbre').value = pedido; }
+  else if ($('timbre').value === 'canto' || $('timbre').value === 'cantoCoro') $('timbre').value = 'choir_aahs';
 }
-const modoCanto = () => !!canto && $('timbre').value === 'canto';
+const modoCanto = () => !!canto && ($('timbre').value === 'canto' || $('timbre').value === 'cantoCoro');
+// «Voces cantadas + coro»: además de las pistas cantadas suena el coro de vocales grabadas (afinación recta y timbre de coro)
+const conCoro = () => $('timbre').value === 'cantoCoro';
+const instrumentoDe = valor => (valor === 'canto' ? 'choir_aahs' : valor === 'cantoCoro' ? 'vocales' : valor);
 // Descarga las pistas (se guardan en la caché de la app) y las deja listas; avisa en la barra de estado
 function cargarCanto() {
   if (!canto || canto.listo) return Promise.resolve();
@@ -551,7 +554,7 @@ const latenciaAudio = () => (ctx && (ctx.outputLatency || ctx.baseLatency)) || 0
 async function prepararAudio(conInstrumento = true) {
   if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
   if (ctx.state === 'suspended') await ctx.resume();
-  const timbre = $('timbre').value === 'canto' ? 'choir_aahs' : $('timbre').value;
+  const timbre = instrumentoDe($('timbre').value);
   if (!conInstrumento && $('timbre').value === 'canto') return;
   if (!instrumento || instrumento.nombre !== timbre) {
     $('estado').textContent = 'Cargando sonido…';
@@ -589,6 +592,8 @@ async function reproducir() {
   const enCanto = modoCanto();
   if (enCanto) {
     if (!canto.listo) { cargarCanto().then(() => { if (!reproduciendo) $('estado').textContent = 'Voces cantadas listas: pulsa ▶.'; }).catch(() => {}); return; }
+    // con coro: el instrumento de vocales tiene que estar cargado antes (el audio solo arranca dentro del toque)
+    if (conCoro() && !(instrumento && instrumento.nombre === 'vocales')) { prepararAudio(true).then(() => { if (!reproduciendo) $('estado').textContent = 'Listo: pulsa ▶.'; }).catch(() => {}); return; }
     if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
     if (ctx.state === 'suspended') ctx.resume();
     conectarCanto();
@@ -613,11 +618,23 @@ function planificar() {
   const enCanto = modoCanto();
   const ahora = enCanto ? tiempoCanto() / f : ctx.currentTime - tInicio + tOffset;
   if (enCanto) {
-    while (indiceEvento < fin && eventos[indiceEvento].seg / f <= ahora) indiceEvento++;
+    if (conCoro() && instrumento && instrumento.nombre === 'vocales') {
+      // el coro de vocales se programa con el reloj de las pistas: instante del contexto que corresponde al 0 del audio
+      const desfase = ctx.currentTime - tiempoCanto() / f;
+      while (indiceEvento < fin && eventos[indiceEvento].seg / f <= ahora + 0.4) {
+        const e = eventos[indiceEvento], t = desfase + e.seg / f;
+        if (t >= ctx.currentTime - 0.05) for (const n of e.notas) {
+          const vel = esMia(n, e.compas) ? 95 : Math.round(95 * mezcla);
+          if (vel > 0) sonando.push(instrumento.start({ note: n.midi, velocity: vel, time: Math.max(t, ctx.currentTime), duration: Math.max(0.05, n.dur / f - 0.03), vocal: n.vocal }));
+        }
+        indiceEvento++;
+      }
+      if (sonando.length > 200) sonando.splice(0, 100);
+    } else while (indiceEvento < fin && eventos[indiceEvento].seg / f <= ahora) indiceEvento++;
     if (indiceEvento >= fin) {
       const ultimo = eventos[fin - 1];
       if (ahora >= (ultimo.seg + 1.5) / f) {
-        if (b) { indiceEvento = b.ini; cursorEn = -1; situarCanto(eventos[b.ini].seg); }
+        if (b) { indiceEvento = b.ini; cursorEn = -1; situarCanto(eventos[b.ini].seg); for (const s of sonando) { try { s(ctx.currentTime); } catch {} } sonando = []; }
         else { parar(); irACompas(0); }
       }
     }
