@@ -97,6 +97,7 @@
     <label>Sonido
       <select id="timbre">
         <option value="choir_aahs">Coro (aah)</option>
+        <option value="vocales">Coro (vocales de la letra)</option>
         <option value="acoustic_grand_piano">Piano</option>
         <option value="church_organ">Órgano</option>
         <option value="flute">Flauta</option>
@@ -114,6 +115,69 @@
 import { Soundfont } from "https://cdn.jsdelivr.net/npm/smplr/+esm";
 
 const $ = id => document.getElementById(id);
+
+// ---------- Coro por vocales ----------
+// Muestras de coro real por vocal (a, e, i, o, u) en voces/<vocal>/<midi>.mp3 (ver voces/vocales.json, con los créditos).
+// Cada archivo lleva un tramo en bucle para las notas largas. Misma interfaz que el Soundfont de smplr:
+// start({ note, velocity, time, duration, vocal }) devuelve una función para cortar la nota.
+class CoroVocales {
+  constructor(ctx) {
+    this.ctx = ctx; this.buffers = {}; this.salida = ctx.createGain(); this.salida.gain.value = 1.4; this.salida.connect(ctx.destination);
+    this.load = (async () => {
+      const info = await (await fetch('voces/vocales.json')).json();
+      this.notas = info.notas; this.bucle = info.bucle;
+      const tareas = [];
+      for (const v of info.vocales) for (const n of info.notas) tareas.push((async () => {
+        const datos = await (await fetch(`voces/${v}/${n}.mp3`)).arrayBuffer();
+        this.buffers[v + n] = await ctx.decodeAudioData(datos);
+      })());
+      await Promise.all(tareas);
+      return this;
+    })();
+  }
+  start({ note, velocity = 100, time, duration, vocal }) {
+    const v = this.buffers[(vocal || 'a') + this.notas[0]] ? (vocal || 'a') : 'a';
+    // muestra más cercana en altura (a igual distancia, la de abajo: transportar hacia arriba oscurece menos)
+    let mejor = this.notas[0];
+    for (const n of this.notas) if (Math.abs(n - note) < Math.abs(mejor - note) || (Math.abs(n - note) === Math.abs(mejor - note) && n < mejor)) mejor = n;
+    const buf = this.buffers[v + mejor]; if (!buf) return () => {};
+    const ctx = this.ctx, t0 = time ?? ctx.currentTime;
+    const src = ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = Math.pow(2, (note - mejor) / 12);
+    src.loop = true; src.loopStart = this.bucle.inicio; src.loopEnd = this.bucle.fin;
+    const g = ctx.createGain(); const nivel = Math.pow(velocity / 127, 1.2);
+    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(nivel, t0 + 0.01);
+    src.connect(g); g.connect(this.salida);
+    src.start(t0);
+    const CAIDA = 0.18; // segundos de caída al soltar la nota
+    let cortada = false;
+    const parar = (t = ctx.currentTime) => {
+      if (cortada) return; cortada = true;
+      const tc = Math.max(t, ctx.currentTime);
+      try { g.gain.cancelScheduledValues(tc); g.gain.setValueAtTime(g.gain.value, tc); g.gain.linearRampToValueAtTime(0, tc + CAIDA); src.stop(tc + CAIDA + 0.01); } catch {}
+    };
+    if (duration) parar(t0 + duration);
+    src.onended = () => { try { src.disconnect(); g.disconnect(); } catch {} };
+    return parar;
+  }
+}
+// Vocal que se canta en una sílaba de la letra (castellano/latín): quita acentos, ignora la u muda de que/qui/gue/gui,
+// y en los diptongos manda la vocal fuerte (a, e, o). Devuelve null si la sílaba no tiene vocal (p. ej. "-").
+function vocalDeSilaba(texto) {
+  if (!texto) return null;
+  let t = String(texto).toLowerCase().replace(/ü/g, 'W').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/W/g, 'u');
+  t = t.replace(/([qg])u(?=[ei])/g, '$1').replace(/y(?![aeiou])/g, 'i').replace(/[^a-z]/g, '');
+  const vocales = t.match(/[aeiou]/g); if (!vocales) return null;
+  const fuertes = vocales.filter(v => 'aeo'.includes(v));
+  return fuertes.length ? fuertes[fuertes.length - 1] : vocales[vocales.length - 1];
+}
+// Primera estrofa de la letra de una entrada de voz de OSMD (LyricsEntries es un diccionario nº de verso → entrada)
+function silabaDe(ve) {
+  const d = ve.LyricsEntries; if (!d) return null;
+  let mejor = null;
+  const ver = (clave, e) => { if (e && e.Text && (mejor === null || +clave < +mejor.clave)) mejor = { clave, texto: e.Text }; };
+  if (d instanceof Map) d.forEach((e, k) => ver(k, e)); else if (typeof d.forEach === 'function') d.forEach(ver);
+  return mejor && mejor.texto;
+}
 const UNIT = 10; // OSMD dibuja en unidades de 10 px a zoom 1
 
 // ---------- Estado ----------
@@ -316,6 +380,7 @@ function construirEventos() {
     const o = {}; [...new Set((ins.Voices || []).map(v => v.VoiceId))].sort((a, b) => a - b).forEach((id, k) => o[id] = k + 1); return o;
   });
   divisi = osmd.Sheet.Instruments.map(() => new Set());
+  const ultimaVocal = {}; // por parte y voz del XML
   let paso = 0;
   let guarda = 0;
   while (!it.EndReached && guarda++ < 20000) {
@@ -330,6 +395,10 @@ function construirEventos() {
       const subVoz = Math.min(2, ordenVoz[parte][ve.ParentVoice.VoiceId] || 1);
       // Subvoz de cada nota: la voz 2 del XML es la de abajo; en un acorde, la nota más aguda es la de arriba y el resto la de abajo
       const sonoras = ve.Notes.filter(n => n.Pitch && !n.isRest());
+      const claveVoz = parte + ':' + ve.ParentVoice.VoiceId;
+      const vocalSilaba = vocalDeSilaba(silabaDe(ve));
+      if (vocalSilaba) ultimaVocal[claveVoz] = vocalSilaba;
+      const vocal = ultimaVocal[claveVoz] || 'a';
       const masAguda = sonoras.reduce((m, n) => (!m || n.Pitch.halfTone > m.Pitch.halfTone ? n : m), null);
       for (const n of sonoras) {
         const sub = subVoz === 2 ? 2 : (sonoras.length > 1 && n !== masAguda ? 2 : 1);
@@ -337,7 +406,7 @@ function construirEventos() {
         if (n.NoteTie && n.NoteTie.StartNote !== n) continue; // nota ligada: no se vuelve a atacar
         let dur = n.Length.RealValue;
         if (n.NoteTie) dur = n.NoteTie.Notes.reduce((s, x) => s + x.Length.RealValue, 0);
-        notas.push({ parte, sub, midi: n.Pitch.halfTone + 12, dur: dur * 4 * 60 / bpm });
+        notas.push({ parte, sub, midi: n.Pitch.halfTone + 12, dur: dur * 4 * 60 / bpm, vocal });
       }
     }
     // posición dentro del compás (0..1), para la marca en la vista PDF
@@ -386,7 +455,7 @@ async function prepararAudio() {
   if (ctx.state === 'suspended') await ctx.resume();
   if (!instrumento || instrumento.nombre !== $('timbre').value) {
     $('estado').textContent = 'Cargando sonido…';
-    const sf = new Soundfont(ctx, { instrument: $('timbre').value });
+    const sf = $('timbre').value === 'vocales' ? new CoroVocales(ctx) : new Soundfont(ctx, { instrument: $('timbre').value });
     await sf.load;
     sf.nombre = $('timbre').value;
     instrumento = sf;
@@ -441,7 +510,7 @@ function planificar() {
     for (const n of e.notas) {
       const vel = esMia(n, e.compas) ? 110 : Math.round(110 * mezcla);
       if (vel <= 0) continue;
-      const stop = instrumento.start({ note: n.midi, velocity: vel, time: t, duration: Math.max(0.05, n.dur / f - 0.03) });
+      const stop = instrumento.start({ note: n.midi, velocity: vel, time: t, duration: Math.max(0.05, n.dur / f - 0.03), vocal: n.vocal });
       sonando.push(stop);
     }
     indiceEvento++;
@@ -490,7 +559,8 @@ $('stop').onclick = () => { parar(); irACompas(eventos[compasInicio]?.compas ?? 
 $('inicio').onclick = () => irACompas(0);
 $('tempo').oninput = () => { mostrarTempo(); try { localStorage.setItem('tempo:' + (obraActual.archivo || ''), $('tempo').value); } catch {} if (reproduciendo) { pausar(); reproducir(); } };
 $('mezcla').oninput = () => $('mezclaVal').textContent = $('mezcla').value + '%';
-$('timbre').onchange = () => { if (reproduciendo) { pausar(); reproducir(); } };
+$('timbre').onchange = () => { try { localStorage.setItem('timbre', $('timbre').value); } catch {} if (reproduciendo) { pausar(); reproducir(); } };
+try { const t = localStorage.getItem('timbre'); if (t && [...$('timbre').options].some(o => o.value === t)) $('timbre').value = t; } catch {}
 
 // ---------- Modo editor (dentro del Gestor de obras, con ?editor=1) y modo Corregir (para el director, con ?corregir=1): tocar una nota la selecciona ----------
 const modoCorregir = new URLSearchParams(location.search).has('corregir');
