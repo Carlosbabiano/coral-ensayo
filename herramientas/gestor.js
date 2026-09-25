@@ -202,7 +202,7 @@ async function instalarVozCantante() {
   catch (e) { log('X ' + e.message); emitir('cantante', { tipo: 'fin', ok: false, error: e.message }); }
   finally { instalandoVoz = false; }
 }
-function cantarBorrador(id, datos, idioma) {
+function cantarBorrador(id, datos, idioma, estilo) {
   const b = leerBorrador(id);
   if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
   if (cantando) throw new Error('Ya se está cantando otra obra; espera a que termine');
@@ -214,7 +214,7 @@ function cantarBorrador(id, datos, idioma) {
   const registrar = linea => { const bb = leerBorrador(id); if (bb) { bb.log.push(linea); guardarBorrador(bb); } emitir(id, { tipo: 'log', linea }); };
   (async () => {
     try {
-      await canto.cantarPistas(dirCanto(id), datos, { idioma, log: registrar, alAvanzar: f => emitir(id, { tipo: 'avance', fraccion: f }), cancelado: () => cancelarCanto });
+      await canto.cantarPistas(dirCanto(id), datos, { idioma, estilo, log: registrar, alAvanzar: f => emitir(id, { tipo: 'avance', fraccion: f }), cancelado: () => cancelarCanto });
       registrar('Convirtiendo a MP3 e incorporando a la obra…');
       const bb = await incorporarCanto(id);
       registrar('Voces cantadas listas: elige el sonido «Voces cantadas» en la previsualización.');
@@ -420,7 +420,7 @@ const servidor = http.createServer(async (req, res) => {
       cancelarCanto = true; return json(res, { ok: true });
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/canto\/cantar$/)) && req.method === 'POST') {
-      try { const cuerpo = JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'); return json(res, cantarBorrador(m[1], cuerpo.datos || {}, cuerpo.idioma)); } catch (e) { return json(res, { error: e.message }, 400); }
+      try { const cuerpo = JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'); return json(res, cantarBorrador(m[1], cuerpo.datos || {}, cuerpo.idioma, cuerpo.estilo)); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/canto\/idioma$/)) && req.method === 'POST') {
       try { const cuerpo = JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'); return json(res, { idioma: canto.detectarIdioma(cuerpo) }); } catch (e) { return json(res, { error: e.message }, 400); }

@@ -274,6 +274,7 @@ function pintarPanel() {
     if (b.cantando) html += `<div class="aviso"><span class="progreso"></span> Cantando la obra… unos 8 minutos por cada voz de 3 minutos; puedes seguir usando el gestor. <span id="cantoAvance"></span> <button class="mini peligro" id="cantoParar" style="margin-left:10px">Parar</button></div><pre class="log" id="cantoLog" style="max-height:160px"></pre>`;
     else if (ct.voz && ct.diccionario) html += `<div class="ayuda">El cantante automático (gratuito, en este PC) canta la letra de cada voz con una voz sintética. Idioma de la letra:
       <select id="cantoIdioma"><option value="es">Castellano</option><option value="la">Latín</option></select>
+      Afinación: <select id="cantoEstilo" title="Exacta: el tono de la partitura, sin adornos. Contenida: algo de expresión. Expresiva: como cantaría la voz sintética por su cuenta"><option value="exacta">Exacta (sin adornos)</option><option value="contenida">Contenida</option><option value="expresiva">Expresiva</option></select>
       <button class="${c.actual.length ? '' : 'principal'}" id="cantoCantar" style="margin-left:8px">${c.actual.length ? 'Volver a cantar la obra' : 'Cantar la obra'}</button> <span class="ayuda">(unos 8 minutos por cada voz de 3 minutos de música)</span></div>`;
     else if (ct.instalando) html += `<div class="aviso"><span class="progreso"></span> Instalando la voz del cantante… <pre class="log" id="cantanteLog" style="max-height:120px;margin-top:6px"></pre></div>`;
     else html += `<div class="aviso">Para que el gestor cante la letra hace falta instalar la voz sintética (550 MB, gratuita, solo una vez): <button id="cantoInstalar">Instalar la voz</button></div>`;
@@ -632,7 +633,7 @@ async function cantarObra() {
   const idioma = $('cantoIdioma').value;
   $('cantoCantar').disabled = true;
   try {
-    borradorActual = await api(`/api/borradores/${b.id}/canto/cantar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ datos, idioma }) });
+    borradorActual = await api(`/api/borradores/${b.id}/canto/cantar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ datos, idioma, estilo: $('cantoEstilo').value }) });
     pintarPanel();
   } catch (e) { alert(e.message); $('cantoCantar').disabled = false; }
 }

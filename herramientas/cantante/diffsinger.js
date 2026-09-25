@@ -151,7 +151,7 @@ class Cantante {
     const totalCuadros = phDur.reduce((a, b) => a + b, 0);
     const tokens = segmentos.map(s => voz.token(s.f));
     let pitch = null;
-    if (voz.cfgPitch) {
+    if (voz.cfgPitch && expresividad > 0) {
       const ling = await voz.sesionLinguisticaPitch();
       const entradasLing = { tokens: t64(tokens, [1, tokens.length]) };
       if (voz.cfgPitch.predict_dur) {
@@ -205,7 +205,12 @@ class Cantante {
     if (!pitch) {
       pitch = new Array(totalCuadros).fill(notas[0].midi);
       for (let i = 0; i < totalCuadros; i++) { const t = inicioMs + i * frameMs; const n = notas.find(n => t >= n.tMs && t < n.finMs) || (t < notas[0].tMs ? notas[0] : notas[notas.length - 1]); pitch[i] = n.midi; }
-      for (let i = 1; i < totalCuadros; i++) pitch[i] = pitch[i - 1] + (pitch[i] - pitch[i - 1]) * 0.35;
+      for (let i = 1; i < totalCuadros; i++) pitch[i] = pitch[i - 1] + (pitch[i] - pitch[i - 1]) * 0.35; // transición de ~40 ms
+      // vibrato ligero (5,5 Hz, ±12 cent) que entra poco a poco a partir de los 350 ms de cada nota
+      for (const n of notas) {
+        const i0 = Math.max(0, Math.round((n.tMs - inicioMs) / frameMs)), i1 = Math.min(totalCuadros, Math.round((n.finMs - inicioMs) / frameMs));
+        for (let i = i0; i < i1; i++) { const t = (i - i0) * frameMs / 1000; if (t > 0.35) pitch[i] += 0.12 * Math.min(1, (t - 0.35) / 0.4) * Math.sin(2 * Math.PI * 5.5 * (t - 0.35)); }
+      }
     }
     // en los cuadros de silencio (cabeza/cola/huecos) el tono no significa nada: se copia el del fonema vecino
     const real = []; segmentos.forEach((s, i) => { for (let k = 0; k < phDur[i]; k++) real.push(s.real); });

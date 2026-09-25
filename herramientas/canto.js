@@ -204,7 +204,10 @@ function ajustesDeVoz(nombrePista) {
   return { genero: 0 };
 }
 // Canta todas las pistas de los datos en la carpeta (un WAV por pista, con el nombre del proyecto) y devuelve el estado
-async function cantarPistas(dir, datos, { idioma, log = () => {}, alAvanzar = () => {}, cancelado = () => false, maxFrases = +process.env.CANTO_MAX_FRASES || 0 } = {}) {
+// Estilo de afinación: exacta (tono de la partitura, sin adornos), contenida (algo de expresión) o expresiva (la que decida el modelo)
+const EXPRESIVIDAD = { exacta: 0, contenida: 0.25, expresiva: 1 };
+async function cantarPistas(dir, datos, { idioma, estilo = 'exacta', log = () => {}, alAvanzar = () => {}, cancelado = () => false, maxFrases = +process.env.CANTO_MAX_FRASES || 0 } = {}) {
+  const expresividad = EXPRESIVIDAD[estilo] !== undefined ? EXPRESIVIDAD[estilo] : 0;
   const est = estadoCantante();
   if (!est.voz || !est.diccionario) throw new Error('La voz del cantante no está instalada');
   idioma = idioma || detectarIdioma(datos);
@@ -217,7 +220,7 @@ async function cantarPistas(dir, datos, { idioma, log = () => {}, alAvanzar = ()
   cantanteActual.cantante.log = log;
   const { escribirWav } = require('./cantante/diffsinger.js');
   const pistas = estadoProyectos.pistas;
-  log(`Cantando ${pistas.length} voces en ${idioma === 'la' ? 'latín' : 'castellano'} con la voz ${cantanteActual.voz.nombre}…`);
+  log(`Cantando ${pistas.length} voces en ${idioma === 'la' ? 'latín' : 'castellano'} con la voz ${cantanteActual.voz.nombre} (afinación ${estilo})…`);
   for (let i = 0; i < pistas.length; i++) {
     const p = pistas[i];
     const pista = datos.pistas.find(x => x.nombre === p.nombre);
@@ -226,7 +229,7 @@ async function cantarPistas(dir, datos, { idioma, log = () => {}, alAvanzar = ()
     log(`— ${p.nombre} (${notas.length} notas)`);
     const t0 = Date.now();
     if (cancelado()) throw new Error('Cancelado');
-    const onda = await cantanteActual.cantante.cantarPista({ notas, bpm: datos.bpm, idioma, ...ajustesDeVoz(p.nombre), alAvanzar: f => alAvanzar((i + f) / pistas.length), cancelado });
+    const onda = await cantanteActual.cantante.cantarPista({ notas, bpm: datos.bpm, idioma, expresividad, ...ajustesDeVoz(p.nombre), alAvanzar: f => alAvanzar((i + f) / pistas.length), cancelado });
     escribirWav(path.join(dir, p.base + '.wav'), onda);
     log(`  ${p.nombre} lista en ${((Date.now() - t0) / 1000).toFixed(0)} s`);
   }
