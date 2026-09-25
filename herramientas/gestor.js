@@ -191,7 +191,9 @@ async function incorporarCanto(id) {
   return conCanto(b);
 }
 // El cantante automático: instalar la voz (una vez) y cantar un borrador, ambos en segundo plano con avisos por SSE
-let instalandoVoz = false, cantando = null; // cantando = id del borrador
+let instalandoVoz = false, cantando = null, cancelarCanto = false; // cantando = id del borrador
+// Si el gestor se cerró a medio cantar, los borradores no deben quedarse marcados como "cantando"
+for (const b of listarBorradores()) if (b.cantando) { b.cantando = false; b.log.push('(El gestor se cerró mientras cantaba: canto interrumpido.)'); guardarBorrador(b); }
 async function instalarVozCantante() {
   if (instalandoVoz) throw new Error('Ya se está instalando la voz');
   instalandoVoz = true;
@@ -207,19 +209,19 @@ function cantarBorrador(id, datos, idioma) {
   const est = canto.estadoCantante();
   if (!est.voz || !est.diccionario) throw new Error('Primero hay que instalar la voz del cantante');
   datos.titulo = datos.titulo || b.entrada.titulo;
-  cantando = id;
+  cantando = id; cancelarCanto = false;
   b.cantando = true; b.log.push('Cantando la obra con el cantante automático (' + (idioma === 'la' ? 'latín' : 'castellano') + ')…'); guardarBorrador(b);
   const registrar = linea => { const bb = leerBorrador(id); if (bb) { bb.log.push(linea); guardarBorrador(bb); } emitir(id, { tipo: 'log', linea }); };
   (async () => {
     try {
-      await canto.cantarPistas(dirCanto(id), datos, { idioma, log: registrar, alAvanzar: f => emitir(id, { tipo: 'avance', fraccion: f }) });
+      await canto.cantarPistas(dirCanto(id), datos, { idioma, log: registrar, alAvanzar: f => emitir(id, { tipo: 'avance', fraccion: f }), cancelado: () => cancelarCanto });
       registrar('Convirtiendo a MP3 e incorporando a la obra…');
       const bb = await incorporarCanto(id);
       registrar('Voces cantadas listas: elige el sonido «Voces cantadas» en la previsualización.');
       const fin = leerBorrador(id); fin.cantando = false; guardarBorrador(fin);
       emitir(id, { tipo: 'estado', borrador: conCanto(fin) });
     } catch (e) {
-      registrar('X No se pudo cantar: ' + e.message);
+      registrar(e.message === 'Cancelado' ? 'Canto parado a petición tuya.' : 'X No se pudo cantar: ' + e.message);
       const fin = leerBorrador(id); if (fin) { fin.cantando = false; guardarBorrador(fin); emitir(id, { tipo: 'estado', borrador: conCanto(fin) }); }
     } finally { cantando = null; }
   })();
@@ -413,6 +415,10 @@ const servidor = http.createServer(async (req, res) => {
       try { instalarVozCantante(); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if (ruta === '/api/cantante/eventos' && req.method === 'GET') return suscribir('cantante', res);
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/canto\/parar$/)) && req.method === 'POST') {
+      if (cantando !== m[1]) return json(res, { error: 'Ese borrador no se está cantando' }, 400);
+      cancelarCanto = true; return json(res, { ok: true });
+    }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/canto\/cantar$/)) && req.method === 'POST') {
       try { const cuerpo = JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'); return json(res, cantarBorrador(m[1], cuerpo.datos || {}, cuerpo.idioma)); } catch (e) { return json(res, { error: e.message }, 400); }
     }

@@ -249,7 +249,7 @@ class Cantante {
   }
 
   // ---------- Pista completa → muestras (44,1 kHz mono) ----------
-  async cantarPista({ notas, bpm, idioma = 'es', genero = 0, transposicion = 0, expresividad = 1, alAvanzar = () => {} }) {
+  async cantarPista({ notas, bpm, idioma = 'es', genero = 0, transposicion = 0, expresividad = 1, alAvanzar = () => {}, cancelado = () => false }) {
     const voz = this.voz, sr = voz.sampleRate;
     const palabras = this.palabras(notas, bpm);
     if (!palabras.length) return new Float32Array(0);
@@ -258,6 +258,7 @@ class Cantante {
     const mezcla = new Float32Array(Math.ceil(finMs / 1000 * sr));
     let i = 0;
     for (const frase of frases) {
+      if (cancelado()) throw new Error('Cancelado');
       i++;
       const texto = frase.palabras.map(p => p.texto).join(' ');
       const t0 = Date.now();

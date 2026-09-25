@@ -271,10 +271,10 @@ function pintarPanel() {
     html += `<div class="tarjeta"><h4>Voces cantadas (canto sintético)</h4>`;
     if (c.actual.length) html += `<div class="aviso bien">La obra lleva voces cantadas: ${c.actual.map(x => esc(x.nombre)).join(', ')}. En la previsualización, elige el sonido «Voces cantadas» para oírlas.</div>`;
     const ct = estado.cantante || {};
-    if (b.cantando) html += `<div class="aviso"><span class="progreso"></span> Cantando la obra… tarda unos minutos por voz. <span id="cantoAvance"></span></div><pre class="log" id="cantoLog" style="max-height:160px"></pre>`;
+    if (b.cantando) html += `<div class="aviso"><span class="progreso"></span> Cantando la obra… unos 8 minutos por cada voz de 3 minutos; puedes seguir usando el gestor. <span id="cantoAvance"></span> <button class="mini peligro" id="cantoParar" style="margin-left:10px">Parar</button></div><pre class="log" id="cantoLog" style="max-height:160px"></pre>`;
     else if (ct.voz && ct.diccionario) html += `<div class="ayuda">El cantante automático (gratuito, en este PC) canta la letra de cada voz con una voz sintética. Idioma de la letra:
       <select id="cantoIdioma"><option value="es">Castellano</option><option value="la">Latín</option></select>
-      <button class="principal" id="cantoCantar" style="margin-left:8px">Cantar la obra</button> <span class="ayuda">(unos 3 minutos por cada minuto de música y voz)</span></div>`;
+      <button class="${c.actual.length ? '' : 'principal'}" id="cantoCantar" style="margin-left:8px">${c.actual.length ? 'Volver a cantar la obra' : 'Cantar la obra'}</button> <span class="ayuda">(unos 8 minutos por cada voz de 3 minutos de música)</span></div>`;
     else if (ct.instalando) html += `<div class="aviso"><span class="progreso"></span> Instalando la voz del cantante… <pre class="log" id="cantanteLog" style="max-height:120px;margin-top:6px"></pre></div>`;
     else html += `<div class="aviso">Para que el gestor cante la letra hace falta instalar la voz sintética (550 MB, gratuita, solo una vez): <button id="cantoInstalar">Instalar la voz</button></div>`;
     if (c.preparado) {
@@ -291,7 +291,7 @@ function pintarPanel() {
     </div>`;
 
     html += `<div class="acciones"><button class="principal" id="publicar">Publicar para el coro</button><span class="ayuda">Se guarda en la app, se sube a internet y los móviles la reciben solos.</span><span class="hueco"></span><button class="peligro" id="descartar">Descartar borrador</button></div>`;
-    html += `<div class="tarjeta" style="padding:8px"><div id="barraNota"></div><iframe class="previa" id="previa" src="/borrador/${b.id}/?editor=1&t=${Date.now()}"></iframe></div>`;
+    html += `<div class="tarjeta" style="padding:8px"><div id="barraNota"></div><iframe class="previa" id="previa" src="/borrador/${b.id}/?editor=1${(b.entrada.canto || []).length ? '&sonido=canto' : ''}&t=${Date.now()}"></iframe></div>`;
   }
 
   html += `<details ${b.estado === 'listo' ? '' : 'open'}><summary>Registro del proceso</summary><pre class="log" id="log">${esc((b.log || []).join('\n'))}\n</pre></details>`;
@@ -307,6 +307,7 @@ function pintarPanel() {
   $('revisarBtn') && ($('revisarBtn').onclick = () => { const n = +$('revisarNum').value; if (n) revisarCompas(n); });
   $('cantoPreparar') && ($('cantoPreparar').onclick = prepararCanto);
   $('cantoCantar') && ($('cantoCantar').onclick = cantarObra);
+  $('cantoParar') && ($('cantoParar').onclick = async () => { $('cantoParar').disabled = true; try { await api(`/api/borradores/${b.id}/canto/parar`, { method: 'POST' }); } catch (e) { alert(e.message); } });
   $('cantoInstalar') && ($('cantoInstalar').onclick = instalarVoz);
   if ($('cantoIdioma')) { const guardado = sessionStorage.getItem('cantoIdioma:' + b.id); if (guardado) $('cantoIdioma').value = guardado; else detectarIdiomaCanto(); }
   if (b.cantando) seguirCanto(b.id);
@@ -627,6 +628,7 @@ async function cantarObra() {
   const b = borradorActual;
   const datos = datosCantoDePrevia();
   if (!datos) return alert('La previsualización todavía no está lista. Espera a que se vea la partitura y vuelve a intentarlo.');
+  if ((b.canto?.actual || []).length && !confirm('La obra ya tiene voces cantadas. ¿Volver a cantarla entera? (tarda bastante)')) return;
   const idioma = $('cantoIdioma').value;
   $('cantoCantar').disabled = true;
   try {

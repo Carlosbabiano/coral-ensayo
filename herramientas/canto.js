@@ -204,7 +204,7 @@ function ajustesDeVoz(nombrePista) {
   return { genero: 0 };
 }
 // Canta todas las pistas de los datos en la carpeta (un WAV por pista, con el nombre del proyecto) y devuelve el estado
-async function cantarPistas(dir, datos, { idioma, log = () => {}, alAvanzar = () => {}, maxFrases = +process.env.CANTO_MAX_FRASES || 0 } = {}) {
+async function cantarPistas(dir, datos, { idioma, log = () => {}, alAvanzar = () => {}, cancelado = () => false, maxFrases = +process.env.CANTO_MAX_FRASES || 0 } = {}) {
   const est = estadoCantante();
   if (!est.voz || !est.diccionario) throw new Error('La voz del cantante no está instalada');
   idioma = idioma || detectarIdioma(datos);
@@ -225,7 +225,8 @@ async function cantarPistas(dir, datos, { idioma, log = () => {}, alAvanzar = ()
     if (maxFrases) { const c = cantanteActual.cantante; const fr = c.frases(c.palabras(notas, datos.bpm)).slice(0, maxFrases); const fin = Math.max(...fr.flatMap(f => f.palabras.flatMap(x => x.notas.map(n => n.finMs)))); notas = notas.filter(n => n.q * 60000 / datos.bpm < fin - 1); }
     log(`— ${p.nombre} (${notas.length} notas)`);
     const t0 = Date.now();
-    const onda = await cantanteActual.cantante.cantarPista({ notas, bpm: datos.bpm, idioma, ...ajustesDeVoz(p.nombre), alAvanzar: f => alAvanzar((i + f) / pistas.length) });
+    if (cancelado()) throw new Error('Cancelado');
+    const onda = await cantanteActual.cantante.cantarPista({ notas, bpm: datos.bpm, idioma, ...ajustesDeVoz(p.nombre), alAvanzar: f => alAvanzar((i + f) / pistas.length), cancelado });
     escribirWav(path.join(dir, p.base + '.wav'), onda);
     log(`  ${p.nombre} lista en ${((Date.now() - t0) / 1000).toFixed(0)} s`);
   }
