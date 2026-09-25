@@ -1,0 +1,8 @@
+{
+  "name": "coral-villa-de-mengibar",
+  "private": true,
+  "description": "Herramientas del reproductor de partituras de la Coral Villa de Mengíbar",
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0"
+  }
+}

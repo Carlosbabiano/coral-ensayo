@@ -98,6 +98,7 @@
       <select id="timbre">
         <option value="choir_aahs">Coro (aah)</option>
         <option value="vocales">Coro (vocales de la letra)</option>
+        <option value="canto" hidden>Voces cantadas</option>
         <option value="acoustic_grand_piano">Piano</option>
         <option value="church_organ">Órgano</option>
         <option value="flute">Flauta</option>
@@ -170,14 +171,19 @@ function vocalDeSilaba(texto) {
   const fuertes = vocales.filter(v => 'aeo'.includes(v));
   return fuertes.length ? fuertes[fuertes.length - 1] : vocales[vocales.length - 1];
 }
-// Primera estrofa de la letra de una entrada de voz de OSMD (LyricsEntries es un diccionario nº de verso → entrada)
-function silabaDe(ve) {
+// Primera estrofa de la letra de una entrada de voz de OSMD (LyricsEntries es un diccionario nº de verso → entrada):
+// { texto: sílaba escrita en la nota, palabra: la palabra entera, indice: qué sílaba de la palabra es (0 = primera) }
+function letraDe(ve) {
   const d = ve.LyricsEntries; if (!d) return null;
   let mejor = null;
-  const ver = (clave, e) => { if (e && e.Text && (mejor === null || +clave < +mejor.clave)) mejor = { clave, texto: e.Text }; };
+  const ver = (clave, e) => { if (e && e.Text && (mejor === null || +clave < +mejor.clave)) mejor = { clave, e }; };
   if (d instanceof Map) d.forEach((e, k) => ver(k, e)); else if (typeof d.forEach === 'function') d.forEach(ver);
-  return mejor && mejor.texto;
+  if (!mejor) return null;
+  const e = mejor.e, silabas = (e.Word && e.Word.Syllables) || [];
+  const palabra = silabas.length > 1 ? silabas.map(x => x.Text || '').join('') : e.Text;
+  return { texto: e.Text, palabra, indice: silabas.length > 1 ? Math.max(0, silabas.indexOf(e)) : 0, total: Math.max(1, silabas.length) };
 }
+const silabaDe = ve => { const l = letraDe(ve); return l && l.texto; };
 const UNIT = 10; // OSMD dibuja en unidades de 10 px a zoom 1
 
 // ---------- Estado ----------
@@ -259,6 +265,7 @@ async function cargarObra(archivo) {
   }
   $('vista').style.display = posiciones ? 'flex' : 'none';
   if (!posiciones) modoPdf = false;
+  prepararCanto();
   await aplicarModo();
   prepararTempo(archivo);
   irACompas(0);
@@ -346,7 +353,7 @@ function crearBotonesVoces() {
       const b = document.createElement('button');
       b.textContent = sub ? nombre + ' ' + sub : nombre;
       b.dataset.parte = i; b.dataset.sub = sub;
-      b.onclick = () => { vozActiva = i; subActiva = sub; marcarVoz(); };
+      b.onclick = () => { vozActiva = i; subActiva = sub; marcarVoz(); ajustarVocesCanto(); };
       cont.appendChild(b);
     }
   });
@@ -396,7 +403,8 @@ function construirEventos() {
       // Subvoz de cada nota: la voz 2 del XML es la de abajo; en un acorde, la nota más aguda es la de arriba y el resto la de abajo
       const sonoras = ve.Notes.filter(n => n.Pitch && !n.isRest());
       const claveVoz = parte + ':' + ve.ParentVoice.VoiceId;
-      const vocalSilaba = vocalDeSilaba(silabaDe(ve));
+      const letra = letraDe(ve);
+      const vocalSilaba = vocalDeSilaba(letra && letra.texto);
       if (vocalSilaba) ultimaVocal[claveVoz] = vocalSilaba;
       const vocal = ultimaVocal[claveVoz] || 'a';
       const masAguda = sonoras.reduce((m, n) => (!m || n.Pitch.halfTone > m.Pitch.halfTone ? n : m), null);
@@ -406,7 +414,7 @@ function construirEventos() {
         if (n.NoteTie && n.NoteTie.StartNote !== n) continue; // nota ligada: no se vuelve a atacar
         let dur = n.Length.RealValue;
         if (n.NoteTie) dur = n.NoteTie.Notes.reduce((s, x) => s + x.Length.RealValue, 0);
-        notas.push({ parte, sub, midi: n.Pitch.halfTone + 12, dur: dur * 4 * 60 / bpm, vocal });
+        notas.push({ parte, sub, midi: n.Pitch.halfTone + 12, dur: dur * 4 * 60 / bpm, vocal, durQ: dur * 4, letra });
       }
     }
     // posición dentro del compás (0..1), para la marca en la vista PDF
@@ -416,13 +424,103 @@ function construirEventos() {
       const tsm = (it.currentTimeStamp || it.CurrentSourceTimestamp);
       if (sm && tsm && sm.Duration.RealValue > 0) frac = (tsm.RealValue - sm.AbsoluteTimestamp.RealValue) / sm.Duration.RealValue;
     } catch {}
-    eventos.push({ paso, seg: segundos, compas: it.CurrentMeasureIndex, frac, notas });
+    eventos.push({ paso, seg: segundos, q: ts * 4, compas: it.CurrentMeasureIndex, frac, notas });
     it.moveToNextVisibleVoiceEntry(false); paso++; // mismo avance que cursor.next(), pero sin redibujar el cursor a cada paso
   }
   osmd.cursor.reset();
   if (eventos.length) console.log('Eventos:', eventos.length, 'duración', segundos.toFixed(1), 's · primera nota midi', eventos.find(e => e.notas.length)?.notas[0].midi, '· desdobles', divisi.map(d => d.size).join('/'));
   crearBotonesVoces();
 }
+
+// ---------- Voces cantadas ----------
+// Datos para generar los proyectos del sintetizador de canto (el gestor los pide a la previsualización):
+// una pista por voz (y por subvoz si hay desdobles), con la línea completa que canta esa voz.
+window.datosCanto = () => {
+  const partes = osmd.Sheet.Instruments.map((ins, i) => ins.Name || ('Voz ' + (i + 1)));
+  const bpm = tempoPartitura;
+  const pistas = [];
+  partes.forEach((nombre, p) => {
+    const subs = seDesdobla(p) ? [1, 2] : [0];
+    for (const s of subs) {
+      const notas = [];
+      for (const e of eventos) {
+        const enDivisi = s && divisi[p].has(e.compas);
+        const cands = e.notas.filter(n => n.parte === p && (enDivisi ? n.sub === s : n.sub === 1));
+        if (!cands.length) continue;
+        const n = cands.reduce((m, x) => (x.midi > m.midi ? x : m));
+        notas.push({ q: e.q, durQ: n.durQ, midi: n.midi, letra: n.letra, compas: e.compas + 1 });
+      }
+      pistas.push({ parte: p, sub: s, nombre: s ? nombre + ' ' + s : nombre, notas });
+    }
+  });
+  const tempoConstante = eventos.every(e => Math.abs(e.seg - e.q * 60 / bpm) < 0.02);
+  let compas = null; try { const ts = osmd.Sheet.SourceMeasures[0].ActiveTimeSignature; compas = { num: ts.Numerator, den: ts.Denominator }; } catch {}
+  return { titulo: (obraActual && obraActual.titulo) || '', bpm, compas, partes, pistas, tempoConstante, compases: osmd.Sheet.SourceMeasures.length };
+};
+
+// Pistas de audio (una por voz) que cantan la obra: se reproducen a la vez, sincronizadas con la barra,
+// con el tempo de la app (sin cambiar la altura) y con la voz elegida en primer plano.
+let canto = null; // { pistas: [{ parte, sub, nombre, archivo, el, ganancia }], listo, cargando }
+function prepararCanto() {
+  if (canto) for (const p of canto.pistas) { try { p.el.pause(); p.el.removeAttribute('src'); p.el.load(); if (p.url) URL.revokeObjectURL(p.url); } catch {} }
+  canto = null;
+  const lista = (obraActual && obraActual.canto) || [];
+  if (lista.length) {
+    canto = { listo: false, cargando: null, pistas: lista.map(c => {
+      const el = document.createElement('audio'); el.preload = 'auto'; el.setAttribute('playsinline', ''); el.playsInline = true;
+      el.preservesPitch = true; el.webkitPreservesPitch = true;
+      return { parte: +c.parte, sub: +c.sub || 0, nombre: c.nombre, archivo: c.archivo, el, ganancia: null, url: null };
+    }) };
+  }
+  const op = [...$('timbre').options].find(o => o.value === 'canto');
+  op.hidden = !canto;
+  if (canto) { let pref = null; try { pref = localStorage.getItem('timbre'); } catch {} if (pref === 'canto') $('timbre').value = 'canto'; }
+  else if ($('timbre').value === 'canto') $('timbre').value = 'choir_aahs';
+}
+const modoCanto = () => !!canto && $('timbre').value === 'canto';
+// Descarga las pistas (se guardan en la caché de la app) y las deja listas; avisa en la barra de estado
+function cargarCanto() {
+  if (!canto || canto.listo) return Promise.resolve();
+  if (canto.cargando) return canto.cargando;
+  const c = canto;
+  c.cargando = (async () => {
+    let hechas = 0;
+    $('estado').textContent = 'Cargando las voces cantadas… 0/' + c.pistas.length;
+    await Promise.all(c.pistas.map(async p => {
+      const r = await fetch('partituras/' + p.archivo); if (!r.ok) throw new Error('No se pudo descargar ' + p.archivo);
+      p.url = URL.createObjectURL(await r.blob()); p.el.src = p.url; p.el.load();
+      hechas++; if (canto === c) $('estado').textContent = 'Cargando las voces cantadas… ' + hechas + '/' + c.pistas.length;
+    }));
+    c.listo = true;
+    if (canto === c) $('estado').textContent = 'Voces cantadas listas.';
+  })().catch(e => { c.cargando = null; if (canto === c) $('estado').textContent = 'No se pudieron cargar las voces cantadas.'; console.warn(e); throw e; });
+  return c.cargando;
+}
+function conectarCanto() {
+  for (const p of canto.pistas) if (!p.ganancia) {
+    p.ganancia = ctx.createGain();
+    try { ctx.createMediaElementSource(p.el).connect(p.ganancia); } catch (e) { console.warn('Sin nodo de audio para la pista', p.nombre, e); }
+    p.ganancia.connect(ctx.destination);
+  }
+  ajustarVocesCanto();
+}
+const esMiaPista = p => p.parte === vozActiva && (!subActiva || !p.sub || p.sub === subActiva);
+function ajustarVocesCanto() {
+  if (!canto) return;
+  const mezcla = $('mezcla').value / 100;
+  for (const p of canto.pistas) if (p.ganancia) p.ganancia.gain.setTargetAtTime(esMiaPista(p) ? 1 : mezcla, ctx.currentTime, 0.02);
+}
+// Coloca todas las pistas en un instante (segundos de partitura al tempo escrito) y las pone a andar
+function arrancarCanto(seg, f) {
+  for (const p of canto.pistas) {
+    try { p.el.playbackRate = f; p.el.currentTime = seg; } catch {}
+    p.el.play().catch(e => { console.warn('No se pudo reproducir', p.nombre, e); $('estado').textContent = 'Pulsa otra vez ▶ para oír las voces cantadas.'; });
+  }
+}
+function situarCanto(seg) { for (const p of canto.pistas) { try { p.el.currentTime = seg; } catch {} } }
+function pausarCanto() { if (canto) for (const p of canto.pistas) { try { p.el.pause(); } catch {} } }
+// Instante que se oye ahora (en segundos de partitura), según la primera pista
+function tiempoCanto() { return canto.pistas[0].el.currentTime; }
 
 function irACompas(compas) {
   parar();
@@ -450,14 +548,16 @@ function moverCursor(i, frac) {
 const latenciaAudio = () => (ctx && (ctx.outputLatency || ctx.baseLatency)) || 0;
 
 // ---------- Audio ----------
-async function prepararAudio() {
+async function prepararAudio(conInstrumento = true) {
   if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
   if (ctx.state === 'suspended') await ctx.resume();
-  if (!instrumento || instrumento.nombre !== $('timbre').value) {
+  const timbre = $('timbre').value === 'canto' ? 'choir_aahs' : $('timbre').value;
+  if (!conInstrumento && $('timbre').value === 'canto') return;
+  if (!instrumento || instrumento.nombre !== timbre) {
     $('estado').textContent = 'Cargando sonido…';
-    const sf = $('timbre').value === 'vocales' ? new CoroVocales(ctx) : new Soundfont(ctx, { instrument: $('timbre').value });
+    const sf = timbre === 'vocales' ? new CoroVocales(ctx) : new Soundfont(ctx, { instrument: timbre });
     await sf.load;
-    sf.nombre = $('timbre').value;
+    sf.nombre = timbre;
     instrumento = sf;
     $('estado').textContent = '';
   }
@@ -486,7 +586,13 @@ function rangoBucle() {
 
 async function reproducir() {
   if (reproduciendo) { pausar(); return; }
-  await prepararAudio();
+  const enCanto = modoCanto();
+  if (enCanto) {
+    if (!canto.listo) { cargarCanto().then(() => { if (!reproduciendo) $('estado').textContent = 'Voces cantadas listas: pulsa ▶.'; }).catch(() => {}); return; }
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
+    conectarCanto();
+  } else await prepararAudio();
   const b = rangoBucle();
   if (b && (indiceEvento < b.ini || indiceEvento >= b.fin)) indiceEvento = b.ini;
   reproduciendo = true;
@@ -494,6 +600,7 @@ async function reproducir() {
   const f = factorTempo();
   tInicio = ctx.currentTime + 0.15;
   tOffset = eventos[indiceEvento].seg / f;
+  if (enCanto) { $('estado').textContent = ''; arrancarCanto(eventos[indiceEvento].seg, f); }
   planificar();
   timerPlan = setInterval(planificar, 100);
   raf = requestAnimationFrame(seguirCursor);
@@ -503,7 +610,19 @@ async function reproducir() {
 function planificar() {
   const f = factorTempo(), mezcla = $('mezcla').value / 100, b = rangoBucle();
   const fin = b ? b.fin : eventos.length;
-  const ahora = ctx.currentTime - tInicio + tOffset;
+  const enCanto = modoCanto();
+  const ahora = enCanto ? tiempoCanto() / f : ctx.currentTime - tInicio + tOffset;
+  if (enCanto) {
+    while (indiceEvento < fin && eventos[indiceEvento].seg / f <= ahora) indiceEvento++;
+    if (indiceEvento >= fin) {
+      const ultimo = eventos[fin - 1];
+      if (ahora >= (ultimo.seg + 1.5) / f) {
+        if (b) { indiceEvento = b.ini; cursorEn = -1; situarCanto(eventos[b.ini].seg); }
+        else { parar(); irACompas(0); }
+      }
+    }
+    return;
+  }
   while (indiceEvento < fin && eventos[indiceEvento].seg / f <= ahora + 0.4) {
     const e = eventos[indiceEvento];
     const t = tInicio + e.seg / f - tOffset;
@@ -520,7 +639,7 @@ function planificar() {
     const ultimo = eventos[fin - 1];
     const tFin = tInicio + (ultimo.seg + 1.5) / f - tOffset;
     if (ctx.currentTime >= tFin) {
-      if (b) { indiceEvento = b.ini; tInicio = ctx.currentTime; tOffset = eventos[b.ini].seg / f; }
+      if (b) { indiceEvento = b.ini; cursorEn = -1; tInicio = ctx.currentTime; tOffset = eventos[b.ini].seg / f; }
       else { parar(); irACompas(0); }
     }
   }
@@ -531,7 +650,7 @@ function seguirCursor() {
   if (!reproduciendo) return;
   const f = factorTempo();
   // lo que se oye ahora mismo: el reloj del audio menos lo que tarda el sonido en salir por el altavoz
-  const ahora = ctx.currentTime - latenciaAudio() - tInicio + tOffset;
+  const ahora = modoCanto() ? tiempoCanto() / f : ctx.currentTime - latenciaAudio() - tInicio + tOffset;
   // último evento cuyo tiempo ya ha pasado, dentro del tramo en curso
   let i = cursorEn < 0 ? 0 : cursorEn;
   const b = rangoBucle(); const fin = b ? b.fin : eventos.length; const ini = b ? b.ini : 0;
@@ -545,6 +664,7 @@ function seguirCursor() {
 function pausar() {
   reproduciendo = false;
   clearInterval(timerPlan); cancelAnimationFrame(raf);
+  pausarCanto();
   for (const s of sonando) { try { s(ctx.currentTime); } catch {} }
   sonando = [];
   if (cursorEn >= 0) indiceEvento = cursorEn;
@@ -558,8 +678,8 @@ $('play').onclick = reproducir;
 $('stop').onclick = () => { parar(); irACompas(eventos[compasInicio]?.compas ?? 0); };
 $('inicio').onclick = () => irACompas(0);
 $('tempo').oninput = () => { mostrarTempo(); try { localStorage.setItem('tempo:' + (obraActual.archivo || ''), $('tempo').value); } catch {} if (reproduciendo) { pausar(); reproducir(); } };
-$('mezcla').oninput = () => $('mezclaVal').textContent = $('mezcla').value + '%';
-$('timbre').onchange = () => { try { localStorage.setItem('timbre', $('timbre').value); } catch {} if (reproduciendo) { pausar(); reproducir(); } };
+$('mezcla').oninput = () => { $('mezclaVal').textContent = $('mezcla').value + '%'; ajustarVocesCanto(); };
+$('timbre').onchange = () => { try { localStorage.setItem('timbre', $('timbre').value); } catch {} if (modoCanto() && !canto.listo) { cargarCanto().catch(() => {}); } if (reproduciendo) { pausar(); reproducir(); } };
 try { const t = localStorage.getItem('timbre'); if (t && [...$('timbre').options].some(o => o.value === t)) $('timbre').value = t; } catch {}
 
 // ---------- Modo editor (dentro del Gestor de obras, con ?editor=1) y modo Corregir (para el director, con ?corregir=1): tocar una nota la selecciona ----------
@@ -636,7 +756,7 @@ function marcarNota(sel) {
 const SEMITONO = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 async function sonarMidi(midi, segundos = 0.7) {
   try {
-    await prepararAudio();
+    await prepararAudio(true);
     instrumento.start({ note: midi, velocity: 100, time: ctx.currentTime, duration: segundos });
   } catch (e) { console.warn('No se pudo hacer sonar la nota', e); }
 }

@@ -295,6 +295,8 @@ function prepararObra({ xml: rutaXml, pdf: rutaPdf = null, dirSalida, log = cons
 }
 
 function leerLista() { try { return JSON.parse(fs.readFileSync(LISTA, 'utf8')); } catch { return []; } }
+// Todos los archivos de una obra de la lista: partitura, posiciones, páginas y voces cantadas
+function archivosDe(o) { return [o.archivo, o.posiciones, ...(o.paginas || []), ...(o.canto || []).map(c => c.archivo)].filter(Boolean); }
 function guardarLista(lista) {
   lista.sort((a, b) => a.titulo.localeCompare(b.titulo, 'es'));
   fs.mkdirSync(DIR_PARTITURAS, { recursive: true });
@@ -309,10 +311,17 @@ function incorporarEnApp(entrada, dirOrigen) {
   const previa = lista.find(o => o.archivo === entrada.archivo) || {};
   const nueva = { titulo: entrada.titulo, archivo: entrada.archivo };
   if (entrada.paginas && entrada.paginas.length && entrada.posiciones) { nueva.posiciones = entrada.posiciones; nueva.paginas = entrada.paginas; }
-  else if (previa.paginas) { nueva.posiciones = previa.posiciones; nueva.paginas = previa.paginas; } // conserva la página original anterior si esta vez no se ha dado el PDF
-  for (const f of [entrada.archivo, ...(entrada.paginas && entrada.posiciones ? [entrada.posiciones, ...entrada.paginas] : [])]) {
-    fs.copyFileSync(path.join(dirOrigen, f), path.join(DIR_PARTITURAS, f));
+  else if (previa.paginas) { nueva.posiciones = previa.posiciones; nueva.paginas = previa.paginas; } // conserva la página original anterior si esta vez se ha dado el PDF
+  // Voces cantadas: las del borrador si las trae (o [] si se han quitado); si no dice nada, se conservan las que ya había
+  const copiar = [entrada.archivo, ...(entrada.paginas && entrada.posiciones ? [entrada.posiciones, ...entrada.paginas] : [])];
+  if (Array.isArray(entrada.canto)) { if (entrada.canto.length) nueva.canto = entrada.canto; copiar.push(...entrada.canto.map(c => c.archivo)); }
+  else if (previa.canto && previa.canto.length) nueva.canto = previa.canto;
+  for (const f of copiar) {
+    const origen = path.join(dirOrigen, f), destino = path.join(DIR_PARTITURAS, f);
+    if (path.resolve(origen) !== path.resolve(destino)) fs.copyFileSync(origen, destino);
   }
+  // MP3 de voces que ya no forman parte de la obra
+  for (const c of previa.canto || []) if (!(nueva.canto || []).some(x => x.archivo === c.archivo)) { try { fs.unlinkSync(path.join(DIR_PARTITURAS, c.archivo)); } catch {} }
   guardarLista([...lista.filter(o => o.archivo !== entrada.archivo), nueva]);
   return !!previa.archivo;
 }
@@ -322,7 +331,7 @@ function retirarDeApp(archivo) {
   const lista = leerLista();
   const obra = lista.find(o => o.archivo === archivo);
   if (!obra) throw new Error('Esa obra no está en la app: ' + archivo);
-  for (const f of [obra.archivo, obra.posiciones, ...(obra.paginas || [])].filter(Boolean)) { try { fs.unlinkSync(path.join(DIR_PARTITURAS, f)); } catch {} }
+  for (const f of archivosDe(obra)) { try { fs.unlinkSync(path.join(DIR_PARTITURAS, f)); } catch {} }
   guardarLista(lista.filter(o => o.archivo !== archivo));
   return obra;
 }
@@ -360,5 +369,5 @@ module.exports = {
   RAIZ, DIR_APP, DIR_PARTITURAS, DIR_PDF, LISTA, NOMBRES_VOCES,
   clave, pdfPara, prepararObra, editarObra, leerPartes, tituloDe, tempoDe, limpiarNombreArchivo,
   sospechososDe, detalleCompas, fijarCompas, notasCompas, escribirCompas, FIGURA_NEGRAS,
-  leerLista, incorporarEnApp, retirarDeApp, subirVersionCache, versionCache, guardarEnGit, guardarPdf,
+  leerLista, archivosDe, incorporarEnApp, retirarDeApp, subirVersionCache, versionCache, guardarEnGit, guardarPdf,
 };

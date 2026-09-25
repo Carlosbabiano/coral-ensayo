@@ -10,11 +10,12 @@
 const http = require('http'), fs = require('fs'), path = require('path'), { spawn } = require('child_process');
 const { Worker } = require('worker_threads');
 const obra = require('./obra.js');
+const canto = require('./canto.js');
 
 const PUERTO = +process.env.PUERTO || 5180;
 const DIR_GESTOR = path.join(__dirname, 'gestor');
 const DIR_BORRADORES = path.join(obra.RAIZ, 'borradores');
-const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.xml': 'application/xml; charset=utf-8', '.musicxml': 'application/xml; charset=utf-8', '.pdf': 'application/pdf', '.mp4': 'video/mp4', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
+const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.xml': 'application/xml; charset=utf-8', '.musicxml': 'application/xml; charset=utf-8', '.pdf': 'application/pdf', '.mp4': 'video/mp4', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.mp3': 'audio/mpeg', '.wav': 'audio/wav' };
 
 fs.mkdirSync(DIR_BORRADORES, { recursive: true });
 
@@ -142,6 +143,63 @@ function cambiarCompas(id, numero, { beats, bt, restaurar }) {
   return b;
 }
 
+// ---------- Voces cantadas (canto sintético) ----------
+// Carpeta borradores/<id>/canto/: proyectos para el sintetizador (uno por voz) y el audio que exporta el usuario
+const dirCanto = id => path.join(dirDe(id), 'canto');
+function estadoCantoDe(b) {
+  const carpeta = canto.estadoCarpeta(dirCanto(b.id));
+  return { carpeta: dirCanto(b.id), preparado: carpeta, actual: (b.entrada && b.entrada.canto) || [] };
+}
+const conCanto = b => b && { ...b, canto: estadoCantoDe(b) };
+function prepararCanto(id, datos) {
+  const b = leerBorrador(id);
+  if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
+  datos.titulo = datos.titulo || b.entrada.titulo;
+  const est = canto.prepararProyectos(dirCanto(id), datos);
+  b.log.push(`Voces cantadas: preparados ${est.pistas.length} proyectos para el sintetizador (${est.pistas.map(p => p.nombre).join(', ')}).`);
+  if (!datos.tempoConstante) b.log.push('Aviso: la obra cambia de tempo; el audio cantado puede descuadrarse en esos tramos.');
+  guardarBorrador(b);
+  abrirCarpeta(dirCanto(id));
+  return conCanto(b);
+}
+function abrirCarpeta(dir) { try { spawn('explorer', [dir], { detached: true, stdio: 'ignore' }).unref(); } catch {} }
+const incorporando = new Set();
+async function incorporarCanto(id) {
+  const b = leerBorrador(id);
+  if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
+  if (incorporando.has(id)) throw new Error('Ya se está convirtiendo el audio');
+  const est = canto.estadoCarpeta(dirCanto(id));
+  if (!est) throw new Error('Primero hay que preparar los proyectos para el sintetizador');
+  const listas = est.pistas.filter(p => p.audio);
+  if (!listas.length) throw new Error('No hay ningún audio exportado en la carpeta ' + dirCanto(id) + ' (tiene que llamarse como la voz: ' + est.pistas.map(p => p.base + '.wav').join(', ') + ')');
+  const base = b.entrada.archivo.replace(/\.xml$/i, '');
+  const dirSalida = path.join(dirDe(id), 'partituras');
+  const nuevas = [];
+  incorporando.add(id);
+  try {
+    for (const p of listas) {
+      const archivo = canto.archivoCanto(base, p.nombre);
+      await canto.convertirAMp3(path.join(dirCanto(id), p.audio), path.join(dirSalida, archivo));
+      nuevas.push({ parte: p.parte, sub: p.sub, nombre: p.nombre, archivo });
+    }
+  } finally { incorporando.delete(id); }
+  for (const c of b.entrada.canto || []) if (!nuevas.some(n => n.archivo === c.archivo)) { try { fs.unlinkSync(path.join(dirSalida, c.archivo)); } catch {} }
+  b.entrada.canto = nuevas;
+  const faltan = est.pistas.filter(p => !p.audio).map(p => p.nombre);
+  b.log.push(`Voces cantadas incorporadas: ${nuevas.map(n => n.nombre).join(', ')}.` + (faltan.length ? ' Faltan: ' + faltan.join(', ') + '.' : ''));
+  guardarBorrador(b);
+  return conCanto(b);
+}
+function quitarCanto(id) {
+  const b = leerBorrador(id);
+  if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
+  for (const c of b.entrada.canto || []) { try { fs.unlinkSync(path.join(dirDe(id), 'partituras', c.archivo)); } catch {} }
+  b.entrada.canto = [];
+  b.log.push('Voces cantadas quitadas: al publicar, la obra irá sin ellas.');
+  guardarBorrador(b);
+  return conCanto(b);
+}
+
 // ---------- Publicar ----------
 // El registro de la publicación en curso se guarda para reenviarlo a quien se conecte después de empezar
 let publicando = false, registroPublicacion = [], finPublicacion = null;
@@ -175,11 +233,12 @@ function borradorDesdePublicada(archivo) {
   const dirSalida = path.join(dirDe(id), 'partituras');
   fs.mkdirSync(path.join(dirDe(id), 'entrada'), { recursive: true });
   fs.mkdirSync(dirSalida, { recursive: true });
-  for (const f of [o.archivo, o.posiciones, ...(o.paginas || [])].filter(Boolean)) fs.copyFileSync(path.join(obra.DIR_PARTITURAS, f), path.join(dirSalida, f));
+  for (const f of obra.archivosDe(o)) fs.copyFileSync(path.join(obra.DIR_PARTITURAS, f), path.join(dirSalida, f));
   const xml = fs.readFileSync(path.join(dirSalida, o.archivo), 'utf8');
   const partes = obra.leerPartes(xml).map(p => ({ id: p.id, nombre: p.nombre, nombreActual: p.nombre, tesitura: '', clave: '' }));
   const entrada = { titulo: o.titulo, archivo: o.archivo };
   if (o.posiciones && o.paginas) { entrada.posiciones = o.posiciones; entrada.paginas = o.paginas; }
+  if (o.canto && o.canto.length) entrada.canto = o.canto;
   const pdf = obra.pdfPara(path.join(obra.DIR_PDF, o.archivo.replace(/\.xml$/, '.pdf')));
   const b = { id, creado: new Date().toISOString(), estado: 'listo', archivos: [o.archivo], origen: 'publicada', entrada, avisos: [], partes, sospechosos: obra.sospechososDe(xml), tempo: obra.tempoDe(xml), pdf: pdf ? path.basename(pdf) : null, log: ['Borrador creado a partir de la obra publicada «' + o.titulo + '». Al publicar, la sustituirá.'] };
   guardarBorrador(b);
@@ -303,7 +362,20 @@ const servidor = http.createServer(async (req, res) => {
       const b = leerBorrador(m[1]); if (!b) return json(res, { error: 'No existe' }, 404);
       // Recalcular los compases sospechosos con el motor actual (los borradores preparados con versiones anteriores pueden traer una lista vieja)
       if (b.estado === 'listo' && b.entrada) { try { const nuevos = obra.sospechososDe(xmlDe(b)); if (JSON.stringify(nuevos) !== JSON.stringify(b.sospechosos)) { b.sospechosos = nuevos; guardarBorrador(b); } } catch {} }
-      return json(res, b);
+      return json(res, conCanto(b));
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/canto\/preparar$/)) && req.method === 'POST') {
+      try { return json(res, prepararCanto(m[1], JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'))); } catch (e) { return json(res, { error: e.message }, 400); }
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/canto\/abrir$/)) && req.method === 'POST') {
+      if (!idValido(m[1])) return json(res, { error: 'No existe' }, 404);
+      fs.mkdirSync(dirCanto(m[1]), { recursive: true }); abrirCarpeta(dirCanto(m[1])); return json(res, { ok: true });
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/canto\/incorporar$/)) && req.method === 'POST') {
+      try { return json(res, await incorporarCanto(m[1])); } catch (e) { return json(res, { error: e.message }, 400); }
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/canto\/quitar$/)) && req.method === 'POST') {
+      try { return json(res, quitarCanto(m[1])); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/ajustes$/)) && req.method === 'POST') {
       try { return json(res, resumen(ajustar(m[1], JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}')))); } catch (e) { return json(res, { error: e.message }, 400); }
