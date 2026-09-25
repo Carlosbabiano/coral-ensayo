@@ -136,6 +136,7 @@ function prepararProyectos(dir, datos) {
   }
   if (!hechas.length) throw new Error('Ninguna voz tiene notas');
   fs.writeFileSync(path.join(dir, 'pistas.json'), JSON.stringify({ titulo: datos.titulo, bpm: datos.bpm, tempoConstante: datos.tempoConstante, pistas: hechas }, null, 2));
+  fs.writeFileSync(path.join(dir, 'datos.json'), JSON.stringify(datos));
   fs.writeFileSync(path.join(dir, 'LEEME.txt'), LEEME({ titulo: datos.titulo || 'la obra', pistas: hechas, bpm: datos.bpm, tempoConstante: datos.tempoConstante }));
   return estadoCarpeta(dir);
 }
@@ -236,7 +237,25 @@ async function cantarPistas(dir, datos, { idioma, estilo = 'exacta', log = () =>
   return estadoCarpeta(dir);
 }
 
+// Tramos de consonantes de cada pista preparada (en segundos), con el modelo de duraciones de la voz: la app baja la voz
+// cantada en las vocales cuando suena junto al coro. Devuelve { nombre: [[t0, t1], …] } o null si no hay voz o datos.
+async function consonantesDePistas(dir, idioma, log = () => {}) {
+  const est = estadoCantante();
+  const rutaDatos = path.join(dir, 'datos.json');
+  if (!est.voz || !est.diccionario || !fs.existsSync(rutaDatos)) return null;
+  const datos = JSON.parse(fs.readFileSync(rutaDatos, 'utf8'));
+  idioma = idioma || detectarIdioma(datos);
+  if (!cantanteActual) {
+    const { Voz } = require('./cantante/voz.js'); const { Cantante } = require('./cantante/diffsinger.js');
+    const voz = new Voz(est.dirVoz);
+    cantanteActual = { voz, cantante: new Cantante(voz, { rutaDiccionario: path.join(est.dirDiccionario, 'dict.txt'), log }) };
+  }
+  const salida = {};
+  for (const p of datos.pistas) salida[p.nombre] = await cantanteActual.cantante.consonantesPista({ notas: p.notas, bpm: datos.bpm, idioma });
+  return salida;
+}
+
 // Nombre del MP3 de una voz dentro de la obra: <base de la obra>.canto.<voz>.mp3
 const archivoCanto = (baseObra, nombrePista) => `${baseObra}.canto.${slug(nombrePista)}.mp3`;
 
-module.exports = { notasPista, svpDe, midiDe, prepararProyectos, estadoCarpeta, convertirAMp3, archivoCanto, slug, EXT_AUDIO, estadoCantante, instalarCantante, cantarPistas, detectarIdioma, ajustesDeVoz };
+module.exports = { notasPista, svpDe, midiDe, prepararProyectos, estadoCarpeta, convertirAMp3, archivoCanto, slug, EXT_AUDIO, estadoCantante, instalarCantante, cantarPistas, consonantesDePistas, detectarIdioma, ajustesDeVoz };

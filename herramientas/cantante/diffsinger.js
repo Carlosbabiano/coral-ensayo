@@ -249,6 +249,21 @@ class Cantante {
     return Float32Array.from(onda.data);
   }
 
+  // Tramos [inicio, fin] en segundos donde la voz canta consonantes (todo lo que no es vocal ni silencio)
+  async consonantesPista({ notas, bpm, idioma = 'es' }) {
+    const palabras = this.palabras(notas, bpm);
+    const tramos = [];
+    for (const frase of this.frases(palabras)) {
+      const { fones } = await this.fonemasConTiempo(frase, idioma);
+      for (const f of fones) {
+        if (this.voz.esVocal(f.fonema) || f.fonema === 'SP' || f.fonema === 'AP') continue;
+        const t0 = +(f.tMs / 1000).toFixed(3), t1 = +(f.finMs / 1000).toFixed(3);
+        if (tramos.length && t0 - tramos[tramos.length - 1][1] < 0.012) tramos[tramos.length - 1][1] = t1; else tramos.push([t0, t1]);
+      }
+    }
+    return tramos;
+  }
+
   // ---------- Pista completa → muestras (44,1 kHz mono) ----------
   async cantarPista({ notas, bpm, idioma = 'es', genero = 0, transposicion = 0, expresividad = 1, alAvanzar = () => {}, cancelado = () => false }) {
     const voz = this.voz, sr = voz.sampleRate;

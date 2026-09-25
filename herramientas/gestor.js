@@ -177,13 +177,17 @@ async function incorporarCanto(id) {
   const nuevas = [];
   incorporando.add(id);
   try {
+    let consonantes = null;
+    try { consonantes = await canto.consonantesDePistas(dirCanto(id), b.cantoIdioma); } catch (e) { b.log.push('(Sin tramos de consonantes: ' + e.message + ')'); }
     for (const p of listas) {
       const archivo = canto.archivoCanto(base, p.nombre);
       await canto.convertirAMp3(path.join(dirCanto(id), p.audio), path.join(dirSalida, archivo));
-      nuevas.push({ parte: p.parte, sub: p.sub, nombre: p.nombre, archivo });
+      const nueva = { parte: p.parte, sub: p.sub, nombre: p.nombre, archivo };
+      if (consonantes && consonantes[p.nombre]) { nueva.consonantes = archivo.replace(/\.mp3$/, '.json'); fs.writeFileSync(path.join(dirSalida, nueva.consonantes), JSON.stringify(consonantes[p.nombre])); }
+      nuevas.push(nueva);
     }
   } finally { incorporando.delete(id); }
-  for (const c of b.entrada.canto || []) if (!nuevas.some(n => n.archivo === c.archivo)) { try { fs.unlinkSync(path.join(dirSalida, c.archivo)); } catch {} }
+  for (const c of b.entrada.canto || []) for (const f of [c.archivo, c.consonantes]) if (f && !nuevas.some(n => n.archivo === f || n.consonantes === f)) { try { fs.unlinkSync(path.join(dirSalida, f)); } catch {} }
   b.entrada.canto = nuevas;
   const faltan = est.pistas.filter(p => !p.audio).map(p => p.nombre);
   b.log.push(`Voces cantadas incorporadas: ${nuevas.map(n => n.nombre).join(', ')}.` + (faltan.length ? ' Faltan: ' + faltan.join(', ') + '.' : ''));
@@ -210,7 +214,7 @@ function cantarBorrador(id, datos, idioma, estilo) {
   if (!est.voz || !est.diccionario) throw new Error('Primero hay que instalar la voz del cantante');
   datos.titulo = datos.titulo || b.entrada.titulo;
   cantando = id; cancelarCanto = false;
-  b.cantando = true; b.log.push('Cantando la obra con el cantante automático (' + (idioma === 'la' ? 'latín' : 'castellano') + ')…'); guardarBorrador(b);
+  b.cantando = true; b.cantoIdioma = idioma; b.log.push('Cantando la obra con el cantante automático (' + (idioma === 'la' ? 'latín' : 'castellano') + ')…'); guardarBorrador(b);
   const registrar = linea => { const bb = leerBorrador(id); if (bb) { bb.log.push(linea); guardarBorrador(bb); } emitir(id, { tipo: 'log', linea }); };
   (async () => {
     try {
@@ -227,10 +231,24 @@ function cantarBorrador(id, datos, idioma, estilo) {
   })();
   return conCanto(leerBorrador(id));
 }
+// Añade (o recalcula) los tramos de consonantes de las voces ya incorporadas, sin volver a cantar ni convertir
+async function consonantesCanto(id) {
+  const b = leerBorrador(id);
+  if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
+  if (!(b.entrada.canto || []).length) throw new Error('La obra no tiene voces cantadas');
+  const consonantes = await canto.consonantesDePistas(dirCanto(id), b.cantoIdioma);
+  if (!consonantes) throw new Error('No hay datos de la obra en la carpeta de canto (hace falta haber preparado o cantado con esta versión)');
+  const dirSalida = path.join(dirDe(id), 'partituras');
+  let n = 0;
+  for (const c of b.entrada.canto) if (consonantes[c.nombre]) { c.consonantes = c.archivo.replace(/\.mp3$/, '.json'); fs.writeFileSync(path.join(dirSalida, c.consonantes), JSON.stringify(consonantes[c.nombre])); n++; }
+  b.log.push('Tramos de consonantes añadidos a ' + n + ' voces cantadas.');
+  guardarBorrador(b);
+  return conCanto(b);
+}
 function quitarCanto(id) {
   const b = leerBorrador(id);
   if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
-  for (const c of b.entrada.canto || []) { try { fs.unlinkSync(path.join(dirDe(id), 'partituras', c.archivo)); } catch {} }
+  for (const c of b.entrada.canto || []) for (const f of [c.archivo, c.consonantes]) if (f) { try { fs.unlinkSync(path.join(dirDe(id), 'partituras', f)); } catch {} }
   b.entrada.canto = [];
   b.log.push('Voces cantadas quitadas: al publicar, la obra irá sin ellas.');
   guardarBorrador(b);
@@ -424,6 +442,9 @@ const servidor = http.createServer(async (req, res) => {
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/canto\/idioma$/)) && req.method === 'POST') {
       try { const cuerpo = JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'); return json(res, { idioma: canto.detectarIdioma(cuerpo) }); } catch (e) { return json(res, { error: e.message }, 400); }
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/canto\/consonantes$/)) && req.method === 'POST') {
+      try { return json(res, await consonantesCanto(m[1])); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/canto\/quitar$/)) && req.method === 'POST') {
       try { return json(res, quitarCanto(m[1])); } catch (e) { return json(res, { error: e.message }, 400); }
