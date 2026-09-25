@@ -214,7 +214,7 @@ class Fonetizador {
   // palabra (sin espacios) → fonemas de la voz
   fonemas(palabra, idioma = 'es') {
     // varias palabras en la misma nota ("sa y"): cada una por su lado
-    const trozos = String(palabra).trim().split(/s+/).filter(Boolean);
+    const trozos = String(palabra).trim().split(/\s+/).filter(Boolean);
     if (trozos.length > 1) return trozos.flatMap(t => this.fonemas(t, idioma));
     const clave = idioma + ':' + palabra.toLowerCase();
     if (this.cache.has(clave)) return this.cache.get(clave);

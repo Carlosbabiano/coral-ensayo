@@ -135,6 +135,18 @@ class Cantante {
     const reales = fonemas.slice(1);
     const fones = reales.map((f, i) => ({ fonema: f, tMs: posiciones[i], finMs: i + 1 < posiciones.length ? posiciones[i + 1] : ultima.finMs }));
     for (const f of fones) f.durMs = Math.max(f.finMs - f.tMs, frameMs * 0.5);
+    // Las consonantes finales de cada nota (y de la frase) no se alargan con la nota: como mucho 0,2 s cada una;
+    // el resto del tiempo lo ocupa la vocal (si no, un "amor" largo acaba en una "r" de un segundo)
+    const TOPE_MS = 200;
+    const limites = puntos.map(p => p.idx - 1).concat([fones.length]);
+    for (let g = 0; g + 1 < limites.length; g++) {
+      const ini = limites[g], fin = limites[g + 1]; if (fin - ini < 2) continue;
+      let ultimaVocal = -1; for (let i = ini; i < fin; i++) if (voz.esVocal(fones[i].fonema)) ultimaVocal = i;
+      if (ultimaVocal < 0 || ultimaVocal === fin - 1) continue;
+      let t = fones[fin - 1].finMs;
+      for (let i = fin - 1; i > ultimaVocal; i--) { const d = Math.min(fones[i].durMs, TOPE_MS); fones[i].tMs = t - d; fones[i].finMs = t; fones[i].durMs = d; t = fones[i].tMs; }
+      fones[ultimaVocal].finMs = t; fones[ultimaVocal].durMs = Math.max(t - fones[ultimaVocal].tMs, frameMs * 0.5);
+    }
     // notas de la frase (para el modelo de tono)
     const notas = frase.palabras.flatMap(p => p.notas);
     return { fones, notas };
