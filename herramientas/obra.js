@@ -10,7 +10,6 @@ const SW = path.join(DIR_APP, 'sw.js');
 const DIR_PDF = path.join(RAIZ, 'pdf');
 const CACHE_AUDIVERIS = path.join(__dirname, 'cache', 'audiveris');
 
-const { transplantar } = require('./letra.js');
 const { posiciones } = require('./posiciones.js');
 const { posicionesImagen } = require('./posiciones-imagen.js');
 const { generarPaginas } = require('./paginas.js');
@@ -374,39 +373,24 @@ function prepararObra({ xml: rutaXml, pdf: rutaPdf = null, dirSalida, log = cons
   fs.mkdirSync(dirSalida, { recursive: true });
   const pdf = rutaPdf || pdfPara(rutaXml);
   if (pdf) {
-    // Audiveris (lento, y a veces falla) solo hace falta para la letra y, como último recurso, para situar los compases.
-    // Se lee una sola vez y solo cuando se necesita; si falla, la obra sigue adelante sin letra.
-    let audXml = null;
-    const conAudiveris = () => {
-      if (audXml === null) { try { audXml = leerConAudiveris(pdf, log); } catch (e) { audXml = false; log('  ! ' + e.message.split('\n')[0]); } }
-      return audXml;
-    };
-    // 1) Página original: imágenes de las páginas y dónde está cada compás (mirando la imagen; si no cuadra con el XML,
-    //    con la maquetación aproximada de Audiveris). Es lo que ve el coro, así que va primero y no depende de la letra.
+    // Página original: imágenes de las páginas y dónde está cada compás, mirando la imagen. Es lo que ve el coro.
+    // La letra no se saca del PDF: el coro la lee en la página. Audiveris (lento, y a veces falla) solo se usa como
+    // último recurso para situar los compases si la imagen no se deja leer.
     try {
       entrada.paginas = generarPaginas(pdf, dirSalida, base);
       let pos;
       try { pos = posicionesImagen(xml, entrada.paginas.map(p => path.join(dirSalida, p)), log); log('  Compases localizados en la imagen de cada página.'); }
       catch (e) {
         log('  ! No se han podido localizar los compases en la imagen (' + e.message + '): se intenta con la maquetación de Audiveris, menos exacta.');
-        const a = conAudiveris(); if (!a) throw e;
-        pos = posiciones(xml, a);
+        let audXml;
+        try { audXml = leerConAudiveris(pdf, log); } catch (e2) { log('  ! ' + e2.message.split('\n')[0]); throw e; }
+        pos = posiciones(xml, audXml);
       }
       fs.writeFileSync(path.join(dirSalida, base + '.pos.json'), JSON.stringify(pos));
       entrada.posiciones = base + '.pos.json';
       log(`  Página original incorporada (${entrada.paginas.length} imagen(es)); vista "PDF original" disponible.`);
     } catch (e) { delete entrada.paginas; delete entrada.posiciones; log('  ! No se ha podido incorporar la página original: ' + e.message.split('\n')[0]); }
-    // 2) Letra: para la partitura dibujada del gestor y para las voces cantadas (el coro ve la página del PDF, que ya la lleva)
-    if (/<lyric/.test(xml)) log('  el XML ya trae letra (por ejemplo una corrección devuelta): se conserva tal cual');
-    else {
-      const a = conAudiveris();
-      if (a) {
-        try { const r = transplantar(xml, a); xml = r.salida; for (const l of r.informe) log('  letra ' + l); }
-        catch (e) { log('  ! No se ha podido pasar la letra del PDF al XML: ' + e.message.split('\n')[0]); }
-      } else log('  La obra irá sin letra: el coro ve la página del PDF (solo las voces cantadas la echarían en falta).');
-    }
-  } else log('  (sin PDF: la obra irá sin letra y sin vista de página original)');
-  entrada.letra = /<lyric/.test(xml); // para que el gestor diga si la obra lleva letra (solo la usan las voces cantadas)
+  } else log('  (sin PDF: la obra irá sin vista de página original)');
 
   fs.writeFileSync(path.join(dirSalida, entrada.archivo), xml);
   return { entrada, avisos, partes: resumenPartes, sospechosos, tempo: tempoDe(xml), pdf };

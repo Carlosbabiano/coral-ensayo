@@ -103,7 +103,7 @@
       o haz clic para elegirlos
       <input type="file" id="elegir" multiple accept=".xml,.musicxml,.pdf">
     </label>
-    <p class="ayuda">Sin el PDF la obra irá sin letra y sin la vista de página original. Si el PDF está en la carpeta <code>pdf/</code> con el mismo nombre, se usa solo.</p>
+    <p class="ayuda">Sin el PDF la obra irá sin la vista de página original (la que ve el coro). Si el PDF está en la carpeta <code>pdf/</code> con el mismo nombre, se usa solo.</p>
     <div class="ayuda" id="entrada" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px"></div>
     <h2>Borradores</h2>
     <ul class="lista" id="borradores"></ul>
@@ -188,7 +188,7 @@ $('elegir').addEventListener('change', e => { subir([...e.target.files]); e.targ
 async function subir(archivos) {
   const validos = archivos.filter(f => /\.(xml|musicxml|pdf)$/i.test(f.name));
   if (!validos.length) return alert('Solo se admiten archivos .xml / .musicxml del Escáner Musical y .pdf');
-  if (!validos.some(f => /\.(xml|musicxml)$/i.test(f.name))) return alert('Hace falta el archivo .xml del Escáner Musical: las notas salen de ahí. El PDF solo sirve para la letra y la página original.');
+  if (!validos.some(f => /\.(xml|musicxml)$/i.test(f.name))) return alert('Hace falta el archivo .xml del Escáner Musical: las notas salen de ahí. El PDF es la página que ve el coro.');
   // Un borrador por cada XML; el PDF con el mismo nombre va con él
   const clave = n => n.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const xmls = validos.filter(f => /\.(xml|musicxml)$/i.test(f.name));
@@ -257,8 +257,7 @@ function pintarPanel() {
     else html += `<div class="aviso bien" id="chipsSospechosos">Todos los compases cuadran.</div>`;
     if (b.entrada.paginas) html += `<div class="aviso bien">Página original sacada del PDF (${b.entrada.paginas.length} página(s)): es lo que verá el coro. Comprueba en la vista «PDF original» que la marca del compás cae donde debe.</div>`;
     else if (b.pdf) html += `<div class="aviso">El PDF no se ha podido incorporar como página original (mira el registro de abajo): el coro verá la partitura dibujada.</div>`;
-    else html += `<div class="aviso">Sin PDF: la obra irá sin letra y sin vista de página original.</div>`;
-    if (b.entrada.letra === false) html += `<div class="aviso">La obra va sin letra (Audiveris no ha podido leerla del PDF; mira el registro). Solo la echarían en falta las voces cantadas.</div>`;
+    else html += `<div class="aviso">Sin PDF: la obra irá sin vista de página original.</div>`;
     html += `</div>`;
     html += `<div class="tarjeta"><h4>Revisar o editar un compás</h4><div class="acciones" style="margin:0">
       <button class="mini" id="revisarAnt" title="Compás anterior">◀</button>

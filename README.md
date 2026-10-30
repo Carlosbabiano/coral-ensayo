@@ -24,14 +24,13 @@ Publicada en: https://carlosbabiano.github.io/coral-ensayo/
    «Cargar» por obra (si el XML no trae PDF, busca uno con el mismo nombre en `pdf/`).
 4. El gestor prepara la obra (nombra las voces, separa en dos voces las partes de dos pentagramas sin acordes —tenor y bajo
    escritos juntos, por ejemplo— y quita las que llevan acordes —el piano—, revisa los compases, convierte las páginas
-   del PDF en imágenes y localiza en ellas cada compás, y lee el PDF con Audiveris para la letra) y la muestra en el mismo
-   reproductor que usa el coro. Si Audiveris falla (tarda minutos y rechaza páginas muy grandes), la obra sigue adelante
-   sin letra: el coro ve la página del PDF, que ya la lleva; la letra solo hace falta para las voces cantadas. Ahí se pueden cambiar el
+   del PDF en imágenes y localiza en ellas cada compás) y la muestra en el mismo reproductor que usa el coro. La letra
+   no se saca del PDF: el coro la lee en la página. Audiveris solo se usa como último recurso para situar los compases. Ahí se pueden cambiar el
    título, el nombre de cada voz, el tempo y quitar voces (por ejemplo el piano), y saltar a los compases dudosos.
 5. «Publicar para el coro» la mete en la app, sube la versión de la caché, la guarda en git y la publica.
    «Retirar» quita una obra publicada. Los borradores viven en `borradores/` hasta que se publican o descartan.
 
-La lectura de cada PDF con Audiveris se guarda en `herramientas/cache/`, así que repetir una obra es instantáneo.
+Si alguna vez hace falta Audiveris, su lectura se guarda en `herramientas/cache/` para no repetirla.
 
 ## Modo corregir (para el director)
 Abrir la app con `?corregir=1` al final de la dirección (https://carlosbabiano.github.io/coral-ensayo/?corregir=1).

@@ -205,17 +205,38 @@ function cabezaEnLosExtremos(img, xc, p) {
   return false;
 }
 
+// Anchura real (en píxeles de tinta) del trazo vertical que pasa por x: mediana, entre las líneas del pentagrama,
+// de la anchura del trazo oscuro más cercano a x en cada fila. Una divisoria normal mide 1-3 px; la barra final
+// gruesa de un movimiento, medio espacio o más.
+function anchoTrazo(img, x, p) {
+  const { w, g } = img, anchos = [];
+  for (let y = Math.round(p.y1); y <= Math.round(p.y5); y++) {
+    if (p.lineas.some(ly => Math.abs(y - ly) <= Math.ceil(p.grosor / 2) + 1)) continue;
+    const o = y * w; let xx = -1;
+    for (const dx of [0, -1, 1, -2, 2]) { const c = x + dx; if (c >= 0 && c < w && g[o + c] < OSCURO) { xx = c; break; } }
+    if (xx < 0) continue;
+    let a = xx, b = xx;
+    while (a > 0 && g[o + a - 1] < OSCURO) a--;
+    while (b < w - 1 && g[o + b + 1] < OSCURO) b++;
+    anchos.push(b - a + 1);
+  }
+  if (!anchos.length) return 0;
+  anchos.sort((u, v) => u - v);
+  return anchos[anchos.length >> 1];
+}
+
 // Candidatas a divisoria de un pentagrama: columnas oscuras que lo cruzan de la primera a la quinta línea
-// sin llevar cabeza de nota pegada. Devuelve el centro de cada trazo (agrupando columnas contiguas).
-function barrasDePentagrama(img, p, estricto) {
+// sin llevar cabeza de nota pegada. Devuelve cada trazo (agrupando columnas contiguas): { x: centro, ancho }.
+function trazosDePentagrama(img, p, estricto) {
   const cols = [];
   for (let x = Math.max(0, p.x0 - 2); x <= Math.min(img.w - 1, p.x1 + 2); x++) {
     if (columnaOscura(img, x, Math.round(p.y1), Math.round(p.y5), 2, COBERTURA) && !tieneCabeza(img, x, p, estricto)) cols.push(x);
   }
   const runs = [];
   for (const x of cols) { const u = runs[runs.length - 1]; if (u && x - u.b <= 2) u.b = x; else runs.push({ a: x, b: x }); }
-  return runs.filter(r => r.b - r.a <= p.esp * 1.5 + 4).map(r => (r.a + r.b) / 2); // lo muy ancho no es una barra
+  return runs.filter(r => r.b - r.a <= p.esp * 1.5 + 4).map(r => { const x = Math.round((r.a + r.b) / 2); return { x, ancho: anchoTrazo(img, x, p) }; }); // lo muy ancho no es una barra
 }
+const barrasDePentagrama = (img, p, estricto) => trazosDePentagrama(img, p, estricto).map(t => t.x);
 
 // Divisorias interiores: sin la barra inicial ni la final, que coinciden en todos los sistemas de la página
 const interiores = (xs, p) => xs.filter(x => x > p.x0 + p.esp * 2 && x < p.x1 - p.esp * 2);
@@ -238,7 +259,7 @@ function conectados(img, a, b) {
 // típico de la página) y además sus divisorias coinciden o alguna cruza el hueco. Así el piano de ensayo entra
 // en el sistema del coro (comparte divisorias) y dos líneas seguidas de un solo no se juntan (divisorias distintas).
 function sistemas(img, pents) {
-  for (const p of pents) { p.barras = barrasDePentagrama(img, p, false); p.firmes = barrasDePentagrama(img, p, true); }
+  for (const p of pents) { p.trazos = trazosDePentagrama(img, p, false); p.barras = p.trazos.map(t => t.x); p.firmes = barrasDePentagrama(img, p, true); }
   const huecos = pents.slice(1).map((p, i) => p.y1 - pents[i].y5).sort((a, b) => a - b);
   const hueco = huecos.length ? huecos[Math.floor((huecos.length - 1) / 2)] : 0; // mediana: el hueco típico entre pentagramas de un sistema
   const cerca = (a, p) => (p.y1 - a.y5) <= hueco * 1.8 + a.esp;
@@ -289,7 +310,12 @@ function barras(img, s) {
     const x = Math.round(g.xs.reduce((a, b) => a + b, 0) / g.xs.length);
     // justo tras el principio del sistema van la clave, la armadura y la cifra de compás, no una divisoria
     if (x > s.x0 + esp * 1.5 && x < s.x0 + esp * 11) continue;
-    const c = { x, votos: g.xs.length, limpias, ok: true };
+    // barra final gruesa (en la mayoría de los pentagramas el trazo es ancho) o doble barra (dos trazos juntos)
+    const enGrupo = s.pents.map(p => p.trazos.filter(t => t.x >= g.xs[0] - esp * 0.6 && t.x <= g.fin + esp * 0.6));
+    const umbralGrueso = Math.max(3, esp * 0.3);
+    const gruesa = enGrupo.filter(ts => ts.some(t => t.ancho >= umbralGrueso)).length >= Math.ceil(n / 2);
+    const doble = enGrupo.filter(ts => ts.length >= 2).length >= Math.ceil(n / 2);
+    const c = { x, votos: g.xs.length, limpias, ok: true, gruesa, doble };
     s.candidatas.push(c);
     if (g.xs.length < minVotos) { c.ok = false; continue; }
     // La mayoría no basta (dos voces homorrítmicas alinean sus plicas): en algún pentagrama ha de verse limpia
@@ -308,14 +334,17 @@ function barras(img, s) {
 }
 
 // Las candidatas aceptadas de un sistema, fundiendo lo que va pegado a una divisoria (barra gruesa final,
-// cifra de compás): el primer trazo es la divisoria de verdad
+// cifra de compás): el primer trazo es la divisoria de verdad. Anota en s.limites las divisorias que cierran
+// un tramo de la obra: barra final gruesa («final») o doble barra fina («doble»).
 function barrasAceptadas(s) {
   const out = [];
   for (const c of s.candidatas) {
     if (!c.ok) continue;
     const u = out[out.length - 1];
-    if (u && c.x - u.b <= s.esp * 3.5) u.b = c.x; else out.push({ a: c.x, b: c.x });
+    if (u && c.x - u.b <= s.esp * 3.5) { u.b = c.x; u.n++; u.gruesa = u.gruesa || c.gruesa; u.doble = u.doble || c.doble; }
+    else out.push({ a: c.x, b: c.x, n: 1, gruesa: c.gruesa, doble: c.doble });
   }
+  s.limites = new Map(out.filter(r => r.gruesa || r.doble || r.n >= 2).map(r => [r.a, r.gruesa ? 'final' : 'doble']));
   return out.map(r => r.a);
 }
 
@@ -326,15 +355,54 @@ function compasesDePagina(img, s) {
   const cajas = [];
   for (let i = 0; i + 1 < bordes.length; i++) {
     if (bordes[i + 1] - bordes[i] < s.esp * 4) continue; // un compás de verdad es más ancho: esto es una cifra de compás tras la barra, puntos de repetición…
-    cajas.push({ xa: bordes[i], xb: bordes[i + 1] });
+    cajas.push({ xa: bordes[i], xb: bordes[i + 1], limite: (s.limites && s.limites.get(bordes[i + 1])) || null });
   }
   return cajas;
 }
 
+// Tramos del XML: dónde acaba cada movimiento o sección. Límites "firmes": compases cuya barra es final (gruesa)
+// o doble (fina). Límites "blandos": cambios de compás o de tonalidad (el escáner a veces se come la barra
+// final de un movimiento, pero el cambio de armadura o de cifra del siguiente sí lo escribe).
+function limitesXml(parte) {
+  const limites = [];
+  const medidas = [...parte.matchAll(/<measure [^>]*>([\s\S]*?)<\/measure>/g)];
+  medidas.forEach((m, i) => {
+    const barras = [...m[1].matchAll(/<barline\b([^>]*)>([\s\S]*?)<\/barline>/g)].filter(b => !/location="left"/.test(b[1]));
+    const estilos = barras.map(b => (b[2].match(/<bar-style>([^<]*)/) || [, ''])[1]);
+    const tipo = estilos.some(e => /heavy/.test(e)) ? 'final' : estilos.some(e => e === 'light-light') ? 'doble' : null;
+    if (tipo && i < medidas.length - 1) limites.push({ i, tipo });
+    if (i > 0 && i < medidas.length - 1 && /<(time|key)\b/.test(m[1]) && !limites.some(l => l.i === i - 1)) limites.push({ i: i - 1, tipo: 'blando' });
+  });
+  limites.sort((a, b) => a.i - b.i);
+  return { n: medidas.length, limites };
+}
+
+// Empareja los límites del XML con los de la página, en orden, cuando los tramos que cierran tienen un número
+// de compases parecido. Un límite sin pareja (una barra final que el escáner no escribió, o una que la imagen
+// no ve) se ignora, y su tramo se junta con el siguiente. Devuelve los tramos emparejados: [{ xa, xb, ia, ib }]
+// (compases del XML [xa, xb) y cajas de la página [ia, ib)).
+function emparejarTramos(limXml, nXml, limImg, nImg) {
+  const X = limXml.map(l => l.i + 1), I = limImg.map(l => l.i + 1); // número de compases hasta el límite inclusive
+  const tol = (m, n) => Math.max(4, Math.round(0.1 * Math.max(m, n)));
+  const parecidos = (m, n) => Math.abs(m - n) <= tol(m, n);
+  const tramos = [];
+  let i = 0, j = 0, px = 0, pi = 0;
+  while (i < X.length && j < I.length) {
+    const M = X[i] - px, N = I[j] - pi;
+    if (parecidos(M, N)) { tramos.push({ xa: px, xb: X[i], ia: pi, ib: I[j] }); px = X[i]; pi = I[j]; i++; j++; continue; }
+    const saltaX = i + 1 < X.length && parecidos(X[i + 1] - px, N), saltaI = j + 1 < I.length && parecidos(M, I[j + 1] - pi);
+    if (saltaX && (!saltaI || Math.abs(X[i + 1] - px - N) <= Math.abs(M - (I[j + 1] - pi)))) i++;
+    else if (saltaI) j++;
+    else if (M < N) i++; else j++;
+  }
+  tramos.push({ xa: px, xb: nXml, ia: pi, ib: nImg });
+  return tramos;
+}
+
 function posicionesImagen(escXml, imagenes, log = () => {}) {
   const parte = (escXml.match(/<part id="[^"]+">([\s\S]*?)<\/part>/) || ['', ''])[1];
-  const nXml = (parte.match(/<measure /g) || []).length;
-  const compases = []; const informe = [];
+  const { n: nXml, limites: limXml } = limitesXml(parte);
+  const informe = [];
   const saltar = +(process.env.POSICIONES_SALTAR || 0); // compases del principio que están en la imagen pero no en el XML (p. ej. una espera de 8 compases que el escáner omitió)
   const paginas = imagenes.map((archivo, p) => {
     const img = enderezar(leerGris(archivo));
@@ -343,48 +411,95 @@ function posicionesImagen(escXml, imagenes, log = () => {}) {
     for (const s of sis) s.cajas = compasesDePagina(img, s);
     return { p, img, pents, sis };
   });
-  const total = () => paginas.reduce((a, pg) => a + pg.sis.reduce((b, s) => b + s.cajas.length, 0), 0);
-  const objetivo = nXml + saltar;
-  // Cuadrar con el XML: si faltan compases, se recuperan las candidatas rechazadas con más votos (siempre que
-  // partan un compás en dos trozos de anchura razonable); si sobran, se quitan las aceptadas con menos votos.
-  const ajustes = [];
+  // Todas las cajas de la obra, en orden de lectura (sin las que se mandan saltar)
+  const cajasTodas = () => { const out = []; for (const pg of paginas) for (const s of pg.sis) for (const c of s.cajas) out.push({ pg, s, c }); return out.slice(saltar); };
+  const limitesImagen = cajas => { const out = []; cajas.forEach(({ c }, k) => { if (c.limite && k < cajas.length - 1) out.push({ i: k, tipo: c.limite }); }); return out; };
   const puntos = c => c.votos * 10 + c.limpias * 5;
-  for (let guarda = 0; total() < objetivo && guarda < 20; guarda++) {
+  const ajustes = [];
+  // Recupera la candidata rechazada con más votos que parta una caja de las [desde, hasta) en dos trozos de anchura razonable
+  const recuperar = (desde, hasta) => {
     let mejor = null;
-    for (const pg of paginas) for (const s of pg.sis) for (const c of s.candidatas) {
-      if (c.ok || c.votos < 2) continue;
-      const caja = s.cajas.find(k => c.x > k.xa + s.esp * 4 && c.x < k.xb - s.esp * 4);
-      if (!caja) continue;
-      if (!mejor || puntos(c) > puntos(mejor.c)) mejor = { pg, s, c };
-    }
-    if (!mejor) break;
+    cajasTodas().forEach(({ pg, s, c: caja }, k) => {
+      if (k < desde || k >= hasta) return;
+      for (const c of s.candidatas) {
+        if (c.ok || c.votos < 2) continue;
+        if (!(c.x > caja.xa + s.esp * 4 && c.x < caja.xb - s.esp * 4)) continue;
+        if (!mejor || puntos(c) > puntos(mejor.c)) mejor = { pg, s, c };
+      }
+    });
+    if (!mejor) return false;
     mejor.c.ok = true; mejor.s.barras = barrasAceptadas(mejor.s); mejor.s.cajas = compasesDePagina(mejor.pg.img, mejor.s);
     ajustes.push(`+1 en página ${mejor.pg.p + 1} (x=${mejor.c.x}, ${mejor.c.votos} votos)`);
-  }
-  for (let guarda = 0; total() > objetivo && guarda < 20; guarda++) {
+    return true;
+  };
+  // Quita la candidata aceptada con menos votos de las cajas [desde, hasta)
+  const quitar = (desde, hasta) => {
     let peor = null;
-    for (const pg of paginas) for (const s of pg.sis) for (const c of s.candidatas) {
-      if (!c.ok || c.votos >= s.pents.length || c.x <= s.x0 + s.esp * 1.5) continue;
-      if (!peor || puntos(c) < puntos(peor.c)) peor = { pg, s, c };
-    }
-    if (!peor) break;
+    cajasTodas().forEach(({ pg, s, c: caja }, k) => {
+      if (k < desde || k >= hasta) return;
+      for (const c of s.candidatas) {
+        // solo las que ningún pentagrama ve limpias del todo (lo demás suele ser una divisoria de verdad con una plica pegada)
+        if (!c.ok || c.limpias > 0 || c.votos >= s.pents.length || c.x <= s.x0 + s.esp * 1.5 || Math.abs(c.x - caja.xb) > 1) continue;
+        if (!peor || puntos(c) < puntos(peor.c)) peor = { pg, s, c };
+      }
+    });
+    if (!peor) return false;
     peor.c.ok = false; peor.s.barras = barrasAceptadas(peor.s); peor.s.cajas = compasesDePagina(peor.pg.img, peor.s);
-    ajustes.push(`-1 en página ${peor.pg.p + 1} (x=${peor.c.x}, ${peor.c.votos} votos)`);
+    ajustes.push(`-1 en página ${peor.pg.p + 1} (x=${peor.c.x}, ${peor.c.votos} votos, ${peor.c.limpias} limpias)`);
+    return true;
+  };
+
+  // La obra se cuadra tramo a tramo (movimiento a movimiento): las barras finales y dobles de la página se
+  // emparejan con las del XML, y así un compás que el escáner se salte o invente no descoloca el resto de la obra.
+  // En cada tramo, si faltan cajas se recuperan candidatas rechazadas; si sobran, se quitan las de menos votos.
+  const tramosAhora = () => { const cajas = cajasTodas(); return { cajas, tramos: emparejarTramos(limXml, nXml, limitesImagen(cajas), cajas.length) }; };
+  for (let guarda = 0; guarda < 60; guarda++) {
+    const { tramos } = tramosAhora();
+    const corto = tramos.find(t => (t.xb - t.xa) > (t.ib - t.ia));
+    if (corto && recuperar(corto.ia, corto.ib)) continue;
+    const largo = tramos.find(t => (t.xb - t.xa) < (t.ib - t.ia) && (t.ib - t.ia) - (t.xb - t.xa) > 0);
+    if (largo && quitar(largo.ia, largo.ib)) continue;
+    break;
   }
-  for (const { p, img, pents, sis } of paginas) {
-    const cx = img.w / 2, t = img.t;
-    for (const s of sis) for (const c of s.cajas) {
-      // deshacer el enderezado: la caja se estira lo que baje o suba la inclinación entre sus dos lados
-      const ya = s.y1 - s.esp * 4, yb = s.y5 + s.esp * 6, da = (c.xa - cx) * t, db = (c.xb - cx) * t;
-      compases.push({ p, x0: c.xa / img.w, x1: c.xb / img.w, y0: Math.max(0, ya + Math.min(da, db)) / img.h, y1: Math.min(img.h, yb + Math.max(da, db)) / img.h });
+  const { cajas, tramos } = tramosAhora();
+  const desajustes = [];
+  const elegidas = []; // una caja por compás del XML
+  for (const t of tramos) {
+    const M = t.xb - t.xa, N = t.ib - t.ia, lista = cajas.slice(t.ia, t.ib);
+    if (!M) continue;
+    if (N === M) elegidas.push(...lista);
+    else if (N > M) {
+      // la página tiene compases que el XML no trae (el escáner se come la introducción instrumental antes de una
+      // espera): se dan por saltados los primeros del tramo
+      elegidas.push(...lista.slice(N - M));
+      desajustes.push(`compases ${t.xa + 1}-${t.xb}: la página tiene ${N} y el XML ${M} (se dan por saltados los ${N - M} primeros de la página)`);
+    } else if (N > 0) {
+      // el XML trae compases de más: se reparten por el tramo (la marca puede ir un compás desviada ahí)
+      for (let k = 0; k < M; k++) elegidas.push(lista[Math.min(N - 1, Math.floor(k * N / M))]);
+      desajustes.push(`compases ${t.xa + 1}-${t.xb}: la página tiene ${N} y el XML ${M} (la marca puede ir desviada en ese tramo)`);
+    } else {
+      // sin cajas para este tramo: se usa la última conocida
+      const ultima = elegidas[elegidas.length - 1] || cajas[0];
+      for (let k = 0; k < M; k++) elegidas.push(ultima);
+      desajustes.push(`compases ${t.xa + 1}-${t.xb}: no se encuentran en la página`);
     }
-    informe.push(`página ${p + 1}: ${t ? 'inclinación ' + (Math.atan(t) * 180 / Math.PI).toFixed(2) + '°, ' : ''}${pents.length} pentagramas, ${sis.length} sistemas, compases por sistema ${sis.map(s => s.cajas.length).join('+') || 0}`);
+  }
+  const compases = elegidas.map(({ pg, s, c }) => {
+    const { img } = pg, cx = img.w / 2, t = img.t;
+    // deshacer el enderezado: la caja se estira lo que baje o suba la inclinación entre sus dos lados
+    const ya = s.y1 - s.esp * 4, yb = s.y5 + s.esp * 6, da = (c.xa - cx) * t, db = (c.xb - cx) * t;
+    return { p: pg.p, x0: c.xa / img.w, x1: c.xb / img.w, y0: Math.max(0, ya + Math.min(da, db)) / img.h, y1: Math.min(img.h, yb + Math.max(da, db)) / img.h };
+  });
+  for (const { p, img, pents, sis } of paginas) {
+    const t = img.t;
+    informe.push(`página ${p + 1}: ${t ? 'inclinación ' + (Math.atan(t) * 180 / Math.PI).toFixed(2) + '°, ' : ''}${pents.length} pentagramas, ${sis.length} sistemas, compases por sistema ${sis.map(s => s.cajas.length + (s.cajas.some(c => c.limite) ? '|' : '')).join('+') || 0}`);
   }
   if (ajustes.length) informe.push('ajustes para cuadrar con el XML: ' + ajustes.join(', '));
-  if (saltar) compases.splice(0, saltar);
+  informe.push(`la obra se ha cuadrado en ${tramos.length} tramo(s) (barras finales o dobles: ${limXml.filter(l => l.tipo !== 'blando').length} en el XML, ${limitesImagen(cajas).length} en la página)`);
+  for (const d of desajustes) informe.push('! ' + d);
   for (const l of informe) log('  ' + l);
-  if (compases.length !== nXml && !process.env.POSICIONES_FORZAR) throw new Error(`la imagen tiene ${compases.length} compases y el XML ${nXml}`);
-  return { paginas: imagenes.length, compases };
+  if (compases.length !== nXml) throw new Error(`la imagen tiene ${cajas.length} compases y el XML ${nXml}`);
+  return { paginas: imagenes.length, compases, desajustes };
 }
 
 if (require.main === module) {
