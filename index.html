@@ -58,6 +58,16 @@
   .pagina img { display: block; width: 100%; height: auto; aspect-ratio: auto 1 / 1.414; } /* hueco A4 mientras carga */
   .pagina .capa { position: absolute; inset: 0; }
   .pdfCursor { position: absolute; background: rgba(227,155,44,.35); border-left: 2px solid #e39b2c; pointer-events: none; }
+  /* Apuntes: lienzo sobre cada página; solo recibe el dedo/lápiz cuando está activado el modo Apuntes */
+  .pagina canvas.apuntes { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  body.apuntando .pagina canvas.apuntes { pointer-events: auto; touch-action: pinch-zoom; cursor: crosshair; }
+  #vistaApuntes.activa { background: #fff7e6; border-color: #e39b2c; color: #8a5a00; }
+  #barraApuntes { display: none; margin: 6px 12px 0; padding: 6px 8px; background: #fff7e6; border: 1px solid #f3dcae; border-radius: 10px; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 13px; }
+  body.apuntando #barraApuntes { display: flex; }
+  #barraApuntes button { padding: 6px 10px; min-width: 38px; border-radius: 8px; border: 1px solid var(--line); background: #fff; font: inherit; font-size: 14px; color: var(--fg); }
+  #barraApuntes button.activa { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(36,64,122,.25); font-weight: 600; }
+  #barraApuntes button.color::before { content: ''; display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--c); vertical-align: -2px; border: 1px solid rgba(0,0,0,.2); }
+  #barraApuntes .sep { flex: 1; }
 </style>
 </head>
 <body>
@@ -74,6 +84,18 @@
 <div class="vista" id="vista" style="display:none">
   <button id="vistaPartitura" class="activa">Partitura</button>
   <button id="vistaPdf">PDF original</button>
+  <button id="vistaApuntes" style="display:none" title="Escribir apuntes sobre la página">✏️ Apuntes</button>
+</div>
+<div id="barraApuntes">
+  <button class="color activa" data-color="#d32f2f" style="--c:#d32f2f" title="Bolígrafo rojo"></button>
+  <button class="color" data-color="#1e4fb5" style="--c:#1e4fb5" title="Bolígrafo azul"></button>
+  <button class="color" data-color="#1b8a3a" style="--c:#1b8a3a" title="Bolígrafo verde"></button>
+  <button class="color" data-color="resaltador" style="--c:#ffe44d" title="Resaltador">🖍</button>
+  <button data-util="texto" title="Escribir un texto donde toques">Aa</button>
+  <button data-util="goma" title="Goma: toca lo que quieras borrar">Goma</button>
+  <span class="sep"></span>
+  <button id="apDeshacer" title="Deshacer el último trazo">↶</button>
+  <button id="apBorrar" title="Borrar todos los apuntes de esta obra">🗑</button>
 </div>
 <div id="estado">Toca un compás de la partitura para empezar desde ahí.</div>
 <div id="partitura"></div>
@@ -260,6 +282,7 @@ async function cargarObra(archivo) {
   // ¿Tiene PDF original con posiciones de compases?
   obraActual = listaObras.find(o => o.archivo === archivo) || {};
   posiciones = null; paginasPdf = []; pdfCargado = null; $('pdfVista').innerHTML = '';
+  cargarApuntes();
   if (obraActual.paginas && obraActual.paginas.length && obraActual.posiciones) {
     try { posiciones = await (await fetch('partituras/' + obraActual.posiciones)).json(); } catch (e) { console.warn('Sin posiciones', e); }
   }
@@ -280,6 +303,8 @@ async function aplicarModo() {
   // La partitura se oculta sin display:none para que OSMD no recalcule con tamaño cero
   Object.assign($('partitura').style, modoPdf ? { position: 'absolute', left: '-20000px', width: '100%', height: '0', overflow: 'hidden', padding: '0' } : { position: '', left: '', width: '', height: '', overflow: '', padding: '' });
   $('pdfVista').style.display = modoPdf ? 'block' : 'none';
+  $('vistaApuntes').style.display = modoPdf ? '' : 'none';
+  if (!modoPdf) activarApuntes(false);
   $('estado').textContent = modoPdf ? 'Toca un compás de la página para empezar desde ahí.' : 'Toca un compás de la partitura para empezar desde ahí.';
   if (modoPdf && !pdfCargado) await cargarPdf();
   try { localStorage.setItem('modoPdf', modoPdf ? '1' : '0'); } catch {}
@@ -302,11 +327,122 @@ async function cargarPdf() {
       if (idx >= 0) { irACompas(idx); $('estado').textContent = 'Empezará en el compás ' + (idx + 1); avisarCompasElegido(idx + 1); }
     });
     const cursor = document.createElement('div'); cursor.className = 'pdfCursor'; cursor.style.display = 'none';
-    capa.appendChild(cursor); div.appendChild(img); div.appendChild(capa); cont.appendChild(div);
-    paginasPdf.push({ div, cursor });
+    capa.appendChild(cursor); div.appendChild(img); div.appendChild(capa);
+    const lienzo = crearLienzoApuntes(n); div.appendChild(lienzo); cont.appendChild(div);
+    paginasPdf.push({ div, cursor, lienzo });
   });
   pdfCargado = true;
 }
+
+// ---------- Apuntes sobre el PDF ----------
+// Cada cantante escribe sobre la página (respiraciones, dinámicas, avisos…) con el dedo o el lápiz. Los trazos se
+// guardan en este dispositivo, en coordenadas relativas a la página (0..1), así que valen a cualquier tamaño o zoom.
+let apuntes = null, apuntando = false, utilApuntes = '#d32f2f', historialApuntes = [];
+const claveApuntes = () => 'apuntes:' + (obraActual && obraActual.archivo || '');
+function cargarApuntes() {
+  apuntes = null; historialApuntes = [];
+  try { apuntes = JSON.parse(localStorage.getItem(claveApuntes()) || 'null'); } catch {}
+  if (!apuntes || !Array.isArray(apuntes.paginas)) apuntes = { paginas: [] };
+}
+function guardarApuntes() {
+  try { localStorage.setItem(claveApuntes(), JSON.stringify(apuntes)); }
+  catch (e) { console.warn('No se pudieron guardar los apuntes', e); $('estado').textContent = 'No hay sitio para guardar los apuntes en este dispositivo.'; }
+}
+const trazosPagina = p => (apuntes.paginas[p] = apuntes.paginas[p] || []);
+
+function crearLienzoApuntes(p) {
+  if (!apuntes) cargarApuntes();
+  const cv = document.createElement('canvas'); cv.className = 'apuntes'; cv.dataset.pagina = p;
+  // El lienzo sigue el tamaño real de la página (que crece cuando llega la imagen) con la nitidez de la pantalla
+  new ResizeObserver(() => dibujarPagina(p)).observe(cv);
+  let trazo = null, punteros = new Set();
+  const pos = ev => { const r = cv.getBoundingClientRect(); return [(ev.clientX - r.left) / r.width, (ev.clientY - r.top) / r.height]; };
+  cv.addEventListener('pointerdown', ev => {
+    if (!apuntando) return;
+    punteros.add(ev.pointerId);
+    if (punteros.size > 1) { trazo = null; dibujarPagina(p); return; } // dos dedos: es un zoom, no un trazo
+    ev.preventDefault(); cv.setPointerCapture(ev.pointerId);
+    const [x, y] = pos(ev);
+    if (utilApuntes === 'goma') { borrarEn(p, x, y); return; }
+    if (utilApuntes === 'texto') {
+      const s = prompt('Texto del apunte:'); if (!s || !s.trim()) return;
+      anotar(p, { t: 'x', x, y, s: s.trim(), c: '#d32f2f' }); return;
+    }
+    trazo = utilApuntes === 'resaltador' ? { t: 'r', c: '#ffe44d', p: [[x, y]] } : { t: 'l', c: utilApuntes, p: [[x, y]] };
+  });
+  cv.addEventListener('pointermove', ev => {
+    if (!apuntando || punteros.size > 1) return;
+    const [x, y] = pos(ev);
+    if (utilApuntes === 'goma') { if (punteros.has(ev.pointerId)) borrarEn(p, x, y); return; }
+    if (!trazo) return;
+    const u = trazo.p[trazo.p.length - 1];
+    if (Math.hypot(x - u[0], y - u[1]) < 0.0015) return; // puntos demasiado juntos: no aportan nada
+    trazo.p.push([x, y]);
+    dibujarPagina(p, trazo);
+  });
+  const soltar = ev => {
+    punteros.delete(ev.pointerId);
+    if (!trazo) return;
+    const t = trazo; trazo = null;
+    if (t.p.length === 1) t.p.push([t.p[0][0] + 0.001, t.p[0][1]]); // un toque: un punto visible
+    anotar(p, t);
+  };
+  cv.addEventListener('pointerup', soltar); cv.addEventListener('pointercancel', soltar);
+  return cv;
+}
+function anotar(p, trazo) {
+  trazosPagina(p).push(trazo); historialApuntes.push({ p, trazo, borrado: false });
+  guardarApuntes(); dibujarPagina(p);
+}
+// Goma: quita el trazo o texto que pase cerca del punto tocado
+function borrarEn(p, x, y) {
+  const lista = trazosPagina(p);
+  const cerca = tr => tr.t === 'x' ? (x > tr.x - 0.012 && x < tr.x + 0.012 * tr.s.length + 0.012 && Math.abs(y - tr.y) < 0.02) : tr.p.some(([px, py]) => Math.hypot(px - x, py - y) < (tr.t === 'r' ? 0.02 : 0.012));
+  const i = lista.findIndex(cerca); if (i < 0) return;
+  const [tr] = lista.splice(i, 1); historialApuntes.push({ p, trazo: tr, borrado: true, i });
+  guardarApuntes(); dibujarPagina(p);
+}
+function deshacerApunte() {
+  const h = historialApuntes.pop(); if (!h) return;
+  const lista = trazosPagina(h.p);
+  if (h.borrado) lista.splice(Math.min(h.i, lista.length), 0, h.trazo); else { const i = lista.lastIndexOf(h.trazo); if (i >= 0) lista.splice(i, 1); }
+  guardarApuntes(); dibujarPagina(h.p);
+}
+function dibujarPagina(p, enCurso) {
+  const pg = paginasPdf[p]; if (!pg || !apuntes) return;
+  const cv = pg.lienzo, r = cv.getBoundingClientRect(), k = devicePixelRatio || 1;
+  const W = Math.round(r.width * k), H = Math.round(r.height * k); if (!W || !H) return;
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const ctx = cv.getContext('2d'); ctx.clearRect(0, 0, W, H);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for (const tr of [...trazosPagina(p), ...(enCurso ? [enCurso] : [])]) {
+    if (tr.t === 'x') {
+      ctx.font = `bold ${W * 0.022}px system-ui, sans-serif`; ctx.fillStyle = tr.c; ctx.textBaseline = 'middle';
+      ctx.fillText(tr.s, tr.x * W, tr.y * H); continue;
+    }
+    ctx.globalAlpha = tr.t === 'r' ? 0.4 : 1; ctx.strokeStyle = tr.c; ctx.lineWidth = W * (tr.t === 'r' ? 0.018 : 0.0035);
+    ctx.beginPath(); tr.p.forEach(([x, y], i) => i ? ctx.lineTo(x * W, y * H) : ctx.moveTo(x * W, y * H)); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+function activarApuntes(on) {
+  apuntando = on;
+  document.body.classList.toggle('apuntando', on);
+  $('vistaApuntes').classList.toggle('activa', on);
+  if (on) $('estado').textContent = 'Escribe sobre la página con el dedo o el lápiz. Con dos dedos puedes ampliar. Vuelve a tocar «Apuntes» para terminar.';
+  else if (modoPdf) $('estado').textContent = 'Toca un compás de la página para empezar desde ahí.';
+}
+$('vistaApuntes').onclick = () => activarApuntes(!apuntando);
+for (const b of document.querySelectorAll('#barraApuntes button[data-color], #barraApuntes button[data-util]')) b.onclick = () => {
+  utilApuntes = b.dataset.color || b.dataset.util;
+  document.querySelectorAll('#barraApuntes button.activa').forEach(x => x.classList.remove('activa')); b.classList.add('activa');
+};
+$('apDeshacer').onclick = deshacerApunte;
+$('apBorrar').onclick = () => {
+  if (!apuntes || !apuntes.paginas.some(l => l && l.length)) return;
+  if (!confirm('¿Borrar todos los apuntes de esta obra en este dispositivo?')) return;
+  apuntes = { paginas: [] }; historialApuntes = []; guardarApuntes(); paginasPdf.forEach((_, p) => dibujarPagina(p));
+};
 
 // Barra sobre la página: en el compás del evento, a la fracción indicada (si no se da, la del propio evento)
 function moverCursorPdf(ev, frac, centrar) {
