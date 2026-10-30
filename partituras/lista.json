@@ -37,6 +37,16 @@
     ]
   },
   {
+    "titulo": "Gloria in excelsis (Vivaldi)",
+    "archivo": "Gloria_in_excelsis_Vivaldi.xml",
+    "posiciones": "Gloria_in_excelsis_Vivaldi.pos.json",
+    "paginas": [
+      "Gloria_in_excelsis_Vivaldi-p1.jpg",
+      "Gloria_in_excelsis_Vivaldi-p2.jpg",
+      "Gloria_in_excelsis_Vivaldi-p3.jpg"
+    ]
+  },
+  {
     "titulo": "Hymne à la nuit (Les Choristes)",
     "archivo": "Hymne_a_la_nuit_Les_Choristes.xml",
     "posiciones": "Hymne_a_la_nuit_Les_Choristes.pos.json",
