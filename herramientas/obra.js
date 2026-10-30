@@ -251,7 +251,8 @@ function leerConAudiveris(pdf, log = console.log) {
   if (!fs.existsSync(AUDIVERIS)) throw new Error('Audiveris no está instalado (' + AUDIVERIS + ')');
   const tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'audiveris-'));
   log('  leyendo el PDF con Audiveris (puede tardar un par de minutos)...');
-  execSync(`"${AUDIVERIS}" -batch -export -constant org.audiveris.omr.text.Language.defaultSpecification=${IDIOMA_OCR} -output "${tmp}" -- "${path.resolve(pdf)}"`, { stdio: 'ignore', timeout: 15 * 60 * 1000 });
+  try { execSync(`"${AUDIVERIS}" -batch -export -constant org.audiveris.omr.text.Language.defaultSpecification=${IDIOMA_OCR} -output "${tmp}" -- "${path.resolve(pdf)}"`, { stdio: 'ignore', timeout: 15 * 60 * 1000 }); }
+  catch (e) { throw new Error('Audiveris no ha podido leer el PDF' + motivoAudiveris(tmp)); }
   const mxl = fs.readdirSync(tmp).find(f => /\.mxl$/i.test(f));
   if (!mxl) throw new Error('Audiveris no ha generado ningún archivo');
   const zip = path.join(tmp, 'salida.zip'); fs.copyFileSync(path.join(tmp, mxl), zip);
@@ -262,6 +263,20 @@ function leerConAudiveris(pdf, log = console.log) {
   const xml = fs.readFileSync(xmlPath, 'utf8');
   try { fs.mkdirSync(CACHE_AUDIVERIS, { recursive: true }); fs.writeFileSync(enCache, xml); } catch {}
   return xml;
+}
+
+// Causa del fallo de Audiveris, leída de su registro (.log) en la carpeta de salida; por ejemplo
+// «Too large image: 21.000.000 pixels (vs 20.000.000 max)» cuando las páginas del PDF son demasiado grandes.
+function motivoAudiveris(dir) {
+  try {
+    const log = fs.readdirSync(dir).find(f => /\.log$/i.test(f)); if (!log) return '';
+    const lineas = fs.readFileSync(path.join(dir, log), 'utf8').split(/\r?\n/);
+    const aviso = lineas.find(l => /\b(WARN|ERROR)\b/.test(l) && /\| /.test(l));
+    if (!aviso) return '';
+    let motivo = aviso.replace(/^.*\| /, '').trim();
+    if (/Too large image/i.test(motivo)) motivo += '; las páginas del PDF tienen más píxeles de los que admite Audiveris';
+    return ' (' + motivo + ')';
+  } catch { return ''; }
 }
 
 function limpiarNombreArchivo(titulo) {
@@ -359,25 +374,39 @@ function prepararObra({ xml: rutaXml, pdf: rutaPdf = null, dirSalida, log = cons
   fs.mkdirSync(dirSalida, { recursive: true });
   const pdf = rutaPdf || pdfPara(rutaXml);
   if (pdf) {
+    // Audiveris (lento, y a veces falla) solo hace falta para la letra y, como último recurso, para situar los compases.
+    // Se lee una sola vez y solo cuando se necesita; si falla, la obra sigue adelante sin letra.
+    let audXml = null;
+    const conAudiveris = () => {
+      if (audXml === null) { try { audXml = leerConAudiveris(pdf, log); } catch (e) { audXml = false; log('  ! ' + e.message.split('\n')[0]); } }
+      return audXml;
+    };
+    // 1) Página original: imágenes de las páginas y dónde está cada compás (mirando la imagen; si no cuadra con el XML,
+    //    con la maquetación aproximada de Audiveris). Es lo que ve el coro, así que va primero y no depende de la letra.
     try {
-      const audXml = leerConAudiveris(pdf, log);
-      if (/<lyric/.test(xml)) log('  el XML ya trae letra (por ejemplo una corrección devuelta): se conserva tal cual');
-      else {
-        const r = transplantar(xml, audXml);
-        xml = r.salida;
-        for (const l of r.informe) log('  letra ' + l);
-      }
       entrada.paginas = generarPaginas(pdf, dirSalida, base);
-      // Dónde está cada compás en la página: mirando la imagen (exacto); si no cuadra con el XML, con la
-      // maquetación aproximada de Audiveris
       let pos;
       try { pos = posicionesImagen(xml, entrada.paginas.map(p => path.join(dirSalida, p)), log); log('  Compases localizados en la imagen de cada página.'); }
-      catch (e) { log('  ! No se han podido localizar los compases en la imagen (' + e.message + '): se usa la maquetación de Audiveris, menos exacta.'); pos = posiciones(xml, audXml); }
+      catch (e) {
+        log('  ! No se han podido localizar los compases en la imagen (' + e.message + '): se intenta con la maquetación de Audiveris, menos exacta.');
+        const a = conAudiveris(); if (!a) throw e;
+        pos = posiciones(xml, a);
+      }
       fs.writeFileSync(path.join(dirSalida, base + '.pos.json'), JSON.stringify(pos));
       entrada.posiciones = base + '.pos.json';
       log(`  Página original incorporada (${entrada.paginas.length} imagen(es)); vista "PDF original" disponible.`);
-    } catch (e) { log('  ! No se ha podido sacar la letra del PDF: ' + e.message.split('\n')[0]); }
+    } catch (e) { delete entrada.paginas; delete entrada.posiciones; log('  ! No se ha podido incorporar la página original: ' + e.message.split('\n')[0]); }
+    // 2) Letra: para la partitura dibujada del gestor y para las voces cantadas (el coro ve la página del PDF, que ya la lleva)
+    if (/<lyric/.test(xml)) log('  el XML ya trae letra (por ejemplo una corrección devuelta): se conserva tal cual');
+    else {
+      const a = conAudiveris();
+      if (a) {
+        try { const r = transplantar(xml, a); xml = r.salida; for (const l of r.informe) log('  letra ' + l); }
+        catch (e) { log('  ! No se ha podido pasar la letra del PDF al XML: ' + e.message.split('\n')[0]); }
+      } else log('  La obra irá sin letra: el coro ve la página del PDF (solo las voces cantadas la echarían en falta).');
+    }
   } else log('  (sin PDF: la obra irá sin letra y sin vista de página original)');
+  entrada.letra = /<lyric/.test(xml); // para que el gestor diga si la obra lleva letra (solo la usan las voces cantadas)
 
   fs.writeFileSync(path.join(dirSalida, entrada.archivo), xml);
   return { entrada, avisos, partes: resumenPartes, sospechosos, tempo: tempoDe(xml), pdf };

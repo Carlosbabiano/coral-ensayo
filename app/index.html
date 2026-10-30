@@ -218,6 +218,9 @@ let sonando = []; // notas en curso para poder cortarlas al parar
 let compasInicio = 0;
 // Vista "PDF original": la página del PDF con una marca que recorre los compases
 let listaObras = [], obraActual = null, posiciones = null, modoPdf = false, pdfjs = null, paginasPdf = [], pdfCargado = null;
+// Modo editor (dentro del Gestor de obras, con ?editor=1) y modo Corregir (para el director, con ?corregir=1)
+const modoCorregir = new URLSearchParams(location.search).has('corregir');
+const modoEditor = new URLSearchParams(location.search).has('editor') || modoCorregir;
 const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.3.289/';
 
 // ---------- Carga ----------
@@ -286,7 +289,10 @@ async function cargarObra(archivo) {
   if (obraActual.paginas && obraActual.paginas.length && obraActual.posiciones) {
     try { posiciones = await (await fetch('partituras/' + obraActual.posiciones)).json(); } catch (e) { console.warn('Sin posiciones', e); }
   }
-  $('vista').style.display = posiciones ? 'flex' : 'none';
+  // El coro ve solo la página original del PDF; la partitura dibujada (y el cambio de vista) quedan para el gestor
+  // y el modo corregir. Si la obra no tiene página original, se enseña la partitura dibujada.
+  if (!modoEditor) modoPdf = !!posiciones;
+  $('vista').style.display = posiciones && modoEditor ? 'flex' : 'none';
   if (!posiciones) modoPdf = false;
   prepararCanto();
   await aplicarModo();
@@ -862,9 +868,7 @@ $('mezcla').oninput = () => { $('mezclaVal').textContent = $('mezcla').value + '
 $('timbre').onchange = () => { try { localStorage.setItem('timbre', $('timbre').value); } catch {} if (modoCanto() && !canto.listo) { cargarCanto().catch(() => {}); } if (reproduciendo) { pausar(); reproducir(); } };
 try { const t = localStorage.getItem('timbre'); if (t && [...$('timbre').options].some(o => o.value === t)) $('timbre').value = t; } catch {}
 
-// ---------- Modo editor (dentro del Gestor de obras, con ?editor=1) y modo Corregir (para el director, con ?corregir=1): tocar una nota la selecciona ----------
-const modoCorregir = new URLSearchParams(location.search).has('corregir');
-const modoEditor = new URLSearchParams(location.search).has('editor') || modoCorregir;
+// ---------- Modo editor y modo Corregir (ver arriba): tocar una nota la selecciona ----------
 let notaSel = null; // { compas (1..), staff (0..), indice (0.. dentro de la voz en ese compás), nota (gráfica) }
 // Notas gráficas de un compás y un pentagrama, con su voz (1, 2…), su "entrada" (golpe dentro de la voz; las notas
 // de un acorde la comparten, los adornos no cuentan) y su midi. Así se localiza la misma nota en el MusicXML.

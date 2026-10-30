@@ -255,8 +255,10 @@ function pintarPanel() {
     for (const a of b.avisos) html += `<div class="aviso">${esc(a)}</div>`;
     if (b.sospechosos.length) html += `<div class="aviso" id="chipsSospechosos">Compases que no cuadran (las figuras no suman lo que marca el compás). Toca uno para revisarlo: <span class="compases">${b.sospechosos.map(c => `<a data-compas="${esc(c)}">${esc(c)}</a>`).join('')}</span></div>`;
     else html += `<div class="aviso bien" id="chipsSospechosos">Todos los compases cuadran.</div>`;
-    if (b.entrada.paginas) html += `<div class="aviso bien">Letra y página original sacadas del PDF (${b.entrada.paginas.length} página(s)). Comprueba en la vista «PDF original» que la marca del compás cae donde debe.</div>`;
+    if (b.entrada.paginas) html += `<div class="aviso bien">Página original sacada del PDF (${b.entrada.paginas.length} página(s)): es lo que verá el coro. Comprueba en la vista «PDF original» que la marca del compás cae donde debe.</div>`;
+    else if (b.pdf) html += `<div class="aviso">El PDF no se ha podido incorporar como página original (mira el registro de abajo): el coro verá la partitura dibujada.</div>`;
     else html += `<div class="aviso">Sin PDF: la obra irá sin letra y sin vista de página original.</div>`;
+    if (b.entrada.letra === false) html += `<div class="aviso">La obra va sin letra (Audiveris no ha podido leerla del PDF; mira el registro). Solo la echarían en falta las voces cantadas.</div>`;
     html += `</div>`;
     html += `<div class="tarjeta"><h4>Revisar o editar un compás</h4><div class="acciones" style="margin:0">
       <button class="mini" id="revisarAnt" title="Compás anterior">◀</button>

@@ -1,6 +1,7 @@
 # Coral Villa de Mengíbar · Ensayo por voces
 
-Aplicación web para ensayar: muestra la partitura (o la página original del PDF) y reproduce la voz
+Aplicación web para ensayar: muestra la página original del PDF (la partitura dibujada a partir del MusicXML queda
+para el gestor y el modo corregir) y reproduce la voz
 elegida (Soprano, Contralto, Tenor o Bajo) destacada sobre las demás, con la marca del compás
 sincronizada, control de tempo y repetición de compases. Se instala en el móvil y funciona sin conexión.
 
@@ -22,8 +23,10 @@ Publicada en: https://carlosbabiano.github.io/coral-ensayo/
    móvil, compartirlos a Google Drive en la carpeta `Entrada/` del proyecto: el gestor los muestra con un botón
    «Cargar» por obra (si el XML no trae PDF, busca uno con el mismo nombre en `pdf/`).
 4. El gestor prepara la obra (nombra las voces, separa en dos voces las partes de dos pentagramas sin acordes —tenor y bajo
-   escritos juntos, por ejemplo— y quita las que llevan acordes —el piano—, revisa los compases, lee el PDF con Audiveris para la letra y
-   la posición de cada compás) y la muestra en el mismo reproductor que usa el coro. Ahí se pueden cambiar el
+   escritos juntos, por ejemplo— y quita las que llevan acordes —el piano—, revisa los compases, convierte las páginas
+   del PDF en imágenes y localiza en ellas cada compás, y lee el PDF con Audiveris para la letra) y la muestra en el mismo
+   reproductor que usa el coro. Si Audiveris falla (tarda minutos y rechaza páginas muy grandes), la obra sigue adelante
+   sin letra: el coro ve la página del PDF, que ya la lleva; la letra solo hace falta para las voces cantadas. Ahí se pueden cambiar el
    título, el nombre de cada voz, el tempo y quitar voces (por ejemplo el piano), y saltar a los compases dudosos.
 5. «Publicar para el coro» la mete en la app, sube la versión de la caché, la guarda en git y la publica.
    «Retirar» quita una obra publicada. Los borradores viven en `borradores/` hasta que se publican o descartan.
