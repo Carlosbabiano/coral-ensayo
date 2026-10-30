@@ -289,10 +289,12 @@ async function cargarObra(archivo) {
   if (obraActual.paginas && obraActual.paginas.length && obraActual.posiciones) {
     try { posiciones = await (await fetch('partituras/' + obraActual.posiciones)).json(); } catch (e) { console.warn('Sin posiciones', e); }
   }
-  // El coro ve solo la página original del PDF; la partitura dibujada (y el cambio de vista) quedan para el gestor
-  // y el modo corregir. Si la obra no tiene página original, se enseña la partitura dibujada.
+  // El coro ve solo la página original del PDF; la partitura dibujada (y los botones para cambiar de vista) quedan
+  // para el gestor y el modo corregir. Si la obra no tiene página original, se enseña la partitura dibujada.
+  // El botón «Apuntes» (lápiz) sigue a la vista del coro siempre que haya página original.
   if (!modoEditor) modoPdf = !!posiciones;
-  $('vista').style.display = posiciones && modoEditor ? 'flex' : 'none';
+  $('vista').style.display = posiciones ? 'flex' : 'none';
+  $('vistaPartitura').style.display = $('vistaPdf').style.display = modoEditor ? '' : 'none';
   if (!posiciones) modoPdf = false;
   prepararCanto();
   await aplicarModo();
