@@ -154,6 +154,47 @@ function separarPentagramas(xml, id) {
   return xml.replace(new RegExp(`<score-part id="${id}">[\\s\\S]*?</score-part>`), cab => cab + '\n\t\t' + cab.replace(new RegExp(`id="${id}(-[^"]*)?"`, 'g'), (mm, suf) => `id="${id2}${suf || ''}"`));
 }
 
+// Silencios normales (redonda, blanca, negra…) que suman una duración dada, en XML
+function silenciosDe(dur, div, voz, staff) {
+  const figuras = [[4, 'whole'], [2, 'half'], [1, 'quarter'], [0.5, 'eighth'], [0.25, '16th'], [0.125, '32nd']];
+  let resto = dur, out = '';
+  const nota = (d, tipo) => `<note><rest/><duration>${d}</duration><voice>${voz}</voice>${tipo ? '<type>' + tipo + '</type>' : ''}${staff ? '<staff>' + staff + '</staff>' : ''}</note>`;
+  for (const [negras, tipo] of figuras) { const d = Math.round(negras * div); if (d < 1) break; while (resto >= d) { out += nota(d, tipo); resto -= d; } }
+  if (resto > 0) out += nota(resto, '');
+  return out;
+}
+
+// El escáner deja huecos <forward> (un trozo del compás sin nada) donde no ha leído notas. En una voz del coro eso
+// es un silencio: se escribe como tal, para que se vea, cuadre el compás y el editor del gestor lo tenga en cuenta
+// (si no, al añadir un silencio a mano las notas se desplazan). Si las notas de esa voz ya llenan el compás, el
+// hueco sobra y se quita.
+function huecosASilencios(xml) {
+  return xml.replace(/<part id="[^"]+">[\s\S]*?<\/part>/g, parte => {
+    let div = 1, beats = 4, bt = 4;
+    return parte.replace(/(<measure number="[^"]+"[^>]*>)([\s\S]*?)(<\/measure>)/g, (m, ini, c, fin) => {
+      const d = c.match(/<divisions>(\d+)/); if (d) div = +d[1];
+      const b = c.match(/<beats>(\d+)<\/beats>\s*<beat-type>(\d+)/); if (b) { beats = +b[1]; bt = +b[2]; }
+      if (!/<forward>/.test(c)) return m;
+      const esperado = Math.round(div * 4 * beats / bt);
+      const sumas = {};
+      for (const [n] of c.matchAll(/<note(?:\s[^>]*)?>[\s\S]*?<\/note>/g)) {
+        if (/<chord/.test(n) || /<grace\b/.test(n)) continue;
+        const v = (n.match(/<voice>(\d+)/) || [, '1'])[1]; sumas[v] = (sumas[v] || 0) + +(n.match(/<duration>(\d+)/) || [, 0])[1];
+      }
+      const nuevo = c.replace(/<forward>\s*<duration>(\d+)<\/duration>\s*(?:<voice>(\d+)<\/voice>\s*)?(?:<staff>(\d+)<\/staff>\s*)?<\/forward>/g, (f, dur, voz, staff, offset) => {
+        // la voz del hueco: la que diga; si no, la de la siguiente nota del compás (o la anterior)
+        const sig = c.slice(offset + f.length).match(/<note(?:\s[^>]*)?>[\s\S]*?<voice>(\d+)/);
+        const ant = c.slice(0, offset).match(/[\s\S]*<voice>(\d+)/);
+        const v = voz || (sig ? sig[1] : ant ? ant[1] : '1');
+        if ((sumas[v] || 0) >= esperado) return '';
+        sumas[v] = (sumas[v] || 0) + +dur;
+        return silenciosDe(+dur, div, v, staff);
+      });
+      return ini + nuevo + fin;
+    });
+  });
+}
+
 function repararCompases(xml, avisos) {
   const partes = () => [...xml.matchAll(/<part id="([^"]+)">([\s\S]*?)<\/part>/g)];
   const medidas = cuerpo => [...cuerpo.matchAll(/<measure number="([^"]+)"[^>]*>([\s\S]*?)<\/measure>/g)];
@@ -182,6 +223,10 @@ function repararCompases(xml, avisos) {
       avisos.push(`La parte ${id} tiene dos pentagramas con acordes (acompañamiento); la app la tratará como una sola voz.`);
     }
   }
+
+  // 1b) Huecos del escáner (<forward>) → silencios
+  const huecos = (xml.match(/<forward>/g) || []).length;
+  if (huecos) { xml = huecosASilencios(xml); avisos.push(`El escáner dejó ${huecos} hueco(s) sin notas en algún compás: se han escrito como silencios (revisa esos compases).`); }
 
   // 2) Indicación de compás que falta en una voz pero está en otra, en el mismo compás: se copia.
   const tiemposPorCompas = {};
@@ -469,7 +514,7 @@ function guardarPdf(rutaPdf, base) {
 
 module.exports = {
   RAIZ, DIR_APP, DIR_PARTITURAS, DIR_PDF, LISTA, NOMBRES_VOCES,
-  clave, pdfPara, prepararObra, editarObra, leerPartes, tituloDe, tempoDe, limpiarNombreArchivo,
+  clave, pdfPara, prepararObra, editarObra, huecosASilencios, leerPartes, tituloDe, tempoDe, limpiarNombreArchivo,
   sospechososDe, detalleCompas, fijarCompas, notasCompas, escribirCompas, FIGURA_NEGRAS,
   leerLista, archivosDe, incorporarEnApp, retirarDeApp, subirVersionCache, versionCache, guardarEnGit, guardarPdf,
 };
