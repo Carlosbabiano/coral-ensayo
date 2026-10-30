@@ -73,6 +73,88 @@ function nombresPorTesitura(partes) {
   return asignados;
 }
 
+// Elementos de primer nivel dentro de un compás (igual que en app/compases.js)
+const RE_ELEMENTO_COMPAS = /<(note|backup|forward|attributes|direction|barline|print|sound|harmony|figured-bass|grouping|link|bookmark)\b[^>]*?(?:\/>|>[\s\S]*?<\/\1>)|<!--[\s\S]*?-->/g;
+
+// ¿Una parte de dos pentagramas parece un acompañamiento (piano, órgano) y no dos voces del coro escritas juntas?
+// Dos voces del coro llevan una línea melódica por pentagrama; el piano lleva acordes (varias notas a la vez).
+function pareceAcompanamiento(nombre, cuerpo) {
+  if (/piano|órgano|organo|acomp|teclado|keyboard|clave|cémbalo|cembalo|arpa|harp|guitar/i.test(nombre)) return true;
+  if (/<staves>\s*[3-9]/.test(cuerpo)) return true; // tres pentagramas o más: órgano
+  if (/<lyric\b/.test(cuerpo)) return false; // lleva letra: son voces
+  const notas = [...cuerpo.matchAll(/<note(?:\s[^>]*)?>[\s\S]*?<\/note>/g)].map(m => m[0]).filter(n => !/<rest\b/.test(n));
+  const acordes = notas.filter(n => /<chord\s*\/>/.test(n)).length;
+  return notas.length > 0 && acordes / notas.length > 0.03;
+}
+
+// Separa una parte de dos pentagramas en dos partes de un pentagrama (la segunda con id + "B"), una voz del coro por
+// pentagrama. Cada compás se reconstruye por pentagrama: las notas conservan su momento (con <forward>/<backup>), las
+// voces se renumeran desde 1, cada pentagrama se queda con su clave, y las indicaciones (tempo, matices...) van al
+// pentagrama que digan (o al primero). Devuelve el XML nuevo.
+function separarPentagramas(xml, id) {
+  const m = xml.match(new RegExp(`<part id="${id}">([\\s\\S]*?)</part>`)); if (!m) return xml;
+  const id2 = id + 'B';
+  const pentagramaDe = x => +((x.match(/<staff>(\d+)<\/staff>/) || [, 1])[1]);
+  const sinPentagrama = x => x.replace(/\s*<staff>\d+<\/staff>/, '');
+  const duracionDe = x => +((x.match(/<duration>(\d+)/) || [, 0])[1]);
+  const atributosPara = (x, st) => {
+    const a = x.replace(/\s*<staves>\d+<\/staves>/, '')
+      .replace(/\s*<(clef|staff-details|transpose) number="(\d+)"[^>]*>[\s\S]*?<\/\1>/g, (todo, el, n) => +n === st ? todo.replace(` number="${n}"`, '') : '');
+    return /<attributes>\s*<\/attributes>/.test(a) ? '' : a;
+  };
+  let div = 1, beats = 4, bt = 4;
+  const compases = { 1: [], 2: [] };
+  for (const [, ini, c, fin] of m[1].matchAll(/(<measure number="[^"]+"[^>]*>)([\s\S]*?)(<\/measure>)/g)) {
+    const d = c.match(/<divisions>(\d+)/); if (d) div = +d[1];
+    const b = c.match(/<beats>(\d+)<\/beats>\s*<beat-type>(\d+)/); if (b) { beats = +b[1]; bt = +b[2]; }
+    // 1) cada elemento del compás, con el momento en que empieza y el pentagrama al que pertenece
+    const eventos = { 1: [], 2: [] };
+    let t = 0, orden = 0; const ultimoInicio = {};
+    for (const mm of c.matchAll(RE_ELEMENTO_COMPAS)) {
+      const tipo = mm[1] || 'comentario', x = mm[0]; orden++;
+      if (tipo === 'note') {
+        const st = eventos[pentagramaDe(x)] ? pentagramaDe(x) : 1;
+        const acorde = /<chord\s*\/>/.test(x), dur = /<grace\b/.test(x) ? 0 : duracionDe(x);
+        const inicio = acorde ? (ultimoInicio[st] || 0) : t;
+        if (!acorde) { t = inicio + dur; ultimoInicio[st] = inicio; }
+        eventos[st].push({ nota: true, inicio, dur, acorde, voz: +((x.match(/<voice>(\d+)/) || [, 1])[1]), xml: sinPentagrama(x), orden });
+      } else if (tipo === 'backup') t -= duracionDe(x);
+      else if (tipo === 'forward') t += duracionDe(x);
+      else if (tipo === 'attributes') { for (const st of [1, 2]) { const a = atributosPara(x, st); if (a) eventos[st].push({ inicio: t, xml: a, orden }); } }
+      else if (tipo === 'barline' || tipo === 'print') for (const st of [1, 2]) eventos[st].push({ inicio: t, xml: x, orden });
+      else { const st = /<staff>/.test(x) && eventos[pentagramaDe(x)] ? pentagramaDe(x) : 1; eventos[st].push({ inicio: t, xml: sinPentagrama(x), orden }); }
+    }
+    // 2) el compás de cada pentagrama: voz por voz, en orden de tiempo
+    for (const st of [1, 2]) {
+      const evs = eventos[st];
+      const vocesNum = [...new Set(evs.filter(e => e.nota).map(e => e.voz))].sort((a, b) => a - b);
+      if (!vocesNum.length) vocesNum.push(1);
+      const nuevaVoz = Object.fromEntries(vocesNum.map((v, i) => [v, i + 1]));
+      const renumerar = x => x.replace(/<voice>(\d+)<\/voice>/g, (mm, v) => `<voice>${nuevaVoz[+v] || 1}</voice>`);
+      let salida = '', cursor = 0;
+      vocesNum.forEach((v, i) => {
+        const lista = evs.filter(e => e.nota ? e.voz === v : i === 0).sort((a, b) => a.inicio - b.inicio || (a.nota ? 1 : 0) - (b.nota ? 1 : 0) || a.orden - b.orden);
+        if (i > 0 && cursor > 0) { salida += `\n\t\t\t<backup>\n\t\t\t\t<duration>${cursor}</duration>\n\t\t\t</backup>`; cursor = 0; }
+        for (const e of lista) {
+          if (!e.acorde) {
+            if (e.inicio > cursor) salida += `\n\t\t\t<forward>\n\t\t\t\t<duration>${e.inicio - cursor}</duration>\n\t\t\t</forward>`;
+            else if (e.inicio < cursor) salida += `\n\t\t\t<backup>\n\t\t\t\t<duration>${cursor - e.inicio}</duration>\n\t\t\t</backup>`;
+            cursor = e.inicio;
+          }
+          salida += '\n\t\t\t' + renumerar(e.xml);
+          if (e.nota && !e.acorde) cursor = e.inicio + e.dur;
+        }
+      });
+      if (!evs.some(e => e.nota)) salida += `\n\t\t\t<note>\n\t\t\t\t<rest measure="yes"/>\n\t\t\t\t<duration>${Math.round(div * 4 * beats / bt)}</duration>\n\t\t\t\t<voice>1</voice>\n\t\t\t\t<type>whole</type>\n\t\t\t</note>`;
+      compases[st].push(ini + salida + '\n\t\t' + fin);
+    }
+  }
+  const parte = st => `<part id="${st === 1 ? id : id2}">\n\t\t` + compases[st].join('\n\t\t') + '\n\t</part>';
+  xml = xml.replace(m[0], () => parte(1) + '\n\t' + parte(2));
+  // La cabecera (nombre, instrumento) se duplica para la parte nueva
+  return xml.replace(new RegExp(`<score-part id="${id}">[\\s\\S]*?</score-part>`), cab => cab + '\n\t\t' + cab.replace(new RegExp(`id="${id}(-[^"]*)?"`, 'g'), (mm, suf) => `id="${id2}${suf || ''}"`));
+}
+
 function repararCompases(xml, avisos) {
   const partes = () => [...xml.matchAll(/<part id="([^"]+)">([\s\S]*?)<\/part>/g)];
   const medidas = cuerpo => [...cuerpo.matchAll(/<measure number="([^"]+)"[^>]*>([\s\S]*?)<\/measure>/g)];
@@ -82,16 +164,23 @@ function repararCompases(xml, avisos) {
     return s / div;
   };
 
-  // 1) Parte con dos pentagramas (acompañamiento de piano) junto a voces normales: se quita.
+  // 1) Parte con dos pentagramas (clave de sol arriba y de fa abajo, con llave) junto a voces normales:
+  //    - si cada pentagrama lleva una sola línea melódica (sin acordes) son dos voces del coro que el escáner ha
+  //      juntado (tenor y bajo, por ejemplo): se separa en dos voces;
+  //    - si lleva acordes, es el acompañamiento de piano: se quita (si hay al menos dos voces normales).
   const esDoble = cuerpo => /<clef number="2">|<staves>\s*[2-9]|<staff>2<\/staff>/.test(cuerpo);
+  const nombreDe = id => ((xml.match(new RegExp(`<score-part id="${id}">[\\s\\S]*?</score-part>`)) || [''])[0].match(/<part-name>([^<]*)/) || [, ''])[1];
   const simples = partes().filter(([, , c]) => !esDoble(c)).length;
   for (const [todo, id, cuerpo] of partes()) {
     if (!esDoble(cuerpo)) continue;
-    if (simples >= 2) {
+    if (!pareceAcompanamiento(nombreDe(id), cuerpo)) {
+      xml = separarPentagramas(xml, id);
+      avisos.push(`La parte ${id} tenía dos pentagramas con una línea melódica en cada uno (por ejemplo tenor y bajo escritos juntos): se ha separado en dos voces (${id} y ${id}B).`);
+    } else if (simples >= 2) {
       xml = xml.replace(todo, '').replace(new RegExp(`<score-part id="${id}">[\\s\\S]*?</score-part>\\s*`), '');
       avisos.push(`Se ha quitado una parte de dos pentagramas que parecía el acompañamiento de piano (${id}).`);
     } else {
-      avisos.push(`La parte ${id} tiene dos pentagramas; la app la tratará como una sola voz.`);
+      avisos.push(`La parte ${id} tiene dos pentagramas con acordes (acompañamiento); la app la tratará como una sola voz.`);
     }
   }
 

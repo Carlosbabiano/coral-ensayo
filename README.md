@@ -21,7 +21,8 @@ Publicada en: https://carlosbabiano.github.io/coral-ensayo/
 3. Arrastrar el `.xml` **y el `.pdf`** de la obra a la zona de la página (o elegirlos con un clic). O, desde el
    móvil, compartirlos a Google Drive en la carpeta `Entrada/` del proyecto: el gestor los muestra con un botón
    «Cargar» por obra (si el XML no trae PDF, busca uno con el mismo nombre en `pdf/`).
-4. El gestor prepara la obra (nombra las voces, revisa los compases, lee el PDF con Audiveris para la letra y
+4. El gestor prepara la obra (nombra las voces, separa en dos voces las partes de dos pentagramas sin acordes —tenor y bajo
+   escritos juntos, por ejemplo— y quita las que llevan acordes —el piano—, revisa los compases, lee el PDF con Audiveris para la letra y
    la posición de cada compás) y la muestra en el mismo reproductor que usa el coro. Ahí se pueden cambiar el
    título, el nombre de cada voz, el tempo y quitar voces (por ejemplo el piano), y saltar a los compases dudosos.
 5. «Publicar para el coro» la mete en la app, sube la versión de la caché, la guarda en git y la publica.
