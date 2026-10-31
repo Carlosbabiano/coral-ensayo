@@ -82,8 +82,13 @@
   header h1 img { width: 40px; height: 40px; border-radius: 50%; }
   /* Iconos y estados de interacción comunes a todos los controles */
   .ico { width: 22px; height: 22px; flex: 0 0 auto; }
-  button { cursor: pointer; }
+  button { cursor: pointer; transition: background-color .15s ease-out, border-color .15s ease-out, color .15s ease-out, filter .15s ease-out, transform .15s ease-out; }
   button:disabled { opacity: .5; cursor: not-allowed; }
+  #resumenAjustes .flecha { transition: transform .2s ease-out; }
+  /* Menos movimiento: sin transiciones ni animaciones para quien lo pida en el sistema */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
   :focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
   @media (hover: hover) { button:not(:disabled):hover { filter: brightness(.95); } }
   button:not(:disabled):active { filter: brightness(.9); }
@@ -430,11 +435,10 @@ let reproduciendo = false, indiceEvento = 0, tInicio = 0, tOffset = 0, timerPlan
 let sonando = []; // notas en curso para poder cortarlas al parar
 let compasInicio = 0;
 // Vista "PDF original": la página del PDF con una marca que recorre los compases
-let listaObras = [], obraActual = null, posiciones = null, modoPdf = false, pdfjs = null, paginasPdf = [], pdfCargado = null;
+let listaObras = [], obraActual = null, posiciones = null, modoPdf = false, paginasPdf = [], pdfCargado = null;
 // Modo editor (dentro del Gestor de obras, con ?editor=1) y modo Corregir (para el director, con ?corregir=1)
 const modoCorregir = new URLSearchParams(location.search).has('corregir');
 const modoEditor = new URLSearchParams(location.search).has('editor') || modoCorregir;
-const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.3.289/';
 
 // ---------- Carga ----------
 async function cargarLista() {
@@ -718,7 +722,9 @@ function fraccionPdf(i, ahora, f) {
 // que nos contiene cuando la app va dentro del Gestor de obras)
 function enfocar(el) {
   const r = el.getBoundingClientRect();
-  if (r.top < 60 || r.bottom > window.innerHeight - 220) window.scrollBy({ top: r.top + r.height / 2 - window.innerHeight / 2, behavior: 'smooth' });
+  // Desplazamiento suave salvo que el sistema pida menos movimiento
+  const suave = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (r.top < 60 || r.bottom > window.innerHeight - 220) window.scrollBy({ top: r.top + r.height / 2 - window.innerHeight / 2, behavior: suave ? 'smooth' : 'auto' });
 }
 
 $('vistaPartitura').onclick = async () => { if (!modoPdf) return; modoPdf = false; await aplicarModo(); moverCursor(indiceEvento); };
