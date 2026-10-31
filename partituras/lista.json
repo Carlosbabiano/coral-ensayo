@@ -123,6 +123,14 @@
     ]
   },
   {
+    "titulo": "Signore delle Cime",
+    "archivo": "Signore_delle_Cime.xml",
+    "posiciones": "Signore_delle_Cime.pos.json",
+    "paginas": [
+      "Signore_delle_Cime-p1.jpg"
+    ]
+  },
+  {
     "titulo": "Tres morillas",
     "archivo": "Tres_morillas.xml",
     "posiciones": "Tres_morillas.pos.json",
