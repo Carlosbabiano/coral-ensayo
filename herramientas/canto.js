@@ -199,6 +199,7 @@ function detectarIdioma(datos) {
 // Voz por cuerda: la voz es femenina; para tenores y bajos se bajan los formantes (parámetro "género" de DiffSinger)
 function ajustesDeVoz(nombrePista) {
   const n = String(nombrePista).toLowerCase();
+  if (/masculin/.test(n)) return { genero: 55 }; // solista masculino: como un tenor
   if (/bajo|bass|bar[ií]tono/.test(n)) return { genero: 65 };
   if (/tenor/.test(n)) return { genero: 55 };
   if (/contralto|alto|mezzo/.test(n)) return { genero: 12 };
