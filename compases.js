@@ -39,6 +39,12 @@ function negrasDe(n, esperado) {
   return base * puntos * tres;
 }
 
+// Nombre de la figura (con puntillos) que dura tantas negras; si no hay ninguna exacta, "1.5 negras"
+function figuraDeNegras(negras) {
+  for (const [tipo, base] of Object.entries(FIGURA_NEGRAS)) for (const [puntos, k] of [[0, 1], [1, 1.5], [2, 1.75]]) if (Math.abs(base * k - negras) < 0.001) return FIGURAS[tipo] + ' con puntillo'.repeat(puntos);
+  return negras + ' negras';
+}
+
 // Recorre los compases de cada parte llamando a f({ id, nombre, num, cuerpo, div, beats, bt, cambio })
 function recorrerCompases(xml, f) {
   const nombres = Object.fromEntries(leerPartes(xml).map(p => [p.id, p.nombre]));
@@ -99,11 +105,15 @@ function detalleCompas(xml, numero) {
   const voces = [];
   recorrerCompases(xml, c => {
     if (c.num !== String(numero)) return;
-    const porVoz = {};
+    const porVoz = {}, sumaFiguras = {}, esperado = 4 * c.beats / c.bt;
     for (const [tok] of c.cuerpo.matchAll(RE_NOTA)) {
       const n = leerNota(tok);
       const dur = n.duracion / c.div;
       const figura = (FIGURAS[n.type] || (dur ? dur + ' negras' : '?')) + ' con puntillo'.repeat(n.dot) + (n.tresillo ? ` (${n.tresillo.actual}:${n.tresillo.normal})` : '');
+      // Lo que dura la nota según su figura (lo que se ve) frente a lo que el escáner escribió en <duration> (lo que suena)
+      const porFigura = negrasDe(n, esperado);
+      if (!n.acorde && !n.adorno) sumaFiguras[n.voz] = (sumaFiguras[n.voz] || 0) + porFigura;
+      const distinta = !n.adorno && FIGURA_NEGRAS[n.type] && !(n.silencio && n.compasEntero) && Math.abs(porFigura - dur) > 0.01;
       let texto;
       if (n.silencio) texto = 'silencio de ' + figura;
       else {
@@ -116,12 +126,14 @@ function detalleCompas(xml, numero) {
       }
       if (n.letra) texto += ' «' + n.letra + '»';
       if (n.simbolos.length) texto += ' [' + [...new Set(n.simbolos)].join(', ') + ']';
+      if (distinta) texto += ' (pero dura como ' + figuraDeNegras(dur) + ')';
       (porVoz[n.voz] = porVoz[n.voz] || []).push(texto);
     }
     const sumas = sumasPorVoz(c.cuerpo, c.div);
     const vozNums = Object.keys(porVoz).map(Number).sort((a, b) => a - b);
     if (!vozNums.length) vozNums.push(1);
-    vozNums.forEach((v, k) => voces.push({ id: c.id, voz: v, nombre: c.nombre + (vozNums.length > 1 ? ' (voz ' + (k + 1) + ')' : ''), beats: c.beats, bt: c.bt, cambio: c.cambio, esperado: 4 * c.beats / c.bt, suma: sumas[v] || 0, notas: porVoz[v] || [] }));
+    // suma: lo que dura la voz según <duration> (lo que suena y lo que cuenta sospechososDe); sumaFiguras: según las figuras (lo que se ve y lo que suma el editor)
+    vozNums.forEach((v, k) => voces.push({ id: c.id, voz: v, nombre: c.nombre + (vozNums.length > 1 ? ' (voz ' + (k + 1) + ')' : ''), beats: c.beats, bt: c.bt, cambio: c.cambio, esperado, suma: sumas[v] || 0, sumaFiguras: sumaFiguras[v] || 0, notas: porVoz[v] || [] }));
   });
   return voces;
 }
