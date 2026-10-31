@@ -108,6 +108,7 @@
   <h1>Gestor de obras · Coral Villa de Mengíbar</h1>
   <span class="muted" id="info"></span>
   <div id="sinPublicar" style="display:none" class="aviso">Hay cambios sin publicar. <button class="mini" id="publicarAhora">Publicar ahora</button></div>
+  <div id="comprobacion" style="display:none" class="aviso" role="status"></div>
   <a href="/app/" target="_blank"><button class="mini">Abrir la app del PC</button></a>
   <a href="https://carlosbabiano.github.io/coral-ensayo/" target="_blank"><button class="mini">Ver la app publicada</button></a>
 </header>
@@ -159,6 +160,13 @@ async function refrescar() {
   $('info').textContent = `${estado.publicadas.length} obras publicadas · caché ${estado.version}`;
   $('sinPublicar').style.display = estado.sinPublicar ? '' : 'none';
   $('sinPublicar').firstChild.textContent = estado.sinPublicar === 1 ? 'Hay un cambio sin publicar para el coro. ' : `Hay ${estado.sinPublicar} cambios sin publicar para el coro. `;
+  // Comprobación de internet tras publicar: en marcha, todo bien (se enseña diez minutos) o archivos que faltan
+  const c = estado.comprobacion, cEl = $('comprobacion');
+  cEl.style.display = c && (c.estado !== 'bien' || Date.now() - c.hora < 10 * 60000) ? '' : 'none';
+  cEl.className = 'aviso' + (c && c.estado === 'faltan' ? ' mal' : c && c.estado === 'bien' ? ' bien' : '');
+  if (c) cEl.textContent = c.estado === 'comprobando' ? 'Comprobando que la publicación haya llegado a internet (tarda un par de minutos)…'
+    : c.estado === 'bien' ? `Publicación comprobada: los ${c.archivos} archivos de las obras están en internet.`
+    : `Atención: estos archivos no se encuentran en internet (revisa mayúsculas y minúsculas del nombre): ${c.faltan.join(', ')}`;
   const en = estado.entrada || { obras: [], pdfsSueltos: [] };
   let te = `<strong>Carpeta Entrada</strong> (desde el móvil: compartir el XML y el PDF a Google Drive, carpeta <code>Entrada</code> del proyecto).`;
   if (!en.obras.length && !en.pdfsSueltos.length) te += `<br><span>Vacía.</span>`;
@@ -779,27 +787,32 @@ async function descartar() {
 }
 
 // ---------- Publicar / retirar (con ventana de progreso) ----------
-// Abre la ventana de progreso y devuelve una promesa que se cumple cuando ya se reciben los avisos del servidor
+// Ventana de progreso: se abre al pedir la publicación y, con el número que devuelve el servidor, se sigue su registro
+// (el servidor guarda el registro, así que no se pierde nada por conectarse después de empezar; y una ventana nueva
+// ya no recibe el «Hecho» de la publicación anterior)
 function abrirVelo(titulo) {
   $('veloTitulo').innerHTML = `<span class="progreso"></span> ${esc(titulo)}`;
   $('veloLog').textContent = ''; $('veloCerrar').disabled = true; $('velo').classList.add('ver');
-  const f = new EventSource('/api/publicacion/eventos');
+}
+function seguirPublicacion(id) {
+  const f = new EventSource('/api/publicacion/eventos?id=' + id);
   f.onmessage = ev => {
     const m = JSON.parse(ev.data);
-    if (m.tipo === 'log') { $('veloLog').textContent += m.linea + '\n'; $('veloLog').scrollTop = $('veloLog').scrollHeight; }
+    if (m.id !== id) return; // avisos de otra publicación
+    if (m.linea) { $('veloLog').textContent += m.linea + '\n'; $('veloLog').scrollTop = $('veloLog').scrollHeight; }
     if (m.tipo === 'fin') { f.close(); $('veloTitulo').textContent = m.ok ? 'Hecho' : 'Ha fallado la publicación'; $('veloCerrar').disabled = false; refrescar(); }
   };
-  return new Promise(ok => { f.onopen = () => ok(f); setTimeout(() => ok(f), 1500); });
 }
+function veloFallo(titulo, mensaje) { $('veloTitulo').textContent = titulo; $('veloLog').textContent = mensaje; $('veloCerrar').disabled = false; }
 $('veloCerrar').onclick = () => { $('velo').classList.remove('ver'); if (seleccionado && !estado.borradores.some(b => b.id === seleccionado)) { seleccionado = null; borradorActual = null; pintarPanel(); } };
 
 async function publicar() {
   const b = borradorActual;
   const ya = estado.publicadas.find(o => o.archivo === b.entrada.archivo);
   if (!confirm(`¿Publicar "${b.entrada.titulo}" para todo el coro?${ya ? '\n\nSustituirá a la obra del mismo nombre que ya está publicada.' : ''}`)) return;
-  const f = await abrirVelo('Publicando "' + b.entrada.titulo + '"…');
-  try { await api(`/api/borradores/${b.id}/publicar`, { method: 'POST' }); }
-  catch (e) { f.close(); $('veloTitulo').textContent = 'No se ha podido publicar'; $('veloLog').textContent = e.message; $('veloCerrar').disabled = false; }
+  abrirVelo('Publicando "' + b.entrada.titulo + '"…');
+  try { seguirPublicacion((await api(`/api/borradores/${b.id}/publicar`, { method: 'POST' })).id); }
+  catch (e) { veloFallo('No se ha podido publicar', e.message); }
 }
 // Marcar o quitar «en ensayo» es inmediato; se sube a internet con «Publicar ahora» (o con la siguiente publicación)
 async function marcarEnsayo(o) {
@@ -810,20 +823,20 @@ async function marcarEnsayo(o) {
   } catch (e) { alert(e.message); }
 }
 async function publicarAhora() {
-  const f = await abrirVelo('Publicando para el coro…');
-  try { await api('/api/publicar', { method: 'POST' }); }
-  catch (e) { f.close(); $('veloTitulo').textContent = 'No se ha podido publicar'; $('veloLog').textContent = e.message; $('veloCerrar').disabled = false; }
+  abrirVelo('Publicando para el coro…');
+  try { seguirPublicacion((await api('/api/publicar', { method: 'POST' })).id); }
+  catch (e) { veloFallo('No se ha podido publicar', e.message); }
 }
 $('publicarAhora').onclick = publicarAhora;
 async function retirar(o) {
   if (!confirm(`¿Retirar "${o.titulo}" de la app? Dejará de verse en los móviles del coro. (El PDF y el XML de tu carpeta no se borran.)`)) return;
-  const f = await abrirVelo('Retirando "' + o.titulo + '"…');
-  try { await api(`/api/publicadas/${encodeURIComponent(o.archivo)}/retirar`, { method: 'POST' }); }
-  catch (e) { f.close(); $('veloTitulo').textContent = 'No se ha podido retirar'; $('veloLog').textContent = e.message; $('veloCerrar').disabled = false; }
+  abrirVelo('Retirando "' + o.titulo + '"…');
+  try { seguirPublicacion((await api(`/api/publicadas/${encodeURIComponent(o.archivo)}/retirar`, { method: 'POST' })).id); }
+  catch (e) { veloFallo('No se ha podido retirar', e.message); }
 }
 
 cargarOsmd().catch(() => {}); // que esté listo al abrir el primer compás; si no hay internet, se avisa en la tarjeta
-refrescar().then(() => { if (estado.publicando) abrirVelo('Publicación en marcha…'); }).catch(e => { $('panel').innerHTML = '<div class="vacio">No se puede hablar con el gestor: ' + esc(e.message) + '</div>'; });
+refrescar().then(() => { if (estado.publicando) { abrirVelo('Publicación en marcha…'); seguirPublicacion(estado.publicacion); } }).catch(e => { $('panel').innerHTML = '<div class="vacio">No se puede hablar con el gestor: ' + esc(e.message) + '</div>'; });
 // Refresco de las listas (carpeta Entrada, borradores) al volver a la pestaña y cada 15 s mientras se ve
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refrescar().catch(() => {}); });
 setInterval(() => { if (document.visibilityState === 'visible' && !$('velo').classList.contains('ver')) refrescar().catch(() => {}); }, 15000);
