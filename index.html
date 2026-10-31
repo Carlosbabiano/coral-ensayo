@@ -538,7 +538,8 @@ async function aplicarModo() {
   if (!modoPdf) activarApuntes(false);
   $('estado').textContent = modoPdf ? 'Toca un compás de la página para empezar desde ahí.' : 'Toca un compás de la partitura para empezar desde ahí.';
   if (modoPdf && !pdfCargado) await cargarPdf();
-  try { localStorage.setItem('modoPdf', modoPdf ? '1' : '0'); } catch {}
+  // El gestor y el modo corregir recuerdan su vista aparte: la app del coro (mismo origen en el PC) fuerza el PDF y no debe arrastrar a la previsualización
+  try { localStorage.setItem(modoEditor ? 'modoPdfEditor' : 'modoPdf', modoPdf ? '1' : '0'); } catch {}
 }
 
 // Las páginas son imágenes (generadas en el PC desde el PDF): cargan al instante y se pueden ampliar con los dedos
@@ -729,7 +730,7 @@ function enfocar(el) {
 
 $('vistaPartitura').onclick = async () => { if (!modoPdf) return; modoPdf = false; await aplicarModo(); moverCursor(indiceEvento); };
 $('vistaPdf').onclick = async () => { if (modoPdf) return; modoPdf = true; await aplicarModo(); moverCursor(indiceEvento); };
-try { modoPdf = localStorage.getItem('modoPdf') === '1'; } catch {}
+try { modoPdf = localStorage.getItem(modoEditor ? 'modoPdfEditor' : 'modoPdf') === '1'; } catch {}
 
 // Un botón por pentagrama; si el pentagrama se desdobla en dos o más compases (Contralto 1 / Contralto 2…), dos botones
 function crearBotonesVoces() {
