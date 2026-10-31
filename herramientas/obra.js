@@ -195,7 +195,165 @@ function huecosASilencios(xml) {
   });
 }
 
+// ---------- Partes corridas por el escáner ----------
+// Cuando a mitad de obra el sistema gana un pentagrama (entra un solista encima del coro) o lo pierde, el escáner
+// reparte los pentagramas por su posición, así que desde ese compás cada parte pasa a llevar la música de la de
+// encima (o de la de debajo). Se nota en que varias partes cambian de clave a la vez y cada una toma justo la clave
+// (y la tesitura) de su vecina, y en que la última parte está vacía a un lado del corte. Aquí se detecta y se
+// recompone cada voz real empalmando sus tramos; donde una voz aún no existe (o ya ha acabado) van silencios.
+function recomponerPartesCorridas(xml, avisos) {
+  const RE_M = /<measure number="([^"]+)"([^>]*)>([\s\S]*?)<\/measure>/g;
+  const partes = [...xml.matchAll(/<part id="([^"]+)">([\s\S]*?)<\/part>/g)].map(m => ({ id: m[1], compases: [...m[2].matchAll(RE_M)].map(c => ({ num: c[1], attrs: c[2], cuerpo: c[3] })) }));
+  const k = partes.length, total = partes[0] && partes[0].compases.length;
+  if (k < 3 || !total || partes.some(p => p.compases.length !== total)) return xml;
+  const normal = c => c.replace(/\s+/g, '');
+  // Por parte y compás: clave en vigor (texto normalizado y el elemento tal cual), si trae cambio de clave, notas y altura media
+  const info = partes.map(p => {
+    let clave = '', bruto = ''; const filas = [];
+    p.compases.forEach(c => {
+      const m = c.cuerpo.match(/<clef(?:\s[^>]*)?>([\s\S]*?)<\/clef>/);
+      const cambia = !!(m && normal(m[1]) !== clave);
+      if (m) { clave = normal(m[1]); bruto = m[0]; }
+      let n = 0, suma = 0, primera = null, ultima = null;
+      for (const [nota] of c.cuerpo.matchAll(/<note(?:\s[^>]*)?>[\s\S]*?<\/note>/g)) {
+        const t = nota.match(/<step>(\w)<\/step>\s*(?:<alter>(-?\d+)<\/alter>)?\s*<octave>(\d)/);
+        if (t && !/<rest/.test(nota)) { const midi = 12 * (+t[3] + 1) + SEMITONOS[t[1]] + (+(t[2] || 0)); n++; suma += midi; if (primera == null) primera = midi; ultima = midi; }
+      }
+      filas.push({ clave, bruto, cambia, n, suma, primera, ultima });
+    });
+    return filas;
+  });
+  const vacia = (p, a, b) => info[p].slice(a, b).every(f => !f.n); // sin notas en [a, b)
+  const media = (p, a, b) => { let n = 0, s = 0; for (const f of info[p].slice(a, b)) { n += f.n; s += f.suma; } return n ? s / n : null; };
+  const cl = (p, i) => info[p][i].clave;
+  // Última nota de la parte p antes del compás i y primera desde i (mirando hasta cuatro compases), para medir el salto
+  const ultimaAntes = (p, i) => { for (let j = i - 1; j >= Math.max(0, i - 4); j--) if (info[p][j].ultima != null) return info[p][j].ultima; return null; };
+  const primeraDesde = (p, i) => { for (let j = i; j < Math.min(total, i + 4); j++) if (info[p][j].primera != null) return info[p][j].primera; return null; };
+
+  // Pistas reales (voces), en orden vertical. Cada una: tramos [{ desde, xml }] (xml = índice de parte del escáner, o null).
+  // "activas" son las que suenan en el tramo actual: la de la posición r lee la parte r del escáner.
+  const todas = Array.from({ length: k }, (_, r) => ({ id: partes[r].id, tramos: [{ desde: 0, xml: r }] }));
+  const activas = todas.slice(); const cortes = [];
+  for (let i = 1; i < total; i++) {
+    if (info.filter(f => f[i].cambia).length < 2) continue;
+    // Partes del final que todavía no han sonado no cuentan como activas (son el hueco que deja el corrimiento)
+    while (activas.length > 1) {
+      const u = activas[activas.length - 1];
+      if (!(u.tramos.length === 1 && u.tramos[0].desde === 0 && vacia(activas.length - 1, 0, i))) break;
+      activas.pop(); todas.splice(todas.indexOf(u), 1);
+    }
+    const n = activas.length, candidatos = [];
+    // Hipótesis "baja": entra un pentagrama en la posición q; las partes de debajo toman la música de la de encima
+    if (n < k && vacia(n, 0, i)) {
+      for (let q = 0; q < n; q++) {
+        if (n - q < 2) continue;
+        let bien = true;
+        for (let p = 0; p < q && bien; p++) bien = cl(p, i) === cl(p, i - 1);
+        for (let p = q + 1; p <= n && bien; p++) bien = cl(p, i) === cl(p - 1, i - 1);
+        if (bien) candidatos.push({ tipo: 'baja', q });
+      }
+    }
+    // Hipótesis "sube": desaparece el pentagrama q; las partes de debajo suben una posición
+    if (n >= 3 && vacia(n - 1, i, total)) {
+      for (let q = 0; q < n - 1; q++) {
+        if (n - 1 - q < 2) continue;
+        let bien = true;
+        for (let p = 0; p < q && bien; p++) bien = cl(p, i) === cl(p, i - 1);
+        for (let p = q; p < n - 1 && bien; p++) bien = cl(p, i) === cl(p + 1, i - 1);
+        if (bien) candidatos.push({ tipo: 'sube', q });
+      }
+    }
+    if (!candidatos.length) continue;
+    // Elegir la hipótesis por el salto melódico en el empalme: con el reparto correcto, cada voz sigue su camino
+    // (intervalos pequeños entre la última nota antes del corte y la primera después); con el reparto del escáner,
+    // o con otro reparto, se comparan voces distintas y los saltos son mayores. Si dejarlo como está salta menos, no se toca.
+    const saltoMedio = pares => { let s = 0, c = 0; for (const [a, b] of pares) { const u = ultimaAntes(a, i), v = primeraDesde(b, i); if (u != null && v != null) { s += Math.abs(u - v); c++; } } return c ? s / c : null; };
+    const paresDe = c => { const pares = []; for (let r = 0; r < n; r++) { if (r < c.q) pares.push([r, r]); else if (c.tipo === 'baja') pares.push([r, r + 1]); else if (r > c.q) pares.push([r, r - 1]); } return pares; };
+    const sinCorte = saltoMedio(Array.from({ length: n }, (_, r) => [r, r]));
+    for (const c of candidatos) {
+      c.salto = saltoMedio(paresDe(c));
+      // Tesitura, solo para desempatar: lo que lleva cada parte corrida se parece más a lo que llevaba su vecina que a lo suyo
+      let a = 0, d = 0;
+      const desp = c.tipo === 'baja' ? 1 : -1, ini = c.tipo === 'baja' ? c.q + 1 : c.q, hasta = c.tipo === 'baja' ? n : n - 2;
+      for (let p = ini; p <= hasta && p < k; p++) {
+        const despues = media(p, i, total), vecina = media(p - desp, 0, i), propia = media(p, 0, i);
+        if (despues == null || vecina == null || propia == null) continue;
+        if (Math.abs(despues - vecina) < Math.abs(despues - propia)) a++; else if (Math.abs(despues - vecina) > Math.abs(despues - propia)) d++;
+      }
+      c.puntos = a - d;
+    }
+    const validos = candidatos.filter(c => c.salto != null && (sinCorte == null || c.salto < sinCorte));
+    if (!validos.length) continue;
+    validos.sort((x, y) => x.salto - y.salto || y.puntos - x.puntos || x.q - y.q);
+    const c = validos[0];
+    const num = partes[0].compases[i].num;
+    if (c.tipo === 'baja') {
+      for (let r = c.q; r < n; r++) activas[r].tramos.push({ desde: i, xml: r + 1 });
+      const nueva = { id: null, tramos: [{ desde: 0, xml: null }, { desde: i, xml: c.q }] };
+      todas.splice(c.q < n ? todas.indexOf(activas[c.q]) : todas.length, 0, nueva);
+      activas.splice(c.q, 0, nueva);
+      avisos.push(`A partir del compás ${num} la página tiene un pentagrama más (entra una voz en la posición ${c.q + 1}) y el escáner había corrido las partes de debajo una posición: se han recompuesto las voces.`);
+    } else {
+      activas[c.q].tramos.push({ desde: i, xml: null });
+      for (let r = c.q + 1; r < n; r++) activas[r].tramos.push({ desde: i, xml: r - 1 });
+      activas.splice(c.q, 1);
+      avisos.push(`A partir del compás ${num} desaparece el pentagrama ${c.q + 1} y el escáner había subido las partes de debajo una posición: se han recompuesto las voces.`);
+    }
+    cortes.push(i);
+  }
+  if (!cortes.length) return xml;
+
+  // Reconstruir el XML: una parte por pista, empalmando tramos
+  const tramoEn = (pista, j) => { let t = pista.tramos[0]; for (const x of pista.tramos) if (x.desde <= j) t = x; return t; };
+  const claveDePista = pista => { const t = pista.tramos.find(x => x.xml != null); return t ? info[t.xml][t.desde].bruto : ''; };
+  const usados = new Set(partes.map(p => p.id)); let siguiente = k + 1;
+  const nuevoId = () => { let id; do { id = 'P' + siguiente++; } while (usados.has(id)); usados.add(id); return id; };
+  const cuerpos = [], cabeceras = [];
+  todas.forEach((pista, orden) => {
+    const id = pista.id || nuevoId();
+    let div = 1, beats = 4, bt = 4, claveActual = '';
+    const salida = [];
+    for (let j = 0; j < total; j++) {
+      const ref = partes[0].compases[j];
+      const d = ref.cuerpo.match(/<divisions>(\d+)/); if (d) div = +d[1];
+      const b = ref.cuerpo.match(/<beats>(\d+)<\/beats>\s*<beat-type>(\d+)/); if (b) { beats = +b[1]; bt = +b[2]; }
+      const t = tramoEn(pista, j);
+      let attrs = ref.attrs, cuerpo;
+      if (t.xml == null) {
+        // Silencio de compás entero con los atributos del primer pentagrama, pero con la clave propia de esta voz
+        let at = (ref.cuerpo.match(/<attributes>[\s\S]*?<\/attributes>/) || [''])[0];
+        const clave = claveDePista(pista);
+        if (clave) {
+          if (/<clef/.test(at)) at = at.replace(/<clef(?:\s[^>]*)?>[\s\S]*?<\/clef>/, clave);
+          else if (j === t.desde) at = at ? at.replace('</attributes>', clave + '</attributes>') : '<attributes>' + clave + '</attributes>';
+          claveActual = normal(clave.match(/<clef(?:\s[^>]*)?>([\s\S]*?)<\/clef>/)[1]);
+        }
+        cuerpo = `\n${at ? '\t\t\t' + at + '\n' : ''}\t\t\t<note><rest measure="yes"/><duration>${Math.round(div * 4 * beats / bt)}</duration><voice>1</voice><type>whole</type></note>\n\t\t`;
+      } else {
+        const c = partes[t.xml].compases[j]; attrs = c.attrs; cuerpo = c.cuerpo;
+        const f = info[t.xml][j];
+        if (j === t.desde && j > 0 && f.cambia && f.clave === claveActual) cuerpo = cuerpo.replace(/\s*<clef(?:\s[^>]*)?>[\s\S]*?<\/clef>/, ''); // clave repetida en el empalme
+        claveActual = f.clave || claveActual;
+      }
+      salida.push(`\t\t<measure number="${ref.num}"${attrs}>${cuerpo}</measure>`);
+    }
+    cuerpos.push(`\t<part id="${id}">\n${salida.join('\n')}\n\t</part>`);
+    const original = pista.id && (xml.match(new RegExp(`<score-part id="${pista.id}">[\\s\\S]*?</score-part>`)) || [''])[0];
+    if (original) cabeceras.push(original);
+    else {
+      const plantilla = (xml.match(/<score-part id="[^"]+">[\s\S]*?<\/score-part>/) || [''])[0];
+      const nombre = orden === 0 ? 'Solista' : 'Voz ' + (orden + 1);
+      cabeceras.push(plantilla.replace(/id="[^"]+"/g, `id="${id}"`).replace(/<part-name>[^<]*<\/part-name>/, `<part-name>${nombre}</part-name>`).replace(/<instrument-name>[^<]*<\/instrument-name>/, `<instrument-name>${nombre}</instrument-name>`).replace(/<midi-channel>\d+/, `<midi-channel>${Math.min(16, orden + 1)}`));
+    }
+  });
+  const ini = xml.indexOf('<part-list>'), finLista = xml.indexOf('</part-list>') + '</part-list>'.length;
+  const primeraParte = xml.indexOf('<part id=', finLista), cola = xml.slice(xml.lastIndexOf('</part>') + '</part>'.length);
+  return xml.slice(0, ini) + '<part-list>\n\t\t' + cabeceras.join('\n\t\t') + '\n\t</part-list>' + xml.slice(finLista, primeraParte) + cuerpos.join('\n') + cola;
+}
+
 function repararCompases(xml, avisos) {
+  // 0) Partes corridas por un pentagrama que entra o sale a mitad de obra: se recomponen antes de nada
+  xml = recomponerPartesCorridas(xml, avisos);
   const partes = () => [...xml.matchAll(/<part id="([^"]+)">([\s\S]*?)<\/part>/g)];
   const medidas = cuerpo => [...cuerpo.matchAll(/<measure number="([^"]+)"[^>]*>([\s\S]*?)<\/measure>/g)];
   const sumaCompas = (m, div) => {
@@ -398,8 +556,10 @@ function prepararObra({ xml: rutaXml, pdf: rutaPdf = null, dirSalida, log = cons
   }
   if (!partes.length) throw new Error('No se han encontrado voces en el archivo.');
 
+  // Nombres: si ninguna parte trae nombre conocido, por tesitura (Soprano, Contralto…); si alguna sí (por ejemplo el
+  // Solista que añade recomponerPartesCorridas), las demás se numeran por su posición en la página (Voz 2, Voz 3…)
   const generico = partes.every(p => !NOMBRES_CONOCIDOS.test(p.nombreActual));
-  const nombres = generico ? nombresPorTesitura(partes) : new Map(partes.map(p => [p.id, p.nombreActual || 'Voz']));
+  const nombres = generico ? nombresPorTesitura(partes) : new Map(partes.map((p, i) => [p.id, NOMBRES_CONOCIDOS.test(p.nombreActual) ? p.nombreActual : 'Voz ' + (i + 1)]));
   xml = editarObra(xml, { nombres: Object.fromEntries(nombres) });
   const resumenPartes = partes.map(p => {
     const m = Math.round(p.media);
@@ -527,6 +687,6 @@ function guardarPdf(rutaPdf, base) {
 module.exports = {
   RAIZ, DIR_APP, DIR_PARTITURAS, DIR_PDF, LISTA, NOMBRES_VOCES,
   clave, pdfPara, prepararObra, editarObra, huecosASilencios, leerPartes, tituloDe, tempoDe, limpiarNombreArchivo,
-  sospechososDe, detalleCompas, fijarCompas, notasCompas, escribirCompas, FIGURA_NEGRAS,
+  sospechososDe, detalleCompas, fijarCompas, notasCompas, escribirCompas, FIGURA_NEGRAS, repararCompases, recomponerPartesCorridas,
   leerLista, archivosDe, incorporarEnApp, retirarDeApp, marcarEnsayo, subirVersionCache, versionCache, guardarEnGit, guardarPdf,
 };
