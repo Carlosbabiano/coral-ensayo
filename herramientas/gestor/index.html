@@ -29,6 +29,9 @@
   ul.lista li.activa { background: #e8edf8; }
   ul.lista li .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   ul.lista li .e { font-size: 12px; color: var(--muted); }
+  ul.lista li.obra { flex-wrap: wrap; gap: 4px 6px; cursor: default; }
+  ul.lista li.obra .t { flex: 1 1 100%; white-space: normal; }
+  ul.lista li.obra button.mini { padding: 2px 7px; font-size: 12px; }
   .punto { width: 9px; height: 9px; border-radius: 50%; background: #bbb; flex: none; }
   .punto.listo { background: var(--ok); } .punto.preparando { background: var(--warn); animation: latido 1s infinite; } .punto.error { background: var(--bad); }
   @keyframes latido { 50% { opacity: .3; } }
@@ -169,9 +172,9 @@ async function refrescar() {
   const up = $('publicadas'); up.innerHTML = '';
   for (const o of estado.publicadas) {
     const li = document.createElement('li');
-    li.style.cursor = 'default';
-    li.innerHTML = `<span class="t">${o.ensayo ? '★ ' : ''}${esc(o.titulo)}<br><span class="e">${o.ensayo ? 'en ensayo · ' : ''}${o.paginas ? 'con página original' : 'solo partitura'}</span></span>`;
-    const en = document.createElement('button'); en.className = 'mini'; en.textContent = o.ensayo ? 'Quitar de ensayo' : 'En ensayo'; en.title = o.ensayo ? 'La obra deja de salir en el grupo «En ensayo» de la app' : 'La obra sale la primera en la app, en el grupo «En ensayo»';
+    li.className = 'obra'; li.title = o.titulo;
+    li.innerHTML = `<span class="t">${o.ensayo ? '★ ' : ''}${esc(o.titulo)} <span class="e">${o.ensayo ? 'en ensayo · ' : ''}${o.paginas ? 'con página original' : 'solo partitura'}</span></span>`;
+    const en = document.createElement('button'); en.className = 'mini'; en.textContent = o.ensayo ? '★ Quitar de ensayo' : '☆ En ensayo'; en.title = o.ensayo ? 'La obra deja de salir en el grupo «En ensayo» de la app' : 'La obra sale la primera en la app, en el grupo «En ensayo»';
     en.onclick = () => marcarEnsayo(o);
     li.appendChild(en);
     const e = document.createElement('button'); e.className = 'mini'; e.textContent = 'Editar'; e.title = 'Crea un borrador a partir de la obra publicada para retocarla y volverla a publicar';
