@@ -10,7 +10,8 @@ Publicada en: https://carlosbabiano.github.io/coral-ensayo/
 ## Carpetas
 - `app/` — la aplicación (lo que se publica en GitHub Pages).
 - `app/partituras/` — obras: MusicXML (`.xml`), PDF original (`.pdf`), posiciones de compases (`.pos.json`) e índice `lista.json`.
-- `pdf/` — PDF originales de las obras.
+- `originales/` — material de partida de cada obra: `pdf/` (el PDF original; el gestor guarda ahí una copia al publicar)
+  y `xml/` (el MusicXML tal como salió del Escáner Musical). Ahí está también el logo de la coral.
 - `herramientas/` — scripts (Node): `gestor.js` (+ `gestor/index.html`), `obra.js`, `anadir-obra.js`, `letra.js`, `posiciones.js`, `paginas.js`, `publicar.js`.
 - `borradores/` — obras en preparación en el gestor (no se publican).
 - `Entrada/` — buzón: lo que se deje aquí (p. ej. desde el móvil vía Google Drive) aparece en el gestor para cargarlo.
@@ -21,7 +22,7 @@ Publicada en: https://carlosbabiano.github.io/coral-ensayo/
 2. Abrir `Gestor.cmd`: arranca un servidor local y abre el gestor en el navegador (http://localhost:5180).
 3. Arrastrar el `.xml` **y el `.pdf`** de la obra a la zona de la página (o elegirlos con un clic). O, desde el
    móvil, compartirlos a Google Drive en la carpeta `Entrada/` del proyecto: el gestor los muestra con un botón
-   «Cargar» por obra (si el XML no trae PDF, busca uno con el mismo nombre en `pdf/`).
+   «Cargar» por obra (si el XML no trae PDF, busca uno con el mismo nombre en `originales/pdf/`).
 4. El gestor prepara la obra (nombra las voces, separa en dos voces las partes de dos pentagramas sin acordes —tenor y bajo
    escritos juntos, por ejemplo— y quita las que llevan acordes —el piano—, revisa los compases, convierte las páginas
    del PDF en imágenes y localiza en ellas cada compás) y la muestra en el mismo reproductor que usa el coro. La letra

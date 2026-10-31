@@ -7,7 +7,7 @@ const DIR_APP = path.join(RAIZ, 'app');
 const DIR_PARTITURAS = path.join(DIR_APP, 'partituras');
 const LISTA = path.join(DIR_PARTITURAS, 'lista.json');
 const SW = path.join(DIR_APP, 'sw.js');
-const DIR_PDF = path.join(RAIZ, 'pdf');
+const DIR_PDF = path.join(RAIZ, 'originales', 'pdf');
 const CACHE_AUDIVERIS = path.join(__dirname, 'cache', 'audiveris');
 
 const { posiciones } = require('./posiciones.js');
@@ -24,7 +24,7 @@ const NOTAS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 // Nombre "clave" de un archivo para emparejar XML y PDF: sin extensión, minúsculas, solo letras y números
 const clave = f => path.basename(f).replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
-// Busca el PDF que corresponde a un XML: entre los dados, junto al XML o en la carpeta pdf/
+// Busca el PDF que corresponde a un XML: entre los dados, junto al XML o en la carpeta originales/pdf/
 function pdfPara(xml, pdfs = []) {
   const k = clave(xml);
   const dado = pdfs.find(p => clave(p) === k); if (dado) return dado;
@@ -497,13 +497,13 @@ function versionCache() { return (fs.readFileSync(SW, 'utf8').match(/coral-v\d+/
 function guardarEnGit(mensaje) {
   try {
     execSync('git rev-parse --is-inside-work-tree', { cwd: RAIZ, stdio: 'ignore' });
-    execSync('git add -A app pdf', { cwd: RAIZ, stdio: 'ignore' });
+    execSync('git add -A app originales', { cwd: RAIZ, stdio: 'ignore' });
     execSync(`git -c user.name="Coral" -c user.email="ipadbabiano@gmail.com" commit -q -m "${mensaje.replace(/"/g, "'")}"`, { cwd: RAIZ, stdio: 'ignore' });
     return true;
   } catch { return false; }
 }
 
-// Guarda una copia del PDF en pdf/ (para poder regenerar la obra en el futuro)
+// Guarda una copia del PDF en originales/pdf/ (para poder regenerar la obra en el futuro)
 function guardarPdf(rutaPdf, base) {
   if (!rutaPdf || !fs.existsSync(rutaPdf)) return null;
   fs.mkdirSync(DIR_PDF, { recursive: true });

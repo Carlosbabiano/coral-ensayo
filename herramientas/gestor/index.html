@@ -103,7 +103,7 @@
       o haz clic para elegirlos
       <input type="file" id="elegir" multiple accept=".xml,.musicxml,.pdf">
     </label>
-    <p class="ayuda">Sin el PDF la obra irá sin la vista de página original (la que ve el coro). Si el PDF está en la carpeta <code>pdf/</code> con el mismo nombre, se usa solo.</p>
+    <p class="ayuda">Sin el PDF la obra irá sin la vista de página original (la que ve el coro). Si el PDF está en la carpeta <code>originales/pdf/</code> con el mismo nombre, se usa solo.</p>
     <div class="ayuda" id="entrada" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px"></div>
     <h2>Borradores</h2>
     <ul class="lista" id="borradores"></ul>
@@ -144,7 +144,7 @@ async function refrescar() {
   const en = estado.entrada || { obras: [], pdfsSueltos: [] };
   let te = `<strong>Carpeta Entrada</strong> (desde el móvil: compartir el XML y el PDF a Google Drive, carpeta <code>Entrada</code> del proyecto).`;
   if (!en.obras.length && !en.pdfsSueltos.length) te += `<br><span>Vacía.</span>`;
-  for (const o of en.obras) te += `<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(o.xml)}">${esc(o.xml)}<br><span>${o.pdf ? 'con ' + esc(o.pdf) : 'sin PDF (se buscará en pdf/)'}</span></span><button class="mini" data-xml="${esc(o.xml)}">Cargar</button></div>`;
+  for (const o of en.obras) te += `<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(o.xml)}">${esc(o.xml)}<br><span>${o.pdf ? 'con ' + esc(o.pdf) : 'sin PDF (se buscará en originales/pdf/)'}</span></span><button class="mini" data-xml="${esc(o.xml)}">Cargar</button></div>`;
   for (const p of en.pdfsSueltos) te += `<div style="margin-top:6px">${esc(p)}: PDF sin XML del mismo nombre; falta el XML del escáner.</div>`;
   $('entrada').innerHTML = te;
   for (const b of $('entrada').querySelectorAll('button[data-xml]')) b.onclick = async () => {
