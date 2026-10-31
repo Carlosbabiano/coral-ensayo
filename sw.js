@@ -1,5 +1,5 @@
 // Service worker: guarda la app, las partituras y los sonidos para funcionar sin conexión.
-const VERSION = 'coral-v119';
+const VERSION = 'coral-v120';
 const BASE = ['./', './index.html', './compases.js', './manifest.json', './icono-192.png', './icono-512.png', './icono-512-maskable.png', './apple-touch-icon.png', './pantalla.mp4', './partituras/lista.json'];
 
 // Instalación: solo lo imprescindible (si un archivo fallara, la versión nueva no se instalaría nunca)
@@ -36,13 +36,14 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
   const propio = url.origin === self.location.origin;
-  // Archivos que cambian con cada versión (app e índice): primero red, si falla, caché
+  // Archivos que cambian con cada versión (app e índice): primero red, si falla, caché. Se piden saltándose la caché
+  // HTTP del navegador (GitHub Pages los sirve con 10 minutos de caducidad): si no, tras publicar se seguía viendo la página vieja
   const volatil = propio && (url.pathname.endsWith('/') || /\/(index\.html|manifest\.json|sw\.js|partituras\/lista\.json)$/.test(url.pathname));
   e.respondWith((async () => {
     const cache = await caches.open(VERSION);
     if (volatil) {
       try {
-        const r = await fetch(e.request);
+        const r = await fetch(e.request.url, { cache: 'no-cache' });
         if (r.ok) cache.put(e.request, r.clone());
         return r;
       } catch { return (await cache.match(e.request, { ignoreSearch: true })) || Response.error(); }
