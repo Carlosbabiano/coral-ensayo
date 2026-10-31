@@ -227,9 +227,14 @@ const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.3.289/';
 async function cargarLista() {
   const lista = await (await fetch('partituras/lista.json')).json();
   listaObras = lista;
-  for (const o of lista) { const op = document.createElement('option'); op.value = o.archivo; op.textContent = o.titulo; $('obra').appendChild(op); }
+  // Las obras marcadas «en ensayo» van las primeras, en su propio grupo, para encontrarlas rápido
+  const enEnsayo = lista.filter(o => o.ensayo), resto = lista.filter(o => !o.ensayo);
+  const opcion = o => { const op = document.createElement('option'); op.value = o.archivo; op.textContent = (o.ensayo ? '★ ' : '') + o.titulo; return op; };
+  const grupo = (nombre, obras) => { const g = document.createElement('optgroup'); g.label = nombre; obras.forEach(o => g.appendChild(opcion(o))); $('obra').appendChild(g); };
+  if (enEnsayo.length) { grupo('En ensayo', enEnsayo); if (resto.length) grupo('Repertorio', resto); }
+  else lista.forEach(o => $('obra').appendChild(opcion(o)));
   $('obra').onchange = () => cargarObra($('obra').value);
-  await cargarObra(lista[0].archivo);
+  await cargarObra((enEnsayo[0] || lista[0]).archivo);
 }
 
 // Carga la obra en OSMD desde una dirección o desde el texto del MusicXML, y arregla las casillas de repetición
