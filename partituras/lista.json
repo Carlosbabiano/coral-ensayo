@@ -59,6 +59,15 @@
     ]
   },
   {
+    "titulo": "CIRINEO de Joaquin Madurga",
+    "archivo": "CIRINEO_de_Joaquin_Madurga.xml",
+    "posiciones": "CIRINEO_de_Joaquin_Madurga.pos.json",
+    "paginas": [
+      "CIRINEO_de_Joaquin_Madurga-p1.png",
+      "CIRINEO_de_Joaquin_Madurga-p2.png"
+    ]
+  },
+  {
     "titulo": "Con amores la mi madre",
     "archivo": "Con_amores_la_mi_madre.xml",
     "posiciones": "Con_amores_la_mi_madre.pos.json",
