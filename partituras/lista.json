@@ -47,6 +47,20 @@
     ]
   },
   {
+    "titulo": "Hasta mi final",
+    "archivo": "Hasta_mi_final.xml",
+    "posiciones": "Hasta_mi_final.pos.json",
+    "paginas": [
+      "Hasta_mi_final-p1.jpg",
+      "Hasta_mi_final-p2.jpg",
+      "Hasta_mi_final-p3.jpg",
+      "Hasta_mi_final-p4.jpg",
+      "Hasta_mi_final-p5.jpg",
+      "Hasta_mi_final-p6.jpg",
+      "Hasta_mi_final-p7.jpg"
+    ]
+  },
+  {
     "titulo": "Hymne à la nuit (Les Choristes)",
     "archivo": "Hymne_a_la_nuit_Les_Choristes.xml",
     "posiciones": "Hymne_a_la_nuit_Les_Choristes.pos.json",
