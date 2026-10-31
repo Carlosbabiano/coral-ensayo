@@ -79,6 +79,14 @@
     "ensayo": true
   },
   {
+    "titulo": "Cristo por nosotros",
+    "archivo": "Cristo_por_nosotros.xml",
+    "posiciones": "Cristo_por_nosotros.pos.json",
+    "paginas": [
+      "Cristo_por_nosotros-p1.jpg"
+    ]
+  },
+  {
     "titulo": "Gloria in excelsis (Vivaldi)",
     "archivo": "Gloria_in_excelsis_Vivaldi.xml",
     "posiciones": "Gloria_in_excelsis_Vivaldi.pos.json",
