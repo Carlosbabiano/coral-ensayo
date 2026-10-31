@@ -1,5 +1,13 @@
 [
   {
+    "titulo": "Acercate a la mesa-bach-mp53-1 - Partitura completa",
+    "archivo": "Acercate_a_la_mesa_bach_mp53_1_Partitura_completa.xml",
+    "posiciones": "Acercate_a_la_mesa_bach_mp53_1_Partitura_completa.pos.json",
+    "paginas": [
+      "Acercate_a_la_mesa_bach_mp53_1_Partitura_completa-p1.jpg"
+    ]
+  },
+  {
     "titulo": "Ave Maria",
     "archivo": "Ave_Maria.xml",
     "posiciones": "Ave_Maria.pos.json",
