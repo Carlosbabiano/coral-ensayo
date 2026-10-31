@@ -32,8 +32,9 @@ Publicada en: https://carlosbabiano.github.io/coral-ensayo/
    título, el nombre de cada voz, el tempo y quitar voces (por ejemplo el piano), y saltar a los compases dudosos.
 5. «Publicar para el coro» la mete en la app, sube la versión de la caché, la guarda en git y la publica.
    «Retirar» quita una obra publicada. «En ensayo» marca una obra que se está ensayando: en la app sale la primera,
-   en el grupo «En ensayo» del desplegable (y con ★); «Quitar de ensayo» la devuelve al repertorio. El borrador también
-   lleva la casilla «En ensayo» para dejarla marcada al publicar. Los borradores viven en `borradores/` hasta que se publican o descartan.
+   en el grupo «En ensayo» del desplegable (y con ★); «Quitar de ensayo» la devuelve al repertorio. Marcar es inmediato
+   (queda guardado en git) y el gestor avisa de que hay cambios sin publicar: se suben todos de una vez con «Publicar
+   ahora». El borrador también lleva la casilla «En ensayo» para dejarla marcada al publicar. Los borradores viven en `borradores/` hasta que se publican o descartan.
 
 Si alguna vez hace falta Audiveris, su lectura se guarda en `herramientas/cache/` para no repetirla.
 

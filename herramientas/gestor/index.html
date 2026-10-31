@@ -92,6 +92,7 @@
   <img src="/app/icono-192.png" alt="">
   <h1>Gestor de obras · Coral Villa de Mengíbar</h1>
   <span class="muted" id="info"></span>
+  <div id="sinPublicar" style="display:none" class="aviso">Hay cambios sin publicar. <button class="mini" id="publicarAhora">Publicar ahora</button></div>
   <a href="/app/" target="_blank"><button class="mini">Abrir la app del PC</button></a>
   <a href="https://carlosbabiano.github.io/coral-ensayo/" target="_blank"><button class="mini">Ver la app publicada</button></a>
 </header>
@@ -141,6 +142,8 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 async function refrescar() {
   estado = await api('/api/estado');
   $('info').textContent = `${estado.publicadas.length} obras publicadas · caché ${estado.version}`;
+  $('sinPublicar').style.display = estado.sinPublicar ? '' : 'none';
+  $('sinPublicar').firstChild.textContent = estado.sinPublicar === 1 ? 'Hay un cambio sin publicar para el coro. ' : `Hay ${estado.sinPublicar} cambios sin publicar para el coro. `;
   const en = estado.entrada || { obras: [], pdfsSueltos: [] };
   let te = `<strong>Carpeta Entrada</strong> (desde el móvil: compartir el XML y el PDF a Google Drive, carpeta <code>Entrada</code> del proyecto).`;
   if (!en.obras.length && !en.pdfsSueltos.length) te += `<br><span>Vacía.</span>`;
@@ -719,13 +722,20 @@ async function publicar() {
   try { await api(`/api/borradores/${b.id}/publicar`, { method: 'POST' }); }
   catch (e) { f.close(); $('veloTitulo').textContent = 'No se ha podido publicar'; $('veloLog').textContent = e.message; $('veloCerrar').disabled = false; }
 }
+// Marcar o quitar «en ensayo» es inmediato; se sube a internet con «Publicar ahora» (o con la siguiente publicación)
 async function marcarEnsayo(o) {
   const poner = !o.ensayo;
-  if (!confirm(poner ? `¿Marcar "${o.titulo}" como en ensayo? Saldrá la primera en la app de todo el coro.` : `¿Quitar "${o.titulo}" del grupo «En ensayo»? Seguirá en la app, en el repertorio.`)) return;
-  const f = await abrirVelo((poner ? 'Marcando en ensayo "' : 'Quitando de ensayo "') + o.titulo + '"…');
-  try { await api(`/api/publicadas/${encodeURIComponent(o.archivo)}/ensayo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ensayo: poner }) }); }
-  catch (e) { f.close(); $('veloTitulo').textContent = 'No se ha podido cambiar'; $('veloLog').textContent = e.message; $('veloCerrar').disabled = false; }
+  try {
+    await api(`/api/publicadas/${encodeURIComponent(o.archivo)}/ensayo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ensayo: poner }) });
+    await refrescar();
+  } catch (e) { alert(e.message); }
 }
+async function publicarAhora() {
+  const f = await abrirVelo('Publicando para el coro…');
+  try { await api('/api/publicar', { method: 'POST' }); }
+  catch (e) { f.close(); $('veloTitulo').textContent = 'No se ha podido publicar'; $('veloLog').textContent = e.message; $('veloCerrar').disabled = false; }
+}
+$('publicarAhora').onclick = publicarAhora;
 async function retirar(o) {
   if (!confirm(`¿Retirar "${o.titulo}" de la app? Dejará de verse en los móviles del coro. (El PDF y el XML de tu carpeta no se borran.)`)) return;
   const f = await abrirVelo('Retirando "' + o.titulo + '"…');
