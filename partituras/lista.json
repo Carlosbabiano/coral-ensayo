@@ -74,9 +74,16 @@
     ]
   },
   {
-    "titulo": "Pan divino F Guerrero",
+    "titulo": "Pan divino y gracioso (Guerrero)",
     "archivo": "Pan_divino_F_Guerrero.xml",
-    "ensayo": true
+    "ensayo": true,
+    "posiciones": "Pan_divino_F_Guerrero.pos.json",
+    "paginas": [
+      "Pan_divino_F_Guerrero-p1.jpg",
+      "Pan_divino_F_Guerrero-p2.jpg",
+      "Pan_divino_F_Guerrero-p3.jpg",
+      "Pan_divino_F_Guerrero-p4.jpg"
+    ]
   },
   {
     "titulo": "Si la nieve resbala (Domínguez)",
