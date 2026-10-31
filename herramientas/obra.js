@@ -155,6 +155,22 @@ function separarPentagramas(xml, id) {
 }
 
 // Silencios normales (redonda, blanca, negra…) que suman una duración dada, en XML
+// Pentagrama de una parte doble que no tiene ni una nota (solo silencios): 1, 2 o null si los dos suenan
+function pentagramaVacio(cuerpo) {
+  const notas = { 1: 0, 2: 0 };
+  for (const [n] of cuerpo.matchAll(/<note(?:\s[^>]*)?>[\s\S]*?<\/note>/g)) if (/<pitch>/.test(n)) notas[+((n.match(/<staff>(\d+)/) || [, 1])[1])]++;
+  return notas[1] && !notas[2] ? 2 : notas[2] && !notas[1] ? 1 : null;
+}
+// Deja una parte doble con solo el pentagrama que suena (el otro, vacío, se quita); la parte conserva su id
+function quitarPentagramaVacio(xml, id, vacio) {
+  xml = separarPentagramas(xml, id);
+  const id2 = id + 'B';
+  const sobra = vacio === 2 ? id2 : id;
+  xml = xml.replace(new RegExp(`<part id="${sobra}">[\\s\\S]*?</part>\\s*`), '').replace(new RegExp(`<score-part id="${sobra}">[\\s\\S]*?</score-part>\\s*`), '');
+  if (vacio === 1) xml = xml.replace(new RegExp(`id="${id2}(-[^"]*)?"`, 'g'), (m, suf) => `id="${id}${suf || ''}"`);
+  return xml;
+}
+
 function silenciosDe(dur, div, voz, staff) {
   const figuras = [[4, 'whole'], [2, 'half'], [1, 'quarter'], [0.5, 'eighth'], [0.25, '16th'], [0.125, '32nd']];
   let resto = dur, out = '';
@@ -371,6 +387,13 @@ function repararCompases(xml, avisos) {
   const simples = partes().filter(([, , c]) => !esDoble(c)).length;
   for (const [todo, id, cuerpo] of partes()) {
     if (!esDoble(cuerpo)) continue;
+    // Uno de los dos pentagramas no tiene ni una nota (una canción escrita en sistema de piano con el bajo vacío): se queda el otro
+    const vacio = pentagramaVacio(cuerpo);
+    if (vacio) {
+      xml = quitarPentagramaVacio(xml, id, vacio);
+      avisos.push(`La parte ${id} tenía dos pentagramas y el ${vacio === 2 ? 'de abajo' : 'de arriba'} estaba vacío (solo silencios): se ha quitado y queda una voz de un pentagrama.`);
+      continue;
+    }
     if (!pareceAcompanamiento(nombreDe(id), cuerpo)) {
       xml = separarPentagramas(xml, id);
       avisos.push(`La parte ${id} tenía dos pentagramas con una línea melódica en cada uno (por ejemplo tenor y bajo escritos juntos): se ha separado en dos voces (${id} y ${id}B).`);
