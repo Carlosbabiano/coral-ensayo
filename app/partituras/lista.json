@@ -48,6 +48,17 @@
     "ensayo": true
   },
   {
+    "titulo": "Carol of the Bells (1)",
+    "archivo": "Carol_of_the_Bells_1.xml",
+    "posiciones": "Carol_of_the_Bells_1.pos.json",
+    "paginas": [
+      "Carol_of_the_Bells_1-p1.jpg",
+      "Carol_of_the_Bells_1-p2.jpg",
+      "Carol_of_the_Bells_1-p3.jpg",
+      "Carol_of_the_Bells_1-p4.jpg"
+    ]
+  },
+  {
     "titulo": "Con amores la mi madre",
     "archivo": "Con_amores_la_mi_madre.xml",
     "posiciones": "Con_amores_la_mi_madre.pos.json",
