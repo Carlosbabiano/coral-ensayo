@@ -7,7 +7,9 @@ const ENV = { ...process.env, GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never'
 const sh = (c, silencio) => execSync(c, { cwd: RAIZ, stdio: silencio ? 'pipe' : 'inherit', encoding: 'utf8', env: ENV });
 const out = c => sh(c, true).trim();
 
-const nombre = process.argv[2] || 'coral-ensayo';
+// --sin-comprobar: no espera a comprobar los archivos en internet (el gestor lo hace por su cuenta, en segundo plano)
+const sinComprobar = process.argv.includes('--sin-comprobar');
+const nombre = process.argv.slice(2).find(a => !a.startsWith('--')) || 'coral-ensayo';
 let remoto = '';
 try { remoto = out('git remote get-url origin'); } catch {}
 
@@ -35,7 +37,7 @@ const url = `https://${repo.split('/')[0].toLowerCase()}.github.io/${repo.split(
 console.log(`\nListo. La app estará disponible en 1-2 minutos en:\n\n   ${url}\n\nComparte esa dirección con el coro. En el móvil: abrirla y "Añadir a pantalla de inicio".`);
 
 // Comprobación: que todos los archivos de las obras existan de verdad en internet (con el mismo nombre exacto)
-(async () => {
+if (!sinComprobar) (async () => {
   const lista = JSON.parse(require('fs').readFileSync(path.join(RAIZ, 'app', 'partituras', 'lista.json'), 'utf8'));
   const archivos = lista.flatMap(o => [o.archivo, o.posiciones, ...(o.paginas || [])].filter(Boolean));
   process.stdout.write('\nComprobando los archivos en internet (espera un par de minutos)...');

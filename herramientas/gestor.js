@@ -257,17 +257,20 @@ function quitarCanto(id) {
 }
 
 // ---------- Publicar ----------
-// El registro de la publicación en curso se guarda para reenviarlo a quien se conecte después de empezar
-let publicando = false, registroPublicacion = [], finPublicacion = null;
-const registrar = linea => { registroPublicacion.push(linea); emitir('publicacion', { tipo: 'log', linea }); };
+// Cada publicación lleva su número. Su registro se guarda para reenviarlo a la ventana de progreso que se conecte
+// (o se vuelva a conectar) mientras dura; la ventana pide el número de SU publicación, para no recibir el de la anterior
+let publicando = false, publicacion = { id: 0, registro: [], fin: null };
+const registrar = linea => { publicacion.registro.push(linea); emitir('publicacion', { tipo: 'log', id: publicacion.id, linea }); };
 function empezarPublicacion() {
   if (publicando) throw new Error('Ya hay una publicación en marcha');
-  publicando = true; registroPublicacion = []; finPublicacion = null;
+  publicando = true; publicacion = { id: publicacion.id + 1, registro: [], fin: null };
+  return publicacion.id;
 }
+// Las tres funciones que publican devuelven el número de la publicación, para que la ventana de progreso la siga
 function publicarBorrador(id) {
   const b = leerBorrador(id);
   if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
-  empezarPublicacion();
+  const idPub = empezarPublicacion();
   const dirSalida = path.join(dirDe(id), 'partituras');
   try {
     const existia = obra.incorporarEnApp(b.entrada, dirSalida);
@@ -280,6 +283,7 @@ function publicarBorrador(id) {
     else registrar('(No se ha guardado en git: no hay cambios o no hay repositorio.)');
   } catch (e) { publicando = false; throw e; }
   subirAInternet(() => { fs.rmSync(dirDe(id), { recursive: true, force: true }); });
+  return idPub;
 }
 // Crea un borrador a partir de una obra ya publicada (para retocarla y volver a publicarla encima)
 function borradorDesdePublicada(archivo) {
@@ -302,7 +306,7 @@ function borradorDesdePublicada(archivo) {
   return id;
 }
 function retirarObra(archivo) {
-  empezarPublicacion();
+  const idPub = empezarPublicacion();
   try {
     const o = obra.retirarDeApp(archivo);
     const version = obra.subirVersionCache();
@@ -310,6 +314,7 @@ function retirarObra(archivo) {
     if (obra.guardarEnGit('Retirar obra: ' + o.titulo)) registrar('Guardado en el repositorio.');
   } catch (e) { publicando = false; throw e; }
   subirAInternet();
+  return idPub;
 }
 // Pone o quita la marca «en ensayo» de una obra publicada y lo publica para el coro
 // (No se publica en el momento: el cambio queda guardado en git y el gestor avisa de que hay cambios sin publicar.)
@@ -326,20 +331,42 @@ function cambiosSinPublicar() {
 }
 // Publica en internet lo que haya pendiente
 function publicarPendiente() {
-  empezarPublicacion();
+  const idPub = empezarPublicacion();
   registrar('Publicando los cambios pendientes...');
   subirAInternet();
+  return idPub;
 }
+// Sube con publicar.js sin esperar a su comprobación de internet (dos minutos): la publicación termina en cuanto
+// está subida y la comprobación la hace el gestor aparte, en segundo plano, sin bloquear la siguiente acción
 function subirAInternet(alAcabar = () => {}) {
-  const fin = ok => { publicando = false; finPublicacion = { tipo: 'fin', ok }; if (ok) alAcabar(); emitir('publicacion', finPublicacion); };
+  const fin = ok => { publicando = false; publicacion.fin = { tipo: 'fin', id: publicacion.id, ok }; if (ok) alAcabar(); emitir('publicacion', publicacion.fin); if (ok && !process.env.GESTOR_SIN_INTERNET) comprobarEnInternet(); };
   if (process.env.GESTOR_SIN_INTERNET) { registrar('(Modo de prueba: no se sube a internet.)'); return setTimeout(() => fin(true), 500); }
   registrar('Publicando en internet...');
-  const p = spawn(process.execPath, [path.join(__dirname, 'publicar.js')], { cwd: obra.RAIZ, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
+  const p = spawn(process.execPath, [path.join(__dirname, 'publicar.js'), '--sin-comprobar'], { cwd: obra.RAIZ, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
   let resto = '';
   const trocear = chunk => { resto += chunk.toString('utf8'); const lineas = resto.split(/\r?\n/); resto = lineas.pop(); for (const l of lineas) if (l.trim()) registrar(l); };
   p.stdout.on('data', trocear); p.stderr.on('data', trocear);
   p.on('close', code => { if (resto.trim()) registrar(resto); registrar(code === 0 ? 'Publicación terminada.' : 'X La publicación ha fallado (código ' + code + ').'); fin(code === 0); });
   p.on('error', e => { registrar('X No se pudo ejecutar la publicación: ' + e.message); fin(false); });
+}
+// Tras publicar, comprueba en segundo plano (GitHub Pages tarda un par de minutos en servir lo nuevo) que todos los
+// archivos de las obras estén de verdad en internet con ese nombre exacto; el resultado se enseña en el gestor
+let comprobacion = null; // { estado: 'comprobando' | 'bien' | 'faltan', archivos, faltan, hora }
+function urlPublicada() {
+  try {
+    const remoto = require('child_process').execSync('git remote get-url origin', { cwd: obra.RAIZ, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+    const [usuario, repo] = remoto.replace(/\.git$/, '').split('/').slice(-2);
+    return `https://${usuario.toLowerCase()}.github.io/${repo}/`;
+  } catch { return null; }
+}
+async function comprobarEnInternet() {
+  const url = urlPublicada(); if (!url) return;
+  const archivos = obra.leerLista().flatMap(o => [o.archivo, o.posiciones, ...(o.paginas || [])].filter(Boolean));
+  const mia = comprobacion = { estado: 'comprobando', archivos: archivos.length, faltan: [], hora: Date.now() };
+  await new Promise(r => setTimeout(r, 120000));
+  if (comprobacion !== mia) return; // ha empezado otra publicación después; manda su comprobación
+  for (const f of archivos) { try { const r = await fetch(url + 'partituras/' + f + '?t=' + Date.now(), { method: 'HEAD' }); if (r.status !== 200) mia.faltan.push(f); } catch { mia.faltan.push(f); } }
+  mia.estado = mia.faltan.length ? 'faltan' : 'bien'; mia.hora = Date.now();
 }
 
 // ---------- Carpeta de entrada (Google Drive) ----------
@@ -412,7 +439,7 @@ const servidor = http.createServer(async (req, res) => {
 
     // API
     if (ruta === '/api/estado' && req.method === 'GET') {
-      return json(res, { borradores: listarBorradores().map(resumen), publicadas: obra.leerLista(), publicando, sinPublicar: cambiosSinPublicar(), version: obra.versionCache(), raiz: obra.RAIZ, preparando: [...trabajando], entrada: listarEntrada(), cantante: { ...canto.estadoCantante(), instalando: instalandoVoz, cantando } });
+      return json(res, { borradores: listarBorradores().map(resumen), publicadas: obra.leerLista(), publicando, publicacion: publicando ? publicacion.id : null, comprobacion, sinPublicar: cambiosSinPublicar(), version: obra.versionCache(), raiz: obra.RAIZ, preparando: [...trabajando], entrada: listarEntrada(), cantante: { ...canto.estadoCantante(), instalando: instalandoVoz, cantando } });
     }
     if (ruta === '/api/borradores' && req.method === 'POST') {
       const id = nuevoId();
@@ -483,7 +510,7 @@ const servidor = http.createServer(async (req, res) => {
       try { return json(res, resumen(cambiarCompas(m[1], m[2], JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}')))); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/publicar$/)) && req.method === 'POST') {
-      try { publicarBorrador(m[1]); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }
+      try { return json(res, { ok: true, id: publicarBorrador(m[1]) }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)$/)) && req.method === 'DELETE') {
       const id = m[1]; if (!idValido(id) || trabajando.has(id)) return json(res, { error: 'No se puede borrar ahora' }, 400);
@@ -494,21 +521,24 @@ const servidor = http.createServer(async (req, res) => {
       try { return json(res, { id: borradorDesdePublicada(decodeURIComponent(m[1])) }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if (ruta === '/api/publicar' && req.method === 'POST') {
-      try { publicarPendiente(); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }
+      try { return json(res, { ok: true, id: publicarPendiente() }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/publicadas\/([^/]+)\/ensayo$/)) && req.method === 'POST') {
       try { const cuerpo = JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'); marcarEnsayo(m[1], !!cuerpo.ensayo); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/publicadas\/([^/]+)\/retirar$/)) && req.method === 'POST') {
-      try { retirarObra(m[1]); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }
+      try { return json(res, { ok: true, id: retirarObra(m[1]) }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if (ruta === '/api/entrada/cargar' && req.method === 'POST') {
       try { const { xml } = JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'); return json(res, { id: cargarDeEntrada(xml) }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if (ruta === '/api/publicacion/eventos' && req.method === 'GET') {
+      // Solo se reenvía el registro de la publicación que pide la ventana (?id=); el de una anterior ya no le sirve
+      const id = +url.searchParams.get('id');
       suscribir('publicacion', res);
-      for (const linea of registroPublicacion) res.write('data: ' + JSON.stringify({ tipo: 'log', linea }) + '\n\n');
-      if (finPublicacion) res.write('data: ' + JSON.stringify(finPublicacion) + '\n\n');
+      if (id !== publicacion.id) { res.write('data: ' + JSON.stringify({ tipo: 'fin', id, ok: false, linea: 'No hay registro de esa publicación.' }) + '\n\n'); return; }
+      for (const linea of publicacion.registro) res.write('data: ' + JSON.stringify({ tipo: 'log', id, linea }) + '\n\n');
+      if (publicacion.fin) res.write('data: ' + JSON.stringify(publicacion.fin) + '\n\n');
       return;
     }
 
