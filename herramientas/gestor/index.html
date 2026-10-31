@@ -521,7 +521,11 @@ async function revisarCompas(n, silencioso) {
     const bien = Math.abs(v.suma - v.esperado) < 0.01;
     const ed = (d.edicion || []).find(e => e.id === v.id && e.voz === (v.voz || 1));
     const botonEditar = ed ? `<button class="mini" data-editar="${esc(v.id)}|${v.voz || 1}">Editar</button>` : '';
-    html += `<tr${bien ? '' : ' style="background:#fdecec"'}><td><strong>${esc(v.nombre)}</strong><br>${bien ? '<span class="ayuda">cuadra</span>' : `<span style="color:var(--bad);font-weight:600">no cuadra: suma ${v.suma} de ${v.esperado}</span>`}<br>${botonEditar}</td><td>${v.notas.map(esc).join('<br>') || '<i>vacío</i>'}</td></tr>`;
+    // Si las figuras sí suman lo esperado, el fallo está en la duración que el escáner escribió a alguna nota (va señalada en la lista): basta con guardar el compás desde «Editar»
+    const soloDuracion = !bien && Math.abs((v.sumaFiguras || 0) - v.esperado) < 0.01;
+    // Al revés: suena bien (las duraciones cuadran) pero alguna figura no es la que dura; el editor, que cuenta por figuras, lo tomará por descuadrado
+    const soloFigura = bien && Math.abs((v.sumaFiguras || 0) - v.esperado) > 0.01;
+    html += `<tr${bien ? '' : ' style="background:#fdecec"'}><td><strong>${esc(v.nombre)}</strong><br>${bien ? '<span class="ayuda">cuadra</span>' : `<span style="color:var(--bad);font-weight:600">no cuadra: suma ${v.suma} de ${v.esperado}</span>`}${soloFigura ? `<br><span class="ayuda">Suena bien, pero las figuras suman ${v.sumaFiguras}: alguna nota se ve con otra figura (van señaladas al lado). Si entras en «Editar», corrige esas figuras antes de guardar.</span>` : ''}${soloDuracion ? `<br><span class="ayuda">Las figuras sí suman ${v.esperado}: el escáner dio a alguna nota otra duración (van señaladas al lado). Pulsa «Editar» y «Guardar compás» para que dure lo que se ve.</span>` : ''}<br>${botonEditar}</td><td>${v.notas.map(esc).join('<br>') || '<i>vacío</i>'}</td></tr>`;
   }
   html += `</table><div id="editorCompas"></div>
     <div class="ayuda" style="margin-top:10px">Si el compás de la partitura es otro (el escáner suele perderse los cambios de compás), cámbialo aquí. Si son las notas las que están mal, pulsa «Editar» en la voz.</div>
@@ -560,6 +564,9 @@ function pintarEditor() {
   const e = editor; if (!e) return;
   const suma = e.notas.reduce((s, n) => s + (n.acorde ? 0 : duracion(n)), 0);
   const cuadra = Math.abs(suma - e.esperado) < 0.001;
+  // Lo que duraba el compás tal como lo leyó el escáner (<duration>), que puede no coincidir con las figuras
+  const sumaXml = e.notas.reduce((s, n) => s + (n.acorde ? 0 : (n.negras != null ? n.negras : duracion(n))), 0);
+  const soloDuracion = cuadra && Math.abs(sumaXml - e.esperado) > 0.01;
   const sel = (clase, i, opciones, valor) => `<select class="${clase}" data-i="${i}">${opciones.map(([v, t]) => `<option value="${v}" ${String(v) === String(valor) ? 'selected' : ''}>${t}</option>`).join('')}</select>`;
   let html = `<div class="tarjeta" style="margin:10px 0 0;background:var(--soft)"><h4>Editar ${esc(e.nombre)}, compás ${e.numero}</h4><table class="editor">
     <tr class="cabecera"><th></th><th>Nota</th><th>Alt.</th><th>Oct.</th><th>Figura</th><th>Puntillo</th><th>Ligadura</th><th>Letra</th><th></th></tr>`;
@@ -578,7 +585,8 @@ function pintarEditor() {
   html += `</table>
     <div class="acciones" style="margin:10px 0 0"><button class="mini" id="eMasNota">+ nota</button><button class="mini" id="eMasSilencio">+ silencio</button>
       <span class="${cuadra ? 'ayuda' : ''}" style="${cuadra ? '' : 'color:var(--bad);font-weight:600'}">Suma ${suma} negras de ${e.esperado}${cuadra ? ' ✓' : ''}</span>
-      <span class="hueco"></span><button id="eCancelar">Cancelar</button><button class="principal" id="eGuardar" ${cuadra ? '' : 'disabled title="El compás tiene que cuadrar para guardar"'}>Guardar compás</button></div></div>`;
+      <span class="hueco"></span><button id="eCancelar">Cancelar</button><button class="principal" id="eGuardar" ${cuadra ? '' : 'disabled title="El compás tiene que cuadrar para guardar"'}>Guardar compás</button></div>
+    ${soloDuracion ? `<div class="aviso" style="margin:8px 0 0">Las figuras suman ${e.esperado}, pero tal como lo leyó el escáner el compás dura ${sumaXml} negras: alguna nota tiene otra duración por dentro. Al guardar, cada nota pasará a durar lo que marca su figura.</div>` : ''}</div>`;
   const cont = $('editorCompas'); cont.innerHTML = html;
   const leer = () => {
     for (const s of cont.querySelectorAll('select, input')) {
