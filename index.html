@@ -51,7 +51,23 @@
   header { position: sticky; top: 0; z-index: 5; background: var(--color-bg); border-bottom: 1px solid var(--color-border); padding: var(--space-2) var(--space-3); display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
   header h1 { font-size: var(--font-l); margin: 0; font-weight: 600; flex: 1 1 auto; display: flex; align-items: center; gap: var(--space-2); }
   header h1 img { width: 40px; height: 40px; border-radius: 50%; }
-  #pantalla { display: inline-flex; align-items: center; justify-content: center; width: var(--tap); height: var(--tap); cursor: pointer; font-size: var(--font-xl); opacity: .8; }
+  /* Iconos y estados de interacción comunes a todos los controles */
+  .ico { width: 22px; height: 22px; flex: 0 0 auto; }
+  button { cursor: pointer; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  :focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+  @media (hover: hover) { button:not(:disabled):hover { filter: brightness(.95); } }
+  button:not(:disabled):active { filter: brightness(.9); }
+  /* El foco por teclado no debe quedar bajo la cabecera fija ni bajo la barra de abajo */
+  html { scroll-padding: 130px 0 calc(var(--alto-controles) + var(--space-4)); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  /* Pantalla siempre encendida: bombilla apagada (puede apagarse) o encendida (no se apagará) */
+  #pantalla { display: inline-flex; align-items: center; justify-content: center; width: var(--tap); height: var(--tap); padding: 0; border: 0; border-radius: var(--radius-s); background: none; color: var(--color-fg-muted); }
+  #pantalla .ico { width: 24px; height: 24px; }
+  #pantalla .si, #pantalla.activa .no { display: none; }
+  #pantalla.activa .si { display: block; }
+  #pantalla.activa { color: var(--color-primary); }
+  button.enlace { background: none; border: 0; padding: 0 var(--space-1); font: inherit; color: var(--color-fg); text-decoration: underline dotted; text-underline-offset: 3px; }
   select, input[type=number], input[type=text] { font: inherit; min-height: var(--tap); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-control); border-radius: var(--radius-s); background: var(--color-surface); color: var(--color-fg); }
   input[type=range], input[type=checkbox] { accent-color: var(--color-primary); }
   .voces-wrap { padding: var(--space-2) var(--space-3) 0; }
@@ -65,7 +81,7 @@
   #barraCorregir { flex-basis: 100%; background: var(--color-note-bg); border: 1px solid var(--color-note-border); border-radius: var(--radius-m); padding: var(--space-2) var(--space-3); font-size: var(--font-s); }
   #barraCorregir .fila { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; }
   #barraCorregir .fila + .fila { margin-top: var(--space-2); }
-  #barraCorregir button { min-height: var(--tap); min-width: var(--tap); padding: var(--space-2) var(--space-3); font: inherit; font-size: var(--font-l); border-radius: var(--radius-s); border: 1px solid var(--color-border-control); background: var(--color-surface); color: var(--color-fg); }
+  #barraCorregir button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap); min-width: var(--tap); padding: var(--space-2) var(--space-3); font: inherit; font-size: var(--font-l); border-radius: var(--radius-s); border: 1px solid var(--color-border-control); background: var(--color-surface); color: var(--color-fg); }
   #barraCorregir button.principal { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); font-size: var(--font-s); }
   #barraCorregir button.peligro { color: var(--color-danger); border-color: var(--color-danger-border); }
   #barraCorregir select { font-size: var(--font-s); }
@@ -80,10 +96,9 @@
   .fila input[type=range] { flex: 1; min-width: 80px; height: var(--tap); margin: 0; }
   #tempoVal { display: inline-flex; align-items: center; min-height: var(--tap); min-width: 5.5em; cursor: pointer; color: var(--color-fg); }
   #desde, #hasta { width: 64px; padding: var(--space-1) var(--space-2); }
-  .transporte button { font: inherit; font-size: var(--font-l); min-height: var(--tap); min-width: var(--tap); padding: var(--space-2) 0; border-radius: var(--radius-m); border: 1px solid var(--color-border-control); background: var(--color-surface-2); color: var(--color-fg); flex: 1; white-space: nowrap; }
+  .transporte button { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); font: inherit; font-size: var(--font-l); min-height: var(--tap); min-width: var(--tap); padding: var(--space-2) 0; border-radius: var(--radius-m); border: 1px solid var(--color-border-control); background: var(--color-surface-2); color: var(--color-fg); flex: 1; white-space: nowrap; }
   .transporte button.principal { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); flex: 2; }
-  .transporte button:disabled { opacity: .5; }
-  .transporte button .txt { margin-left: var(--space-2); }
+  .transporte button.principal .ico { width: 26px; height: 26px; }
   /* En pantallas estrechas el botón principal se queda con el icono para que la fila no se parta en dos líneas */
   @media (max-width: 399px) { .transporte button .txt { display: none; } }
   .chip { font-size: var(--font-s); padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-surface-2); border: 1px solid var(--color-border); display: inline-flex; align-items: center; gap: var(--space-2); min-height: 36px; }
@@ -109,7 +124,7 @@
   #vistaApuntes.activa { background: var(--color-note-bg); border-color: var(--color-note-border); color: var(--color-note-fg); }
   #barraApuntes { display: none; margin: 0; padding: var(--space-2); background: var(--color-note-bg); border: 1px solid var(--color-note-border); border-radius: var(--radius-m); gap: var(--space-2); flex-wrap: wrap; align-items: center; font-size: var(--font-s); }
   body.apuntando #barraApuntes { display: flex; }
-  #barraApuntes button { min-height: var(--tap); min-width: var(--tap); padding: var(--space-2) var(--space-3); border-radius: var(--radius-s); border: 1px solid var(--color-border-control); background: var(--color-surface); font: inherit; font-size: var(--font-s); color: var(--color-fg); }
+  #barraApuntes button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap); min-width: var(--tap); padding: var(--space-2) var(--space-3); border-radius: var(--radius-s); border: 1px solid var(--color-border-control); background: var(--color-surface); font: inherit; font-size: var(--font-s); color: var(--color-fg); }
   #barraApuntes button.activa { border-color: var(--color-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 25%, transparent); font-weight: 600; }
   #barraApuntes button.color::before { content: ''; display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: var(--c); vertical-align: -3px; border: 1px solid rgba(0, 0, 0, .2); }
   #barraApuntes .sep { flex: 1; }
@@ -125,42 +140,67 @@
 </style>
 </head>
 <body>
+<!-- Iconos (Lucide, trazo de 2 px): un único set, incrustado para que valga sin conexión -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/></symbol>
+  <symbol id="i-skip-back" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" x2="5" y1="19" y2="5"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></symbol>
+  <symbol id="i-highlighter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></symbol>
+  <symbol id="i-bulb-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.8 11.2c.8-.9 1.2-2 1.2-3.2a6 6 0 0 0-9.3-5"/><path d="m2 2 20 20"/><path d="M6.3 6.3a4.67 4.67 0 0 0 1.2 5.2c.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></symbol>
+  <symbol id="i-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+  <symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+</svg>
 <header>
   <h1><img src="icono-192.png" alt="">Coral Villa de Mengíbar</h1>
-  <span id="pantalla" title="Pantalla">🌙</span>
-  <select id="obra" title="Obra"></select>
+  <button type="button" id="pantalla" aria-label="Pantalla siempre encendida: desactivado">
+    <svg class="ico no" aria-hidden="true"><use href="#i-bulb-off"/></svg>
+    <svg class="ico si" aria-hidden="true"><use href="#i-bulb"/></svg>
+  </button>
+  <label for="obra" class="sr-only">Obra</label>
+  <select id="obra"></select>
   <div id="barraCorregir" style="display:none"></div>
 </header>
 
+<main>
 <div class="voces-wrap">
-  <div class="voces" id="voces"></div>
+  <div class="voces" id="voces" role="group" aria-label="Voz que se ensaya"></div>
 </div>
 <div class="vista" id="vista" style="display:none">
   <button id="vistaPartitura" class="activa">Partitura</button>
   <button id="vistaPdf">PDF original</button>
 </div>
-<div id="estado">Toca un compás de la partitura para empezar desde ahí.</div>
+<div id="estado" role="status" aria-live="polite">Toca un compás de la partitura para empezar desde ahí.</div>
 <div id="partitura"></div>
 <div id="pdfVista"></div>
+</main>
 
-<div class="controles">
-  <div id="barraApuntes">
-    <button class="color activa" data-color="#d32f2f" style="--c:#d32f2f" title="Bolígrafo rojo"></button>
-    <button class="color" data-color="#1e4fb5" style="--c:#1e4fb5" title="Bolígrafo azul"></button>
-    <button class="color" data-color="#1b8a3a" style="--c:#1b8a3a" title="Bolígrafo verde"></button>
-    <button class="color" data-color="resaltador" style="--c:#ffe44d" title="Resaltador">🖍</button>
-    <button data-util="texto" title="Escribir un texto donde toques">Aa</button>
+<section class="controles" aria-label="Reproducción">
+  <div id="barraApuntes" role="toolbar" aria-label="Apuntes">
+    <button class="color activa" data-color="#d32f2f" style="--c:#d32f2f" title="Bolígrafo rojo" aria-label="Bolígrafo rojo"></button>
+    <button class="color" data-color="#1e4fb5" style="--c:#1e4fb5" title="Bolígrafo azul" aria-label="Bolígrafo azul"></button>
+    <button class="color" data-color="#1b8a3a" style="--c:#1b8a3a" title="Bolígrafo verde" aria-label="Bolígrafo verde"></button>
+    <button class="color" data-color="resaltador" style="--c:#ffe44d" title="Resaltador" aria-label="Resaltador"><svg class="ico" aria-hidden="true"><use href="#i-highlighter"/></svg></button>
+    <button data-util="texto" title="Escribir un texto donde toques" aria-label="Escribir un texto donde toques">Aa</button>
     <button data-util="goma" title="Goma: toca lo que quieras borrar">Goma</button>
     <span class="sep"></span>
-    <button id="apDeshacer" title="Deshacer el último trazo">↶</button>
-    <button id="apBorrar" title="Borrar todos los apuntes de esta obra">🗑</button>
+    <button id="apDeshacer" title="Deshacer el último trazo" aria-label="Deshacer el último trazo"><svg class="ico" aria-hidden="true"><use href="#i-undo"/></svg></button>
+    <button id="apBorrar" title="Borrar todos los apuntes de esta obra" aria-label="Borrar todos los apuntes de esta obra"><svg class="ico" aria-hidden="true"><use href="#i-trash"/></svg></button>
   </div>
   <div class="fila transporte">
-    <button id="inicio" title="Al principio">⏮</button>
-    <button id="play" class="principal" aria-label="Reproducir"><span class="ico" aria-hidden="true">▶</span><span class="txt">Reproducir</span></button>
-    <button id="stop" title="Parar">■</button>
+    <button id="inicio" title="Al principio" aria-label="Al principio"><svg class="ico" aria-hidden="true"><use href="#i-skip-back"/></svg></button>
+    <button id="play" class="principal" aria-label="Reproducir"><svg class="ico" aria-hidden="true"><use href="#i-play"/></svg><span class="txt">Reproducir</span></button>
+    <button id="stop" title="Parar" aria-label="Parar"><svg class="ico" aria-hidden="true"><use href="#i-stop"/></svg></button>
     <span class="chip">Compás <span id="compas">–</span></span>
-    <button id="vistaApuntes" style="display:none" title="Escribir apuntes sobre la página">✏️</button>
+    <button id="vistaApuntes" style="display:none" title="Escribir apuntes sobre la página" aria-label="Escribir apuntes sobre la página" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-pencil"/></svg></button>
   </div>
   <!-- Ajustes plegados: la fila resume los valores en uso y, al tocarla, despliega los controles -->
   <button id="resumenAjustes" type="button" aria-expanded="false" aria-controls="panelAjustes">
@@ -170,7 +210,7 @@
   </button>
   <div id="panelAjustes" hidden>
   <div class="fila">
-    <label>Tempo <input type="range" id="tempo" min="30" max="208" value="80"> <span id="tempoVal" title="Toca para volver al tempo de la partitura">♩ = 80</span></label>
+    <label>Tempo <input type="range" id="tempo" min="30" max="208" value="80"> <button type="button" id="tempoVal" class="enlace" title="Toca para volver al tempo de la partitura">♩ = 80</button></label>
     <label>Otras voces <input type="range" id="mezcla" min="0" max="100" value="25"> <span id="mezclaVal">25%</span></label>
   </div>
   <div class="fila">
@@ -190,7 +230,7 @@
     <span id="version" title="Versión de la app instalada en este dispositivo"></span>
   </div>
   </div>
-</div>
+</section>
 
 <div id="cargando">Cargando partitura…</div>
 
@@ -523,7 +563,8 @@ function activarApuntes(on) {
   apuntando = on;
   document.body.classList.toggle('apuntando', on);
   $('vistaApuntes').classList.toggle('activa', on);
-  if (on) $('estado').textContent = conLapiz ? 'Escribe con el lápiz; la mano apoyada no cuenta. Vuelve a tocar ✏️ para terminar.' : 'Escribe sobre la página con el dedo o el lápiz. Con dos dedos puedes ampliar. Vuelve a tocar ✏️ para terminar.';
+  $('vistaApuntes').setAttribute('aria-pressed', on ? 'true' : 'false');
+  if (on) $('estado').textContent = conLapiz ? 'Escribe con el lápiz; la mano apoyada no cuenta. Vuelve a tocar el lápiz para terminar.' : 'Escribe sobre la página con el dedo o el lápiz. Con dos dedos puedes ampliar. Vuelve a tocar el lápiz para terminar.';
   else if (modoPdf) $('estado').textContent = 'Toca un compás de la página para empezar desde ahí.';
 }
 $('vistaApuntes').onclick = () => activarApuntes(!apuntando);
@@ -752,7 +793,7 @@ function arrancarCanto(seg, f) {
   for (const p of canto.pistas) {
     try { p.el.playbackRate = f; p.el.currentTime = seg; } catch {}
     reiniciarAtenuacion(p, seg);
-    p.el.play().catch(e => { console.warn('No se pudo reproducir', p.nombre, e); $('estado').textContent = 'Pulsa otra vez ▶ para oír las voces cantadas.'; });
+    p.el.play().catch(e => { console.warn('No se pudo reproducir', p.nombre, e); $('estado').textContent = 'Pulsa otra vez Reproducir para oír las voces cantadas.'; });
   }
 }
 function situarCanto(seg) { for (const p of canto.pistas) { try { p.el.currentTime = seg; } catch {} reiniciarAtenuacion(p, seg); } }
@@ -865,9 +906,9 @@ async function reproducir() {
   if (reproduciendo) { pausar(); return; }
   const enCanto = modoCanto();
   if (enCanto) {
-    if (!canto.listo) { cargarCanto().then(() => { if (!reproduciendo) $('estado').textContent = 'Voces cantadas listas: pulsa ▶.'; }).catch(() => {}); return; }
+    if (!canto.listo) { cargarCanto().then(() => { if (!reproduciendo) $('estado').textContent = 'Voces cantadas listas: pulsa Reproducir.'; }).catch(() => {}); return; }
     // con coro: el instrumento de vocales tiene que estar cargado antes (el audio solo arranca dentro del toque)
-    if (conCoro() && !(instrumento && instrumento.nombre === 'vocales')) { prepararAudio(true).then(() => { if (!reproduciendo) $('estado').textContent = 'Listo: pulsa ▶.'; }).catch(() => {}); return; }
+    if (conCoro() && !(instrumento && instrumento.nombre === 'vocales')) { prepararAudio(true).then(() => { if (!reproduciendo) $('estado').textContent = 'Listo: pulsa Reproducir.'; }).catch(() => {}); return; }
     if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
     if (ctx.state === 'suspended') ctx.resume();
     conectarCanto();
@@ -966,7 +1007,7 @@ function pausar() {
 function parar() { pausar(); }
 // Botón principal: icono y texto según esté sonando o no (en pantallas estrechas solo se ve el icono)
 function pintarPlay(pausa) {
-  $('play').querySelector('.ico').textContent = pausa ? '❚❚' : '▶';
+  $('play').querySelector('use').setAttribute('href', pausa ? '#i-pause' : '#i-play');
   $('play').querySelector('.txt').textContent = pausa ? 'Pausa' : 'Reproducir';
   $('play').setAttribute('aria-label', pausa ? 'Pausa' : 'Reproducir');
 }
@@ -1123,8 +1164,10 @@ const videoActivo = () => !!videoPantalla && !videoPantalla.paused && !videoPant
 const pantallaActiva = () => (!!bloqueoPantalla && !bloqueoPantalla.released) || videoActivo();
 function indicarPantalla() {
   const p = $('pantalla');
-  p.textContent = pantallaActiva() ? '🔆' : '🌙';
-  p.title = pantallaActiva() ? 'La pantalla no se apagará mientras la app esté a la vista' + (videoActivo() ? ' (vídeo)' : '') : 'La pantalla puede apagarse. ' + errorPantalla;
+  const activa = pantallaActiva();
+  p.classList.toggle('activa', activa);
+  p.title = activa ? 'La pantalla no se apagará mientras la app esté a la vista' + (videoActivo() ? ' (vídeo)' : '') : 'La pantalla puede apagarse. ' + errorPantalla;
+  p.setAttribute('aria-label', 'Pantalla siempre encendida: ' + (activa ? 'activado' : 'desactivado'));
 }
 function videoMantener() {
   if (!videoPantalla) {
@@ -1169,7 +1212,7 @@ window.addEventListener('pageshow', () => mantenerPantalla());
 window.addEventListener('focus', () => mantenerPantalla());
 // Safari solo lo permite tras un gesto del usuario: en pantallas táctiles el gesto cuenta al soltar (touchend/click), no al pulsar
 for (const ev of ['touchend', 'pointerup', 'click']) document.addEventListener(ev, mantenerPantalla, { passive: true });
-$('pantalla').onclick = () => setTimeout(() => { if (!pantallaActiva()) alert('No se puede mantener la pantalla encendida.\n\n' + (errorPantalla || 'Esperando respuesta del sistema… vuelve a tocar el icono.') + '\n\nSi el móvil está en modo de bajo consumo, desactívalo y vuelve a tocar el icono.'); }, 800);
+$('pantalla').onclick = () => setTimeout(() => { if (pantallaActiva()) { $('estado').textContent = 'La pantalla no se apagará mientras la app esté a la vista.'; return; } alert('No se puede mantener la pantalla encendida.\n\n' + (errorPantalla || 'Esperando respuesta del sistema… vuelve a tocar el icono.') + '\n\nSi el móvil está en modo de bajo consumo, desactívalo y vuelve a tocar el icono.'); }, 800);
 mantenerPantalla();
 
 // Versión de la app que tiene este dispositivo: el nombre de la caché del service worker ("coral-vNN"); si aún no
@@ -1219,16 +1262,18 @@ function pintarBarraCorregir() {
   const b = $('barraCorregir'); if (!modoCorregir) return;
   b.style.display = '';
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const btn = (t, accion, tit, clase = '') => `<button data-accion="${accion}" title="${tit}" class="${clase}">${t}</button>`;
+  const ico = n => `<svg class="ico" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+  // Un botón solo con icono lleva el título también como nombre accesible
+  const btn = (t, accion, tit, clase = '') => `<button data-accion="${accion}" title="${tit}" ${t.startsWith('<svg') ? `aria-label="${tit}"` : ''} class="${clase}">${t}</button>`;
   let html = '';
   if (!corr) html += `<div class="fila"><strong>Modo corregir.</strong> Toca una nota de la partitura para seleccionarla.</div>`;
   else if (!corr.editable) html += `<div class="fila"><strong>${esc(corr.nombre)}, compás ${corr.compas}</strong>: esta voz tiene tresillos o adornos y no se puede corregir aquí.</div>`;
   else {
     const n = corr.notas[corr.indice], suma = sumaCorr(corr), cuadra = Math.abs(suma - corr.esperado) < 0.001;
     html += `<div class="fila"><span><strong>${esc(corr.nombre)}</strong> · compás ${corr.compas} · figura ${corr.indice + 1} de ${corr.notas.length}: <strong>${n ? esc(describirC(n)) : '—'}</strong> · <span class="${cuadra ? '' : 'cuadra-mal'}">suma ${suma} de ${corr.esperado}${cuadra ? ' ✓' : ''}</span></span></div>`;
-    html += `<div class="fila">${btn('↑', 'arriba', 'Subir')}${btn('↓', 'abajo', 'Bajar')}${btn('♯', 'sost', 'Sostenido')}${btn('♭', 'bemol', 'Bemol')}
+    html += `<div class="fila">${btn(ico('arrow-up'), 'arriba', 'Subir')}${btn(ico('arrow-down'), 'abajo', 'Bajar')}${btn('♯', 'sost', 'Sostenido')}${btn('♭', 'bemol', 'Bemol')}
       <select data-accion="figura" title="Figura">${Object.entries(Compases.FIGURAS).filter(([v]) => NEGRAS_C[v]).map(([v, t]) => `<option value="${v}" ${n && v === n.type ? 'selected' : ''}>${t}</option>`).join('')}</select>
-      ${btn('·', 'puntillo', 'Puntillo')}${btn('𝄽', 'silencio', 'Nota ↔ silencio')}${btn('~', 'liga', 'Ligadura')}${btn('✕', 'borrar', 'Borrar', 'peligro')}${btn('+', 'anadir', 'Añadir una figura detrás')}${btn('♪♪', 'acorde', 'Añadir una nota a la vez (acorde)')}${btn('←', 'izq', 'Figura anterior')}${btn('→', 'der', 'Figura siguiente')}</div>`;
+      ${btn('·', 'puntillo', 'Puntillo')}${btn('𝄽', 'silencio', 'Nota ↔ silencio')}${btn('~', 'liga', 'Ligadura')}${btn(ico('x'), 'borrar', 'Borrar', 'peligro')}${btn(ico('plus'), 'anadir', 'Añadir una figura detrás')}${btn('♪♪', 'acorde', 'Añadir una nota a la vez (acorde)')}${btn(ico('arrow-left'), 'izq', 'Figura anterior')}${btn(ico('arrow-right'), 'der', 'Figura siguiente')}</div>`;
     if (n && !n.silencio) html += `<div class="fila"><label>Letra <input type="text" id="corrLetra" value="${esc(n.letra)}" placeholder="sílaba"></label>
       <select id="corrSilaba" title="Tipo de sílaba">${[['single', 'palabra'], ['begin', 'inicio-'], ['middle', '-medio-'], ['end', '-final']].map(([v, t]) => `<option value="${v}" ${v === n.silaba ? 'selected' : ''}>${t}</option>`).join('')}</select></div>`;
   }
