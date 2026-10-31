@@ -13,7 +13,8 @@
     "posiciones": "Brindis.pos.json",
     "paginas": [
       "Brindis-p1.png"
-    ]
+    ],
+    "ensayo": true
   },
   {
     "titulo": "Cantares",
