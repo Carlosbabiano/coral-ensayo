@@ -43,8 +43,11 @@
   .fila { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .fila label { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
   .fila input[type=range] { flex: 1; min-width: 80px; }
-  .transporte button { font: inherit; font-size: 18px; padding: 10px 0; border-radius: 12px; border: 1px solid var(--line); background: var(--soft); color: var(--fg); flex: 1; }
+  .transporte button { font: inherit; font-size: 18px; padding: 10px 0; border-radius: 12px; border: 1px solid var(--line); background: var(--soft); color: var(--fg); flex: 1; white-space: nowrap; }
   .transporte button.principal { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); flex: 2; }
+  .transporte button .txt { margin-left: 6px; }
+  /* En pantallas estrechas el botón principal se queda con el icono para que la fila no se parta en dos líneas */
+  @media (max-width: 399px) { .transporte button .txt { display: none; } }
   .transporte button:disabled { opacity: .5; }
   .chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--soft); border: 1px solid var(--line); }
   .chip input { vertical-align: middle; }
@@ -72,6 +75,14 @@
   #barraApuntes button.activa { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(36,64,122,.25); font-weight: 600; }
   #barraApuntes button.color::before { content: ''; display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--c); vertical-align: -2px; border: 1px solid rgba(0,0,0,.2); }
   #barraApuntes .sep { flex: 1; }
+  /* Ajustes plegados: una fila que resume tempo, mezcla y sonido; al tocarla se despliegan los controles */
+  #resumenAjustes { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--soft); color: var(--fg); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+  #resumenAjustes .etiqueta { font-weight: 600; }
+  #resumenAjustes .texto { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+  #resumenAjustes .flecha { flex: 0 0 auto; }
+  #resumenAjustes[aria-expanded=true] .flecha { transform: rotate(180deg); }
+  #panelAjustes { display: grid; gap: 8px; }
+  #panelAjustes[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -107,11 +118,18 @@
   </div>
   <div class="fila transporte">
     <button id="inicio" title="Al principio">⏮</button>
-    <button id="play" class="principal">▶ Reproducir</button>
+    <button id="play" class="principal" aria-label="Reproducir"><span class="ico" aria-hidden="true">▶</span><span class="txt">Reproducir</span></button>
     <button id="stop" title="Parar">■</button>
     <span class="chip">Compás <span id="compas">–</span></span>
     <button id="vistaApuntes" style="display:none" title="Escribir apuntes sobre la página">✏️</button>
   </div>
+  <!-- Ajustes plegados: la fila resume los valores en uso y, al tocarla, despliega los controles -->
+  <button id="resumenAjustes" type="button" aria-expanded="false" aria-controls="panelAjustes">
+    <span class="etiqueta">Ajustes</span>
+    <span class="texto" id="textoAjustes"></span>
+    <svg class="flecha" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
+  <div id="panelAjustes" hidden>
   <div class="fila">
     <label>Tempo <input type="range" id="tempo" min="30" max="208" value="80"> <span id="tempoVal" title="Toca para volver al tempo de la partitura" style="cursor:pointer;min-width:5.5em">♩ = 80</span></label>
     <label>Otras voces <input type="range" id="mezcla" min="0" max="100" value="25"> <span id="mezclaVal">25%</span></label>
@@ -131,6 +149,7 @@
       </select>
     </label>
     <span id="version" title="Versión de la app instalada en este dispositivo" style="margin-left:auto;font-size:12px;opacity:.55;align-self:center"></span>
+  </div>
   </div>
 </div>
 
@@ -768,7 +787,22 @@ async function prepararAudio(conInstrumento = true) {
 // Tempo: el deslizador está en pulsaciones por minuto (negra); el factor se aplica sobre el tempo escrito en la partitura
 let tempoPartitura = 80;
 function factorTempo() { return $('tempo').value / tempoPartitura; }
-function mostrarTempo() { $('tempoVal').textContent = '♩ = ' + $('tempo').value + ($('tempo').value == tempoPartitura ? '' : ' (' + Math.round(factorTempo() * 100) + '%)'); }
+function mostrarTempo() { $('tempoVal').textContent = '♩ = ' + $('tempo').value + ($('tempo').value == tempoPartitura ? '' : ' (' + Math.round(factorTempo() * 100) + '%)'); resumirAjustes(); }
+// Fila de ajustes plegada: resume lo que está en uso (tempo, otras voces, repetición y sonido)
+function resumirAjustes() {
+  const partes = ['♩ = ' + $('tempo').value, 'Otras voces ' + $('mezcla').value + '%'];
+  if ($('bucle').checked) partes.push('Repite ' + $('desde').value + '–' + $('hasta').value);
+  const op = $('timbre').selectedOptions[0]; if (op) partes.push(op.textContent);
+  $('textoAjustes').textContent = partes.join(' · ');
+}
+function mostrarAjustes(abrir) {
+  $('panelAjustes').hidden = !abrir;
+  $('resumenAjustes').setAttribute('aria-expanded', abrir ? 'true' : 'false');
+  try { localStorage.setItem('ajustesAbiertos', abrir ? '1' : '0'); } catch {}
+}
+$('resumenAjustes').onclick = () => mostrarAjustes($('panelAjustes').hidden);
+try { if (localStorage.getItem('ajustesAbiertos') === '1') mostrarAjustes(true); } catch {}
+for (const id of ['bucle', 'desde', 'hasta']) $(id).addEventListener('change', resumirAjustes);
 function prepararTempo(archivo) {
   tempoPartitura = Math.round(osmd.Sheet.DefaultStartTempoInBpm || 80);
   let v = tempoPartitura;
@@ -800,7 +834,7 @@ async function reproducir() {
   const b = rangoBucle();
   if (b && (indiceEvento < b.ini || indiceEvento >= b.fin)) indiceEvento = b.ini;
   reproduciendo = true;
-  $('play').textContent = '❚❚ Pausa';
+  pintarPlay(true);
   const f = factorTempo();
   tInicio = ctx.currentTime + 0.15;
   tOffset = eventos[indiceEvento].seg / f;
@@ -886,18 +920,25 @@ function pausar() {
   sonando = [];
   if (cursorEn >= 0) indiceEvento = cursorEn;
   cursorEn = -1;
-  $('play').textContent = '▶ Reproducir';
+  pintarPlay(false);
 }
 function parar() { pausar(); }
+// Botón principal: icono y texto según esté sonando o no (en pantallas estrechas solo se ve el icono)
+function pintarPlay(pausa) {
+  $('play').querySelector('.ico').textContent = pausa ? '❚❚' : '▶';
+  $('play').querySelector('.txt').textContent = pausa ? 'Pausa' : 'Reproducir';
+  $('play').setAttribute('aria-label', pausa ? 'Pausa' : 'Reproducir');
+}
 
 // ---------- Interacción ----------
 $('play').onclick = reproducir;
 $('stop').onclick = () => { parar(); irACompas(eventos[compasInicio]?.compas ?? 0); };
 $('inicio').onclick = () => irACompas(0);
 $('tempo').oninput = () => { mostrarTempo(); try { localStorage.setItem('tempo:' + (obraActual.archivo || ''), $('tempo').value); } catch {} if (reproduciendo) { pausar(); reproducir(); } };
-$('mezcla').oninput = () => { $('mezclaVal').textContent = $('mezcla').value + '%'; ajustarVocesCanto(); };
-$('timbre').onchange = () => { try { localStorage.setItem('timbre', $('timbre').value); } catch {} if (modoCanto() && !canto.listo) { cargarCanto().catch(() => {}); } if (reproduciendo) { pausar(); reproducir(); } };
+$('mezcla').oninput = () => { $('mezclaVal').textContent = $('mezcla').value + '%'; ajustarVocesCanto(); resumirAjustes(); };
+$('timbre').onchange = () => { try { localStorage.setItem('timbre', $('timbre').value); } catch {} resumirAjustes(); if (modoCanto() && !canto.listo) { cargarCanto().catch(() => {}); } if (reproduciendo) { pausar(); reproducir(); } };
 try { const t = localStorage.getItem('timbre'); if (t && [...$('timbre').options].some(o => o.value === t)) $('timbre').value = t; } catch {}
+resumirAjustes();
 
 // ---------- Modo editor y modo Corregir (ver arriba): tocar una nota la selecciona ----------
 let notaSel = null; // { compas (1..), staff (0..), indice (0.. dentro de la voz en ese compás), nota (gráfica) }
