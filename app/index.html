@@ -27,6 +27,7 @@
     --color-on-primary: #ffffff;
     --color-primary-soft: #e8edf7;
     --color-danger: #b3261e;
+    --color-on-danger: #ffffff;
     --color-danger-border: #d58a85;
     --color-note-bg: #fff7e6;          /* apuntes y modo Corregir */
     --color-note-border: #b5731c;
@@ -63,6 +64,7 @@
       --color-on-primary: #0f1a33;
       --color-primary-soft: #263252;
       --color-danger: #f28b82;
+      --color-on-danger: #2b0b09;
       --color-danger-border: #8a3a35;
       --color-note-bg: #2e2616;
       --color-note-border: #c9933f;
@@ -164,6 +166,30 @@
   #panelAjustes { display: grid; gap: var(--space-2); }
   #panelAjustes[hidden] { display: none; }
   #version { margin-left: auto; align-self: center; font-size: var(--font-xs); color: var(--color-fg-muted); }
+  /* Aviso de que no hay conexión (la app sigue funcionando con lo guardado) */
+  #sinConexion { background: var(--color-note-bg); color: var(--color-note-fg); border-bottom: 1px solid var(--color-note-border); padding: var(--space-1) var(--space-3); font-size: var(--font-s); text-align: center; }
+  /* Carga, estado vacío y error: una tarjeta centrada sobre la página */
+  .tarjeta { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-m); box-shadow: var(--shadow-card); padding: var(--space-4) var(--space-6); width: min(92vw, 380px); text-align: center; }
+  .tarjeta h2 { font-size: var(--font-l); margin: 0 0 var(--space-2); }
+  .tarjeta p { margin: 0 0 var(--space-3); color: var(--color-fg-muted); }
+  .tarjeta button.principal { min-height: var(--tap); padding: var(--space-2) var(--space-4); border-radius: var(--radius-s); border: 1px solid var(--color-primary); background: var(--color-primary); color: var(--color-on-primary); font: inherit; }
+  /* Esqueleto de pentagrama mientras se dibuja la partitura */
+  .esqueleto { display: grid; gap: var(--space-2); margin: var(--space-3) auto 0; width: 70%; }
+  .esqueleto i { display: block; height: 6px; border-radius: var(--radius-pill); background: var(--color-surface-2); animation: pulso 1.2s ease-in-out infinite; }
+  .esqueleto i:nth-child(2) { animation-delay: .2s; } .esqueleto i:nth-child(3) { animation-delay: .4s; }
+  @keyframes pulso { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+  /* Diálogos propios (confirmar, avisar, pedir un texto) en lugar de los del navegador */
+  .dialogo { border: 1px solid var(--color-border); border-radius: var(--radius-m); background: var(--color-surface); color: var(--color-fg); padding: var(--space-4); width: min(92vw, 420px); box-shadow: var(--shadow-card); }
+  .dialogo::backdrop { background: rgba(0, 0, 0, .45); }
+  .dialogo h2 { font-size: var(--font-l); margin: 0 0 var(--space-2); }
+  .dialogo p { margin: 0 0 var(--space-3); }
+  .dialogo input[type=text] { width: 100%; margin-bottom: var(--space-3); }
+  .dialogo details { font-size: var(--font-s); color: var(--color-fg-muted); margin-bottom: var(--space-3); }
+  .dialogo pre { white-space: pre-wrap; font-size: var(--font-xs); margin: var(--space-2) 0 0; }
+  .dialogo .acciones { display: flex; gap: var(--space-2); justify-content: flex-end; flex-wrap: wrap; }
+  .dialogo .acciones button { min-height: var(--tap); padding: var(--space-2) var(--space-4); border-radius: var(--radius-s); border: 1px solid var(--color-border-control); background: var(--color-surface); color: var(--color-fg); font: inherit; }
+  .dialogo .acciones button.principal { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); }
+  .dialogo .acciones button.peligro { background: var(--color-danger); color: var(--color-on-danger); border-color: var(--color-danger); }
 </style>
 </head>
 <body>
@@ -198,6 +224,7 @@
 </header>
 
 <main>
+<div id="sinConexion" role="status" hidden>Sin conexión. La app funciona con lo que ya está guardado en este dispositivo.</div>
 <div class="voces-wrap">
   <div class="voces" id="voces" role="group" aria-label="Voz que se ensaya"></div>
 </div>
@@ -259,7 +286,20 @@
   </div>
 </section>
 
-<div id="cargando">Cargando partitura…</div>
+<div id="cargando" role="status" aria-live="polite"><div class="tarjeta">Cargando partitura…<div class="esqueleto" aria-hidden="true"><i></i><i></i><i></i></div></div></div>
+
+<dialog id="dialogo" class="dialogo" aria-labelledby="dialogoTitulo">
+  <form method="dialog">
+    <h2 id="dialogoTitulo"></h2>
+    <p id="dialogoTexto"></p>
+    <label id="dialogoCampoLabel" hidden><span class="sr-only">Texto</span><input type="text" id="dialogoCampo" autocomplete="off"></label>
+    <details id="dialogoDetalles" hidden><summary>Detalles técnicos</summary><pre id="dialogoDetallesTexto"></pre></details>
+    <div class="acciones">
+      <button type="button" id="dialogoCancelar">Cancelar</button>
+      <button type="submit" value="ok" id="dialogoAceptar" class="principal">Aceptar</button>
+    </div>
+  </form>
+</dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1/build/opensheetmusicdisplay.min.js"></script>
 <script src="compases.js"></script>
@@ -269,6 +309,48 @@ import { Soundfont } from "https://cdn.jsdelivr.net/npm/smplr/+esm";
 const $ = id => document.getElementById(id);
 // Valor actual de un token de diseño (variable CSS de :root), para lo que se dibuja desde JS
 const token = nombre => getComputedStyle(document.documentElement).getPropertyValue(nombre).trim();
+
+// ---------- Diálogos propios (en lugar de alert, confirm y prompt) ----------
+// dialogo({ titulo, texto, aceptar, cancelar, peligro, campo, detalles }) → promesa: true/false, o el texto escrito
+// (null si se cancela) cuando se pide un campo. Los detalles técnicos van plegados, para quien los necesite.
+function dialogo({ titulo = '', texto = '', aceptar = 'Aceptar', cancelar = null, peligro = false, campo = null, detalles = '' } = {}) {
+  const d = $('dialogo');
+  $('dialogoTitulo').textContent = titulo; $('dialogoTitulo').hidden = !titulo;
+  $('dialogoTexto').textContent = texto; $('dialogoTexto').hidden = !texto;
+  $('dialogoCampoLabel').hidden = campo === null; $('dialogoCampo').value = ''; $('dialogoCampo').placeholder = (campo && campo.ejemplo) || '';
+  $('dialogoDetalles').hidden = !detalles; $('dialogoDetallesTexto').textContent = detalles; $('dialogoDetalles').open = false;
+  $('dialogoAceptar').textContent = aceptar; $('dialogoAceptar').classList.toggle('peligro', peligro); $('dialogoAceptar').classList.toggle('principal', !peligro);
+  $('dialogoCancelar').hidden = !cancelar; $('dialogoCancelar').textContent = cancelar || 'Cancelar';
+  return new Promise(res => {
+    d.onclose = () => { const ok = d.returnValue === 'ok'; res(campo !== null ? (ok ? $('dialogoCampo').value : null) : ok); };
+    d.returnValue = '';
+    d.showModal();
+    (campo !== null ? $('dialogoCampo') : $('dialogoAceptar')).focus();
+  });
+}
+$('dialogoCancelar').onclick = () => $('dialogo').close('cancel');
+const avisar = (titulo, texto, detalles) => dialogo({ titulo, texto, detalles });
+const confirmar = (titulo, texto, aceptar = 'Sí', peligro = false) => dialogo({ titulo, texto, aceptar, cancelar: 'Cancelar', peligro });
+const pedirTexto = (titulo, texto, ejemplo) => dialogo({ titulo, texto, aceptar: 'Añadir', cancelar: 'Cancelar', campo: { ejemplo } });
+
+// Pantalla de carga, estado vacío y error de carga (en lenguaje llano, con qué hacer)
+function mostrarCargando() {
+  $('cargando').innerHTML = '<div class="tarjeta">Cargando partitura…<div class="esqueleto" aria-hidden="true"><i></i><i></i><i></i></div></div>';
+  $('cargando').style.display = 'grid';
+}
+function mostrarTarjeta(titulo, texto, boton) {
+  $('cargando').innerHTML = `<div class="tarjeta"><h2></h2><p></p>${boton ? '<button type="button" class="principal" id="reintentar"></button>' : ''}</div>`;
+  $('cargando').querySelector('h2').textContent = titulo; $('cargando').querySelector('p').textContent = texto;
+  if (boton) { $('reintentar').textContent = boton; $('reintentar').onclick = () => location.reload(); }
+  $('cargando').style.display = 'grid';
+}
+function mostrarErrorCarga(e) {
+  console.error(e);
+  mostrarTarjeta('No se ha podido cargar la obra', navigator.onLine ? 'Comprueba la conexión e inténtalo de nuevo.' : 'No hay conexión y esta obra todavía no estaba guardada en el dispositivo. Vuelve a intentarlo cuando la tengas.', 'Reintentar');
+}
+// Aviso de que no hay conexión: la app sigue funcionando con lo que el service worker tiene guardado
+const indicarConexion = () => { $('sinConexion').hidden = navigator.onLine !== false; };
+window.addEventListener('online', indicarConexion); window.addEventListener('offline', indicarConexion); indicarConexion();
 
 // ---------- Coro por vocales ----------
 // Muestras de coro real por vocal (a, e, i, o, u) en voces/<vocal>/<midi>.mp3 (ver voces/vocales.json, con los créditos).
@@ -364,7 +446,8 @@ async function cargarLista() {
   const grupo = (nombre, obras) => { const g = document.createElement('optgroup'); g.label = nombre; obras.forEach(o => g.appendChild(opcion(o))); $('obra').appendChild(g); };
   if (enEnsayo.length) { grupo('En ensayo', enEnsayo); if (resto.length) grupo('Repertorio', resto); }
   else lista.forEach(o => $('obra').appendChild(opcion(o)));
-  $('obra').onchange = () => cargarObra($('obra').value);
+  if (!lista.length) { mostrarTarjeta('Todavía no hay obras', 'Cuando se publique la primera obra aparecerá aquí.'); return; }
+  $('obra').onchange = () => cargarObra($('obra').value).catch(mostrarErrorCarga);
   await cargarObra((enEnsayo[0] || lista[0]).archivo);
 }
 
@@ -406,7 +489,7 @@ function arreglarCasillas(texto) {
 
 async function cargarObra(archivo) {
   parar();
-  $('cargando').style.display = 'grid';
+  mostrarCargando();
   if (!osmd) {
     osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay('partitura', {
       autoResize: true, drawTitle: true, drawPartNames: true, drawMeasureNumbers: true,
@@ -525,8 +608,8 @@ function crearLienzoApuntes(p) {
     const [x, y] = pos(ev);
     if (utilApuntes === 'goma') { borrarEn(p, x, y); return; }
     if (utilApuntes === 'texto') {
-      const s = prompt('Texto del apunte:'); if (!s || !s.trim()) return;
-      anotar(p, { t: 'x', x, y, s: s.trim(), c: '#d32f2f' }); return;
+      pedirTexto('Apunte de texto', 'Se escribirá en el sitio de la página que has tocado.', 'p. ej. respirar').then(s => { if (s && s.trim()) anotar(p, { t: 'x', x, y, s: s.trim(), c: '#d32f2f' }); });
+      return;
     }
     trazo = utilApuntes === 'resaltador' ? { t: 'r', c: '#ffe44d', p: [[x, y]] } : { t: 'l', c: utilApuntes, p: [[x, y]] };
   });
@@ -603,9 +686,9 @@ for (const b of document.querySelectorAll('#barraApuntes button[data-color], #ba
   document.querySelectorAll('#barraApuntes button.activa').forEach(x => x.classList.remove('activa')); b.classList.add('activa');
 };
 $('apDeshacer').onclick = deshacerApunte;
-$('apBorrar').onclick = () => {
-  if (!apuntes || !apuntes.paginas.some(l => l && l.length)) return;
-  if (!confirm('¿Borrar todos los apuntes de esta obra en este dispositivo?')) return;
+$('apBorrar').onclick = async () => {
+  if (!apuntes || !apuntes.paginas.some(l => l && l.length)) { $('estado').textContent = 'Esta obra no tiene apuntes que borrar.'; return; }
+  if (!await confirmar('Borrar los apuntes', 'Se borrarán todos los apuntes de esta obra en este dispositivo. No se puede deshacer.', 'Borrar todo', true)) return;
   apuntes = { paginas: [] }; historialApuntes = []; guardarApuntes(); paginasPdf.forEach((_, p) => dibujarPagina(p));
 };
 
@@ -1239,7 +1322,12 @@ window.addEventListener('pageshow', () => mantenerPantalla());
 window.addEventListener('focus', () => mantenerPantalla());
 // Safari solo lo permite tras un gesto del usuario: en pantallas táctiles el gesto cuenta al soltar (touchend/click), no al pulsar
 for (const ev of ['touchend', 'pointerup', 'click']) document.addEventListener(ev, mantenerPantalla, { passive: true });
-$('pantalla').onclick = () => setTimeout(() => { if (pantallaActiva()) { $('estado').textContent = 'La pantalla no se apagará mientras la app esté a la vista.'; return; } alert('No se puede mantener la pantalla encendida.\n\n' + (errorPantalla || 'Esperando respuesta del sistema… vuelve a tocar el icono.') + '\n\nSi el móvil está en modo de bajo consumo, desactívalo y vuelve a tocar el icono.'); }, 800);
+$('pantalla').onclick = () => setTimeout(() => {
+  if (pantallaActiva()) { $('estado').textContent = 'La pantalla no se apagará mientras la app esté a la vista.'; return; }
+  avisar('La pantalla puede apagarse',
+    (errorPantalla ? 'Este dispositivo no deja mantener la pantalla encendida desde el navegador.' : 'El sistema todavía no ha contestado. Vuelve a tocar la bombilla.') + ' Si el móvil está en modo de bajo consumo, desactívalo y vuelve a tocar la bombilla.',
+    errorPantalla);
+}, 800);
 mantenerPantalla();
 
 // Versión de la app que tiene este dispositivo: el nombre de la caché del service worker ("coral-vNN"); si aún no
@@ -1268,7 +1356,7 @@ async function cargarParaCorregir(archivo) {
   xmlActual = await resp.text();
   cambiosCorr = 0; corr = null;
   let guardado = null; try { guardado = localStorage.getItem('correccion:' + archivo); } catch {}
-  if (guardado && confirm('Hay una corrección de esta obra sin enviar. ¿Quieres recuperarla?')) { xmlActual = guardado; cambiosCorr = 1; }
+  if (guardado && await confirmar('Corrección sin enviar', 'Hay una corrección de esta obra que no se llegó a enviar. ¿Quieres recuperarla?', 'Recuperar')) { xmlActual = guardado; cambiosCorr = 1; }
   else { try { localStorage.removeItem('correccion:' + archivo); } catch {} }
   await cargarEnOsmd(xmlActual);
   pintarBarraCorregir();
@@ -1314,7 +1402,11 @@ function pintarBarraCorregir() {
 }
 function accionCorr(a, extra) {
   if (a === 'enviar') return enviarCorreccion();
-  if (a === 'deshacer') { if (confirm('¿Descartar todos los cambios y volver a la obra publicada?')) { try { localStorage.removeItem(claveGuardado()); } catch {} cargarObra(obraActual.archivo); } return; }
+  if (a === 'deshacer') {
+    confirmar('Descartar los cambios', 'Se perderán todas las correcciones de esta obra y volverá a la versión publicada.', 'Descartar', true)
+      .then(ok => { if (!ok) return; try { localStorage.removeItem(claveGuardado()); } catch {} cargarObra(obraActual.archivo).catch(mostrarErrorCarga); });
+    return;
+  }
   const s = corr; if (!s || !s.editable) return;
   if (a === 'izq' || a === 'der') { const i = s.indice + (a === 'izq' ? -1 : 1); if (i < 0 || i >= s.notas.length) return; s.indice = i; seleccionCorr(); sonarSeleccion(notaSel); pintarBarraCorregir(); return; }
   const n = s.notas[s.indice]; if (!n) return;
@@ -1331,7 +1423,7 @@ function accionCorr(a, extra) {
   else if (a === 'anadir') { const c = JSON.parse(JSON.stringify(n)); c.letra = ''; c.ligaEmpieza = c.ligaTermina = false; c.compasEntero = false; c.acorde = false; c.adorno = false; c.indiceXml = undefined; s.notas.splice(s.indice + 1, 0, c); s.indice++; Compases.renumerar(s.notas); }
   else if (a === 'letra') { n.letra = extra.letra; n.silaba = extra.silaba; suena = false; }
   else return;
-  try { xmlActual = Compases.escribirCompas(xmlActual, s.voz, s.compas, s.notas, s.numVoz); } catch (e) { alert(e.message); return; }
+  try { xmlActual = Compases.escribirCompas(xmlActual, s.voz, s.compas, s.notas, s.numVoz); } catch (e) { avisar('No se ha podido aplicar el cambio', e.message); return; }
   // tras guardar, las notas se releen del XML nuevo para que los índices sigan siendo válidos
   const relectura = Compases.notasCompas(xmlActual, s.compas).find(v => v.id === s.voz && v.voz === s.numVoz);
   if (relectura) { const actual = s.notas[s.indice]; s.notas = relectura.notas; s.indice = actual ? indiceDeNota(s.notas, actual.entrada, actual.silencio ? null : Compases.midiDe(actual), !!actual.acorde) : 0; }
@@ -1362,7 +1454,7 @@ async function enviarCorreccion() {
   }
   const url = URL.createObjectURL(archivo); const a = document.createElement('a'); a.href = url; a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
-  alert('Se ha descargado ' + nombre + '. Mándaselo a Carlos (o déjalo en la carpeta Entrada de Google Drive).');
+  avisar('Corrección descargada', 'Se ha descargado ' + nombre + '. Mándaselo a Carlos o déjalo en la carpeta Entrada de Google Drive.');
 }
 if (modoCorregir) document.addEventListener('keydown', e => {
   if (!corr) return;
@@ -1381,7 +1473,7 @@ if (modoCorregir) document.addEventListener('keydown', e => {
 window.irACompas = irACompas; // para el Gestor de obras (previsualización): saltar a un compás desde fuera
 // Dentro del Gestor de obras, tocar un compás abre su tarjeta de revisión
 function avisarCompasElegido(numero) { try { if (window.parent !== window && window.parent.compasElegido) window.parent.compasElegido(numero); } catch {} }
-cargarLista().catch(e => { $('cargando').textContent = 'Error al cargar: ' + e.message; console.error(e); });
+cargarLista().catch(mostrarErrorCarga);
 </script>
 </body>
 </html>
