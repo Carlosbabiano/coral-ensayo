@@ -75,7 +75,8 @@
   },
   {
     "titulo": "Pan divino F Guerrero",
-    "archivo": "Pan_divino_F_Guerrero.xml"
+    "archivo": "Pan_divino_F_Guerrero.xml",
+    "ensayo": true
   },
   {
     "titulo": "Si la nieve resbala (Domínguez)",
