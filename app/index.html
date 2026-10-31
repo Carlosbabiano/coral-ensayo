@@ -26,7 +26,7 @@
   .voces button.activa { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
   /* Sin relleno lateral: OSMD dibuja el SVG al ancho del contenedor (relleno incluido) y el cursor se coloca en esos
      píxeles; si el SVG se encogiera para caber (max-width), el cursor se iría descuadrando hacia abajo y a la derecha */
-  #partitura { padding: 8px 0 220px; min-height: 60vh; position: relative; }
+  #partitura { padding: 8px 0 calc(var(--alto-controles, 200px) + 20px); min-height: 60vh; position: relative; }
   /* Modo Corregir (para el director): barra dentro de la cabecera, que ya es fija */
   #barraCorregir { flex-basis: 100%; background: #fff7e6; border: 1px solid #f3dcae; border-radius: 10px; padding: 6px 10px; font-size: 14px; }
   #barraCorregir .fila { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
@@ -53,7 +53,7 @@
   .vista { display: flex; gap: 6px; margin: 8px 12px 0; }
   .vista button { flex: 1; padding: 6px 0; border: 1px solid var(--line); background: #fff; border-radius: 8px; font: inherit; font-size: 13px; color: var(--fg); }
   .vista button.activa { background: var(--soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
-  #pdfVista { display: none; padding: 8px 4px 220px; }
+  #pdfVista { display: none; padding: 8px 4px calc(var(--alto-controles, 200px) + 20px); }
   .pagina { position: relative; margin: 0 auto 10px; box-shadow: 0 1px 6px rgba(0,0,0,.15); background: #fff; }
   .pagina img { display: block; width: 100%; height: auto; aspect-ratio: auto 1 / 1.414; } /* hueco A4 mientras carga */
   .pagina .capa { position: absolute; inset: 0; }
@@ -61,8 +61,12 @@
   /* Apuntes: lienzo sobre cada página; solo recibe el dedo/lápiz cuando está activado el modo Apuntes */
   .pagina canvas.apuntes { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   body.apuntando .pagina canvas.apuntes { pointer-events: auto; touch-action: pinch-zoom; cursor: crosshair; }
+  /* Con lápiz detectado, la mano apoyada no debe ni escribir ni mover la página */
+  body.apuntando.conLapiz .pagina canvas.apuntes { touch-action: none; }
+  /* El botón del lápiz vive en la barra fija de abajo, para poder escribir también al final de la página */
+  .transporte button#vistaApuntes { flex: 0 0 auto; padding: 10px 14px; }
   #vistaApuntes.activa { background: #fff7e6; border-color: #e39b2c; color: #8a5a00; }
-  #barraApuntes { display: none; margin: 6px 12px 0; padding: 6px 8px; background: #fff7e6; border: 1px solid #f3dcae; border-radius: 10px; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 13px; }
+  #barraApuntes { display: none; margin: 0; padding: 6px 8px; background: #fff7e6; border: 1px solid #f3dcae; border-radius: 10px; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 13px; }
   body.apuntando #barraApuntes { display: flex; }
   #barraApuntes button { padding: 6px 10px; min-width: 38px; border-radius: 8px; border: 1px solid var(--line); background: #fff; font: inherit; font-size: 14px; color: var(--fg); }
   #barraApuntes button.activa { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(36,64,122,.25); font-weight: 600; }
@@ -84,29 +88,29 @@
 <div class="vista" id="vista" style="display:none">
   <button id="vistaPartitura" class="activa">Partitura</button>
   <button id="vistaPdf">PDF original</button>
-  <button id="vistaApuntes" style="display:none" title="Escribir apuntes sobre la página">✏️ Apuntes</button>
-</div>
-<div id="barraApuntes">
-  <button class="color activa" data-color="#d32f2f" style="--c:#d32f2f" title="Bolígrafo rojo"></button>
-  <button class="color" data-color="#1e4fb5" style="--c:#1e4fb5" title="Bolígrafo azul"></button>
-  <button class="color" data-color="#1b8a3a" style="--c:#1b8a3a" title="Bolígrafo verde"></button>
-  <button class="color" data-color="resaltador" style="--c:#ffe44d" title="Resaltador">🖍</button>
-  <button data-util="texto" title="Escribir un texto donde toques">Aa</button>
-  <button data-util="goma" title="Goma: toca lo que quieras borrar">Goma</button>
-  <span class="sep"></span>
-  <button id="apDeshacer" title="Deshacer el último trazo">↶</button>
-  <button id="apBorrar" title="Borrar todos los apuntes de esta obra">🗑</button>
 </div>
 <div id="estado">Toca un compás de la partitura para empezar desde ahí.</div>
 <div id="partitura"></div>
 <div id="pdfVista"></div>
 
 <div class="controles">
+  <div id="barraApuntes">
+    <button class="color activa" data-color="#d32f2f" style="--c:#d32f2f" title="Bolígrafo rojo"></button>
+    <button class="color" data-color="#1e4fb5" style="--c:#1e4fb5" title="Bolígrafo azul"></button>
+    <button class="color" data-color="#1b8a3a" style="--c:#1b8a3a" title="Bolígrafo verde"></button>
+    <button class="color" data-color="resaltador" style="--c:#ffe44d" title="Resaltador">🖍</button>
+    <button data-util="texto" title="Escribir un texto donde toques">Aa</button>
+    <button data-util="goma" title="Goma: toca lo que quieras borrar">Goma</button>
+    <span class="sep"></span>
+    <button id="apDeshacer" title="Deshacer el último trazo">↶</button>
+    <button id="apBorrar" title="Borrar todos los apuntes de esta obra">🗑</button>
+  </div>
   <div class="fila transporte">
     <button id="inicio" title="Al principio">⏮</button>
     <button id="play" class="principal">▶ Reproducir</button>
     <button id="stop" title="Parar">■</button>
     <span class="chip">Compás <span id="compas">–</span></span>
+    <button id="vistaApuntes" style="display:none" title="Escribir apuntes sobre la página">✏️</button>
   </div>
   <div class="fila">
     <label>Tempo <input type="range" id="tempo" min="30" max="208" value="80"> <span id="tempoVal" title="Toca para volver al tempo de la partitura" style="cursor:pointer;min-width:5.5em">♩ = 80</span></label>
@@ -298,7 +302,7 @@ async function cargarObra(archivo) {
   // para el gestor y el modo corregir. Si la obra no tiene página original, se enseña la partitura dibujada.
   // El botón «Apuntes» (lápiz) sigue a la vista del coro siempre que haya página original.
   if (!modoEditor) modoPdf = !!posiciones;
-  $('vista').style.display = posiciones ? 'flex' : 'none';
+  $('vista').style.display = posiciones && modoEditor ? 'flex' : 'none';
   $('vistaPartitura').style.display = $('vistaPdf').style.display = modoEditor ? '' : 'none';
   if (!posiciones) modoPdf = false;
   prepararCanto();
@@ -351,6 +355,21 @@ async function cargarPdf() {
 // Cada cantante escribe sobre la página (respiraciones, dinámicas, avisos…) con el dedo o el lápiz. Los trazos se
 // guardan en este dispositivo, en coordenadas relativas a la página (0..1), así que valen a cualquier tamaño o zoom.
 let apuntes = null, apuntando = false, utilApuntes = '#d32f2f', historialApuntes = [];
+// Lápiz: en cuanto se detecta uno (Apple Pencil, S Pen…), los toques del dedo o de la mano apoyada dejan de escribir.
+// Se recuerda en el dispositivo para que valga desde el primer trazo la próxima vez.
+let conLapiz = false;
+try { conLapiz = localStorage.getItem('apuntesLapiz') === '1'; } catch {}
+if (conLapiz) document.body.classList.add('conLapiz');
+function detectarLapiz() {
+  if (conLapiz) return;
+  conLapiz = true; document.body.classList.add('conLapiz');
+  try { localStorage.setItem('apuntesLapiz', '1'); } catch {}
+  if (apuntando) $('estado').textContent = 'Lápiz detectado: la mano apoyada ya no escribe ni mueve la página.';
+}
+// Un toque de dedo con mucha superficie es la palma o el canto de la mano, no la yema
+const esPalma = ev => ev.pointerType === 'touch' && Math.max(ev.width || 0, ev.height || 0) > 60;
+// ¿Este puntero puede escribir? El lápiz siempre; el dedo, si no hay lápiz y no es la palma
+const puedeEscribir = ev => { if (ev.pointerType === 'pen') { detectarLapiz(); return true; } if (ev.pointerType === 'touch') return !conLapiz && !esPalma(ev); return true; };
 const claveApuntes = () => 'apuntes:' + (obraActual && obraActual.archivo || '');
 function cargarApuntes() {
   apuntes = null; historialApuntes = [];
@@ -372,6 +391,7 @@ function crearLienzoApuntes(p) {
   const pos = ev => { const r = cv.getBoundingClientRect(); return [(ev.clientX - r.left) / r.width, (ev.clientY - r.top) / r.height]; };
   cv.addEventListener('pointerdown', ev => {
     if (!apuntando) return;
+    if (!puedeEscribir(ev)) { if (conLapiz || esPalma(ev)) ev.preventDefault(); return; } // la mano apoyada no cuenta
     punteros.add(ev.pointerId);
     if (punteros.size > 1) { trazo = null; dibujarPagina(p); return; } // dos dedos: es un zoom, no un trazo
     ev.preventDefault(); cv.setPointerCapture(ev.pointerId);
@@ -384,7 +404,7 @@ function crearLienzoApuntes(p) {
     trazo = utilApuntes === 'resaltador' ? { t: 'r', c: '#ffe44d', p: [[x, y]] } : { t: 'l', c: utilApuntes, p: [[x, y]] };
   });
   cv.addEventListener('pointermove', ev => {
-    if (!apuntando || punteros.size > 1) return;
+    if (!apuntando || punteros.size > 1 || !punteros.has(ev.pointerId)) return;
     const [x, y] = pos(ev);
     if (utilApuntes === 'goma') { if (punteros.has(ev.pointerId)) borrarEn(p, x, y); return; }
     if (!trazo) return;
@@ -394,6 +414,7 @@ function crearLienzoApuntes(p) {
     dibujarPagina(p, trazo);
   });
   const soltar = ev => {
+    if (!punteros.has(ev.pointerId)) return; // un toque ignorado (la mano) no cierra el trazo del lápiz
     punteros.delete(ev.pointerId);
     if (!trazo) return;
     const t = trazo; trazo = null;
@@ -442,10 +463,13 @@ function activarApuntes(on) {
   apuntando = on;
   document.body.classList.toggle('apuntando', on);
   $('vistaApuntes').classList.toggle('activa', on);
-  if (on) $('estado').textContent = 'Escribe sobre la página con el dedo o el lápiz. Con dos dedos puedes ampliar. Vuelve a tocar «Apuntes» para terminar.';
+  if (on) $('estado').textContent = conLapiz ? 'Escribe con el lápiz; la mano apoyada no cuenta. Vuelve a tocar ✏️ para terminar.' : 'Escribe sobre la página con el dedo o el lápiz. Con dos dedos puedes ampliar. Vuelve a tocar ✏️ para terminar.';
   else if (modoPdf) $('estado').textContent = 'Toca un compás de la página para empezar desde ahí.';
 }
 $('vistaApuntes').onclick = () => activarApuntes(!apuntando);
+// La barra fija de abajo cambia de alto (paleta de apuntes, filas que se parten en pantallas estrechas): el cuerpo deja ese hueco
+const ajustarHueco = () => document.documentElement.style.setProperty('--alto-controles', document.querySelector('.controles').offsetHeight + 'px');
+new ResizeObserver(ajustarHueco).observe(document.querySelector('.controles')); ajustarHueco();
 for (const b of document.querySelectorAll('#barraApuntes button[data-color], #barraApuntes button[data-util]')) b.onclick = () => {
   utilApuntes = b.dataset.color || b.dataset.util;
   document.querySelectorAll('#barraApuntes button.activa').forEach(x => x.classList.remove('activa')); b.classList.add('activa');
