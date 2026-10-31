@@ -74,6 +74,10 @@
     ]
   },
   {
+    "titulo": "Pan divino F Guerrero",
+    "archivo": "Pan_divino_F_Guerrero.xml"
+  },
+  {
     "titulo": "Si la nieve resbala (Domínguez)",
     "archivo": "Si_la_nieve_resbala_Dominguez.xml",
     "posiciones": "Si_la_nieve_resbala_Dominguez.pos.json",
