@@ -74,7 +74,19 @@
   .progreso { display: inline-block; width: 16px; height: 16px; border: 3px solid #c9d2e8; border-top-color: var(--accent); border-radius: 50%; animation: girar .8s linear infinite; vertical-align: middle; }
   @keyframes girar { to { transform: rotate(360deg); } }
   .ayuda { font-size: 13px; color: var(--muted); }
-  .revision { display: grid; grid-template-columns: minmax(280px, 420px) 1fr; gap: 16px; align-items: start; }
+  .revision { display: grid; grid-template-columns: minmax(320px, 1.4fr) minmax(300px, 1fr); gap: 16px 24px; align-items: start; }
+  .revision > * { min-width: 0; }
+  .revision h5 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--fg); }
+  .partituraCompas { position: relative; min-height: 120px; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; margin-bottom: 4px; }
+  .partituraCompas .esqueleto { min-height: 160px; display: flex; align-items: center; justify-content: center; color: var(--muted); background: linear-gradient(90deg, var(--soft) 25%, #fff 50%, var(--soft) 75%); background-size: 200% 100%; animation: brillo 1.4s ease-in-out infinite; border-radius: 8px; }
+  @keyframes brillo { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  @media (prefers-reduced-motion: reduce) { .partituraCompas .esqueleto { animation: none; } }
+  .partituraCompas .lienzo { position: relative; width: fit-content; max-width: 100%; }
+  .partituraCompas svg { max-width: 100%; height: auto; display: block; }
+  .partituraCompas .marco { position: absolute; border: 3px solid rgba(227,155,44,.9); border-radius: 4px; pointer-events: none; }
+  .partituraCompas .marco span { position: absolute; left: 2px; top: 2px; font-size: 12px; font-weight: 600; line-height: 1.3; color: #7a4b00; background: #fff1d6; padding: 0 6px; border-radius: 4px; }
+  .partituraCompas .fallo { padding: 14px; color: var(--muted); }
+  .paginaOriginal { margin-top: 14px; }
   #barraNota { position: sticky; top: 0; z-index: 6; background: #fff; padding-top: 4px; }
   .barraNota { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 8px 10px; margin-bottom: 8px; background: #fff7e6; border: 1px solid #f3dcae; border-radius: 10px; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
   .barraNota .botones { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
@@ -274,7 +286,7 @@ function pintarPanel() {
       <label>Compás <input type="number" id="revisarNum" min="1" value="${compasEnRevision || 1}" style="width:80px"></label>
       <button class="mini" id="revisarSig" title="Compás siguiente">▶</button>
       <button class="principal" id="revisarBtn">Ver</button>
-      <span class="ayuda">También puedes tocar un compás en la previsualización de abajo: se abre su tarjeta con el recorte de la página, lo que leyó el escáner y el botón «Editar» de cada voz.</span></div></div>`;
+      <span class="ayuda">También puedes tocar un compás en la previsualización de abajo: se abre su tarjeta con el compás tal como lo leyó el escáner, las figuras de cada voz y su botón «Editar»; la página original queda debajo para comparar.</span></div></div>`;
     html += `<div id="revision"></div>`;
 
     // Voces cantadas (canto sintético)
@@ -499,7 +511,10 @@ async function revisarCompas(n, silencioso) {
   const v0 = d.voces[0];
   const cuadra = d.voces.every(v => Math.abs(v.suma - v.esperado) < 0.01);
   let html = `<div class="tarjeta" id="tarjetaRevision"><h4>Compás ${n}</h4><div class="revision">`;
-  html += d.pagina ? `<div><canvas id="recorte"></canvas><div class="ayuda">Recorte de la página original (compás ${n} en el centro, con los vecinos a los lados).</div></div>` : `<div class="ayuda">Sin PDF no hay imagen del compás.</div>`;
+  html += `<div><h5>Lo que leyó el escáner</h5><div class="partituraCompas" id="partituraCompas"><div class="esqueleto">Dibujando el compás…</div></div>
+    <div class="ayuda">Compás ${n} dibujado a partir del MusicXML, con los vecinos a los lados. Si no coincide con la página, el error está aquí: corrígelo con «Editar».</div>`;
+  html += d.pagina ? `<div class="paginaOriginal"><h5>Página original</h5><canvas id="recorte"></canvas><div class="ayuda">Recorte del PDF, solo para comparar: la página casi siempre está bien.</div></div>` : `<div class="paginaOriginal ayuda">Sin PDF no hay imagen de la página original.</div>`;
+  html += `</div>`;
   const malas = d.voces.filter(v => Math.abs(v.suma - v.esperado) >= 0.01).map(v => v.nombre);
   html += `<div><div class="aviso ${cuadra ? 'bien' : 'mal'}">Compás de <strong>${v0.beats}/${v0.bt}</strong>${v0.cambio ? ' (cambia aquí)' : ''}: caben ${v0.esperado} negras.` + (cuadra ? ' Todas las voces cuadran.' : ` No cuadra en: <strong>${malas.map(esc).join(', ')}</strong>.`) + `</div><table class="voces">`;
   for (const v of d.voces) {
@@ -523,6 +538,7 @@ async function revisarCompas(n, silencioso) {
   };
   for (const bt of $('tarjetaRevision').querySelectorAll('button[data-editar]')) bt.onclick = () => abrirEditor(d, bt.dataset.editar);
   if (d.pagina && d.posicion) dibujarRecorte(`/borrador/${b.id}/partituras/${d.pagina}`, d.posicion);
+  dibujarCompasXml(b, n);
   irACompas(n);
   if (!silencioso) $('tarjetaRevision').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -602,7 +618,7 @@ function dibujarRecorte(src, p) {
     const ancho = p.x1 - p.x0, margen = Math.min(ancho * 1.2, 0.12);
     const x0 = Math.max(0, p.x0 - margen) * img.width, x1 = Math.min(1, p.x1 + margen) * img.width;
     const y0 = Math.max(0, p.y0 - 0.01) * img.height, y1 = Math.min(1, p.y1 + 0.01) * img.height;
-    const escala = Math.min(560 / (x1 - x0), 700 / (y1 - y0), 1.2);
+    const escala = Math.min(400 / (x1 - x0), 420 / (y1 - y0), 1);
     c.width = Math.round((x1 - x0) * escala); c.height = Math.round((y1 - y0) * escala);
     const g = c.getContext('2d');
     g.drawImage(img, x0, y0, x1 - x0, y1 - y0, 0, 0, c.width, c.height);
@@ -611,6 +627,58 @@ function dibujarRecorte(src, p) {
     g.strokeRect((p.x0 * img.width - x0) * escala, 2, (p.x1 - p.x0) * img.width * escala, c.height - 4);
   };
   img.src = src;
+}
+
+// El compás tal como lo leyó el escáner: se dibuja desde el MusicXML del borrador con OpenSheetMusicDisplay
+// (el mismo dibujador que usa la app). Solo se pintan el compás y sus vecinos; el central lleva un marco naranja.
+const OSMD_URL = 'https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1/build/opensheetmusicdisplay.min.js';
+let osmdCarga = null;
+function cargarOsmd() {
+  if (window.opensheetmusicdisplay) return Promise.resolve(window.opensheetmusicdisplay);
+  if (!osmdCarga) osmdCarga = new Promise((ok, mal) => {
+    const s = document.createElement('script'); s.src = OSMD_URL;
+    s.onload = () => ok(window.opensheetmusicdisplay);
+    s.onerror = () => { s.remove(); osmdCarga = null; mal(new Error('No se ha podido cargar el dibujador de partituras. Hace falta conexión a internet la primera vez.')); };
+    document.head.appendChild(s);
+  });
+  return osmdCarga;
+}
+async function dibujarCompasXml(b, n) {
+  const cont = $('partituraCompas'); if (!cont) return;
+  const vigente = () => $('partituraCompas') === cont && compasEnRevision === n; // la tarjeta puede haber cambiado mientras tanto
+  try {
+    const [lib, xml] = await Promise.all([cargarOsmd(), fetch(`/borrador/${b.id}/partituras/${encodeURIComponent(b.entrada.archivo)}?t=${Date.now()}`).then(r => { if (!r.ok) throw new Error('No se ha podido leer el XML del borrador.'); return r.text(); })]);
+    if (!vigente()) return;
+    const lienzo = document.createElement('div'); lienzo.className = 'lienzo';
+    const osmd = new lib.OpenSheetMusicDisplay(lienzo, { autoResize: false, drawTitle: false, drawSubtitle: false, drawComposer: false, drawLyricist: false, drawCredits: false, drawPartNames: true, drawMeasureNumbers: true, followCursor: false, renderSingleHorizontalStaffline: true });
+    await osmd.load(xml);
+    if (!vigente()) return;
+    const total = osmd.Sheet.SourceMeasures.length;
+    const desde = Math.max(1, n - 1), hasta = Math.min(total, n + 1);
+    osmd.setOptions({ drawFromMeasureNumber: desde, drawUpToMeasureNumber: hasta });
+    osmd.EngravingRules.RenderMeasureNumbersOnlyAtSystemStart = false;
+    osmd.Zoom = 0.7;
+    cont.innerHTML = ''; cont.appendChild(lienzo);
+    osmd.render();
+    lienzo.setAttribute('role', 'img'); lienzo.setAttribute('aria-label', `Compás ${n} dibujado desde el XML${desde < n ? ', con el ' + desde + ' delante' : ''}${hasta > n ? ' y el ' + hasta + ' detrás' : ''}`);
+    // Marco naranja sobre el compás central (como en el recorte de la página). El SVG se encoge con CSS para caber
+    // en la columna, así que el marco va en porcentajes del dibujo y se encoge con él.
+    const origen = osmd.Sheet.SourceMeasures[n - 1];
+    const fila = osmd.GraphicSheet.MeasureList.find(f => f && f.some(gm => gm && gm.parentSourceMeasure === origen)) || [];
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const gm of fila) { if (!gm) continue; const p = gm.PositionAndShape.AbsolutePosition, s = gm.PositionAndShape.Size; x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x + s.width); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y + s.height); }
+    const svg = lienzo.querySelector('svg'), W = svg && +svg.getAttribute('width'), H = svg && +svg.getAttribute('height');
+    if (isFinite(x0) && W && H) {
+      const k = 10 * osmd.Zoom, pc = (v, total) => (v / total * 100) + '%', marco = document.createElement('div'); marco.className = 'marco';
+      Object.assign(marco.style, { left: pc(x0 * k - 4, W), top: pc(y0 * k - 26, H), width: pc((x1 - x0) * k + 8, W), height: pc((y1 - y0) * k + 32, H) });
+      marco.innerHTML = `<span aria-hidden="true">Compás ${n}</span>`;
+      lienzo.appendChild(marco);
+    }
+  } catch (e) {
+    if (!vigente()) return;
+    cont.innerHTML = `<div class="fallo">No se ha podido dibujar el compás: ${esc(e.message)} Las figuras de la derecha son igualmente lo que leyó el escáner. <button class="mini" id="reintentarDibujo">Reintentar</button></div>`;
+    $('reintentarDibujo').onclick = () => { cont.innerHTML = '<div class="esqueleto">Dibujando el compás…</div>'; dibujarCompasXml(b, n); };
+  }
 }
 
 // ---------- Voces cantadas ----------
@@ -746,6 +814,7 @@ async function retirar(o) {
   catch (e) { f.close(); $('veloTitulo').textContent = 'No se ha podido retirar'; $('veloLog').textContent = e.message; $('veloCerrar').disabled = false; }
 }
 
+cargarOsmd().catch(() => {}); // que esté listo al abrir el primer compás; si no hay internet, se avisa en la tarjeta
 refrescar().then(() => { if (estado.publicando) abrirVelo('Publicación en marcha…'); }).catch(e => { $('panel').innerHTML = '<div class="vacio">No se puede hablar con el gestor: ' + esc(e.message) + '</div>'; });
 // Refresco de las listas (carpeta Entrada, borradores) al volver a la pestaña y cada 15 s mientras se ve
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refrescar().catch(() => {}); });
