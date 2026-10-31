@@ -11,89 +11,128 @@
 <meta name="apple-mobile-web-app-title" content="Coral Mengíbar">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
+  /* ---------- Tokens: todos los colores, espacios, radios, tipografías y sombras salen de aquí ---------- */
   :root {
-    --bg: #fafaf7; --fg: #1d1d1b; --muted: #6b6b66; --line: #dcdcd6;
-    --accent: #24407a; --accent-fg: #fff; --soft: #f0efe9;
+    /* Color: un neutro cálido de base, el azul de la coral como primario y colores semánticos */
+    --color-bg: #fafaf7;
+    --color-surface: #ffffff;
+    --color-surface-2: #f0efe9;
+    --color-paper: #ffffff;            /* la página de la partitura: siempre blanca, como el papel */
+    --color-fg: #1d1d1b;
+    --color-fg-muted: #6b6b66;         /* 5:1 sobre el fondo */
+    --color-border: #dcdcd6;           /* separadores y tarjetas */
+    --color-border-control: #8e8e87;   /* bordes de controles: 3:1 sobre blanco */
+    --color-primary: #24407a;
+    --color-on-primary: #ffffff;
+    --color-primary-soft: #e8edf7;
+    --color-danger: #b3261e;
+    --color-danger-border: #d58a85;
+    --color-note-bg: #fff7e6;          /* apuntes y modo Corregir */
+    --color-note-border: #b5731c;
+    --color-note-fg: #8a5a00;
+    --color-cursor: #c97f14;           /* marca del compás que suena (3:1 sobre blanco) */
+    --color-scrim: rgba(250, 250, 247, .9);
+    /* Espaciado: escala de 4/8 px */
+    --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px;
+    /* Radios */
+    --radius-s: 8px; --radius-m: 12px; --radius-pill: 999px;
+    /* Tipografía: base 16 px y cuatro tamaños más */
+    --font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-xs: 13px; --font-s: 14px; --font-m: 16px; --font-l: 18px; --font-xl: 20px;
+    --line-height: 1.45;
+    /* Sombras y tamaños */
+    --shadow-card: 0 1px 6px rgba(0, 0, 0, .12);
+    --shadow-bar: 0 -4px 16px rgba(0, 0, 0, .06);
+    --tap: 44px;                       /* área táctil mínima */
+    --alto-controles: 200px;           /* lo ajusta la app al alto real de la barra fija */
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; overflow-x: hidden; background: var(--bg); color: var(--fg); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  header h1 { font-size: 16px; margin: 0; font-weight: 600; flex: 1 1 auto; display: flex; align-items: center; gap: 10px; }
+  html, body { margin: 0; overflow-x: hidden; background: var(--color-bg); color: var(--color-fg); font: var(--font-m)/var(--line-height) var(--font-family); }
+  header { position: sticky; top: 0; z-index: 5; background: var(--color-bg); border-bottom: 1px solid var(--color-border); padding: var(--space-2) var(--space-3); display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+  header h1 { font-size: var(--font-l); margin: 0; font-weight: 600; flex: 1 1 auto; display: flex; align-items: center; gap: var(--space-2); }
   header h1 img { width: 40px; height: 40px; border-radius: 50%; }
-  select, input[type=number] { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--fg); }
-  .voces { display: flex; flex-wrap: wrap; gap: 6px; }
-  .voces button { flex: 1 1 auto; min-width: 4.5em; padding: 10px 6px; border: 1px solid var(--line); background: #fff; border-radius: 10px; font: inherit; font-weight: 600; color: var(--fg); white-space: nowrap; }
-  .voces button.activa { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  #pantalla { display: inline-flex; align-items: center; justify-content: center; width: var(--tap); height: var(--tap); cursor: pointer; font-size: var(--font-xl); opacity: .8; }
+  select, input[type=number], input[type=text] { font: inherit; min-height: var(--tap); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-control); border-radius: var(--radius-s); background: var(--color-surface); color: var(--color-fg); }
+  input[type=range], input[type=checkbox] { accent-color: var(--color-primary); }
+  .voces-wrap { padding: var(--space-2) var(--space-3) 0; }
+  .voces { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .voces button { flex: 1 1 auto; min-width: 4.5em; min-height: var(--tap); padding: var(--space-2); border: 1px solid var(--color-border-control); background: var(--color-surface); border-radius: var(--radius-m); font: inherit; font-weight: 600; color: var(--color-fg); white-space: nowrap; }
+  .voces button.activa { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); }
   /* Sin relleno lateral: OSMD dibuja el SVG al ancho del contenedor (relleno incluido) y el cursor se coloca en esos
      píxeles; si el SVG se encogiera para caber (max-width), el cursor se iría descuadrando hacia abajo y a la derecha */
-  #partitura { padding: 8px 0 calc(var(--alto-controles, 200px) + 20px); min-height: 60vh; position: relative; }
+  #partitura { padding: var(--space-2) 0 calc(var(--alto-controles) + 20px); min-height: 60vh; position: relative; }
   /* Modo Corregir (para el director): barra dentro de la cabecera, que ya es fija */
-  #barraCorregir { flex-basis: 100%; background: #fff7e6; border: 1px solid #f3dcae; border-radius: 10px; padding: 6px 10px; font-size: 14px; }
-  #barraCorregir .fila { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
-  #barraCorregir .fila + .fila { margin-top: 6px; }
-  #barraCorregir button { padding: 6px 10px; min-width: 40px; font-size: 16px; border-radius: 8px; border: 1px solid var(--line); background: #fff; }
-  #barraCorregir button.principal { background: var(--accent); color: #fff; border-color: var(--accent); font-size: 14px; }
-  #barraCorregir button.peligro { color: #b3261e; border-color: #e6b8b5; }
-  #barraCorregir select { padding: 6px; font-size: 14px; border-radius: 8px; border: 1px solid var(--line); }
-  #barraCorregir .cuadra-mal { color: #b3261e; font-weight: 600; }
-  #notaSel { position: absolute; border: 2px solid #e39b2c; border-radius: 50%; background: rgba(227,155,44,.28); pointer-events: none; z-index: 3; box-shadow: 0 0 0 3px rgba(227,155,44,.25); }
+  #barraCorregir { flex-basis: 100%; background: var(--color-note-bg); border: 1px solid var(--color-note-border); border-radius: var(--radius-m); padding: var(--space-2) var(--space-3); font-size: var(--font-s); }
+  #barraCorregir .fila { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; }
+  #barraCorregir .fila + .fila { margin-top: var(--space-2); }
+  #barraCorregir button { min-height: var(--tap); min-width: var(--tap); padding: var(--space-2) var(--space-3); font: inherit; font-size: var(--font-l); border-radius: var(--radius-s); border: 1px solid var(--color-border-control); background: var(--color-surface); color: var(--color-fg); }
+  #barraCorregir button.principal { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); font-size: var(--font-s); }
+  #barraCorregir button.peligro { color: var(--color-danger); border-color: var(--color-danger-border); }
+  #barraCorregir select { font-size: var(--font-s); }
+  #barraCorregir .cuadra-mal { color: var(--color-danger); font-weight: 600; }
+  #corrLetra { width: 100px; }
+  #notaSel { position: absolute; border: 2px solid var(--color-cursor); border-radius: 50%; background: color-mix(in srgb, var(--color-cursor) 28%, transparent); pointer-events: none; z-index: 3; box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-cursor) 25%, transparent); }
   #partitura svg { max-width: 100%; height: auto; }
-  #estado { color: var(--muted); font-size: 13px; padding: 4px 12px; }
-  .controles { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--line); padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); display: grid; gap: 8px; z-index: 5; box-shadow: 0 -4px 16px rgba(0,0,0,.06); }
-  .fila { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .fila label { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
-  .fila input[type=range] { flex: 1; min-width: 80px; }
-  .transporte button { font: inherit; font-size: 18px; padding: 10px 0; border-radius: 12px; border: 1px solid var(--line); background: var(--soft); color: var(--fg); flex: 1; white-space: nowrap; }
-  .transporte button.principal { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); flex: 2; }
-  .transporte button .txt { margin-left: 6px; }
+  #estado { color: var(--color-fg-muted); font-size: var(--font-s); padding: var(--space-1) var(--space-3); }
+  .controles { position: fixed; bottom: 0; left: 0; right: 0; background: var(--color-surface); border-top: 1px solid var(--color-border); padding: var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom)); display: grid; gap: var(--space-2); z-index: 5; box-shadow: var(--shadow-bar); }
+  .fila { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+  .fila label { font-size: var(--font-s); color: var(--color-fg-muted); display: flex; align-items: center; gap: var(--space-2); }
+  .fila input[type=range] { flex: 1; min-width: 80px; height: var(--tap); margin: 0; }
+  #tempoVal { display: inline-flex; align-items: center; min-height: var(--tap); min-width: 5.5em; cursor: pointer; color: var(--color-fg); }
+  #desde, #hasta { width: 64px; padding: var(--space-1) var(--space-2); }
+  .transporte button { font: inherit; font-size: var(--font-l); min-height: var(--tap); min-width: var(--tap); padding: var(--space-2) 0; border-radius: var(--radius-m); border: 1px solid var(--color-border-control); background: var(--color-surface-2); color: var(--color-fg); flex: 1; white-space: nowrap; }
+  .transporte button.principal { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); flex: 2; }
+  .transporte button:disabled { opacity: .5; }
+  .transporte button .txt { margin-left: var(--space-2); }
   /* En pantallas estrechas el botón principal se queda con el icono para que la fila no se parta en dos líneas */
   @media (max-width: 399px) { .transporte button .txt { display: none; } }
-  .transporte button:disabled { opacity: .5; }
-  .chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--soft); border: 1px solid var(--line); }
-  .chip input { vertical-align: middle; }
+  .chip { font-size: var(--font-s); padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-surface-2); border: 1px solid var(--color-border); display: inline-flex; align-items: center; gap: var(--space-2); min-height: 36px; }
+  label.chip { min-height: var(--tap); color: var(--color-fg); }
+  .chip input[type=checkbox] { width: 20px; height: 20px; margin: 0; }
   #compas { font-variant-numeric: tabular-nums; font-weight: 600; }
-  #cargando { position: fixed; inset: 0; background: rgba(250,250,247,.9); display: grid; place-items: center; z-index: 10; font-size: 16px; }
-  .vista { display: flex; gap: 6px; margin: 8px 12px 0; }
-  .vista button { flex: 1; padding: 6px 0; border: 1px solid var(--line); background: #fff; border-radius: 8px; font: inherit; font-size: 13px; color: var(--fg); }
-  .vista button.activa { background: var(--soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
-  #pdfVista { display: none; padding: 8px 4px calc(var(--alto-controles, 200px) + 20px); }
-  .pagina { position: relative; margin: 0 auto 10px; box-shadow: 0 1px 6px rgba(0,0,0,.15); background: #fff; }
+  #cargando { position: fixed; inset: 0; background: var(--color-scrim); display: grid; place-items: center; z-index: 10; font-size: var(--font-m); }
+  .vista { display: flex; gap: var(--space-2); margin: var(--space-2) var(--space-3) 0; }
+  .vista button { flex: 1; min-height: var(--tap); padding: var(--space-2) 0; border: 1px solid var(--color-border-control); background: var(--color-surface); border-radius: var(--radius-s); font: inherit; font-size: var(--font-s); color: var(--color-fg); }
+  .vista button.activa { background: var(--color-primary-soft); border-color: var(--color-primary); color: var(--color-primary); font-weight: 600; }
+  #pdfVista { display: none; padding: var(--space-2) var(--space-1) calc(var(--alto-controles) + 20px); }
+  .pagina { position: relative; margin: 0 auto var(--space-3); box-shadow: var(--shadow-card); background: var(--color-paper); }
   .pagina img { display: block; width: 100%; height: auto; aspect-ratio: auto 1 / 1.414; } /* hueco A4 mientras carga */
   .pagina .capa { position: absolute; inset: 0; }
-  .pdfCursor { position: absolute; background: rgba(227,155,44,.35); border-left: 2px solid #e39b2c; pointer-events: none; }
+  .pdfCursor { position: absolute; background: color-mix(in srgb, var(--color-cursor) 35%, transparent); border-left: 2px solid var(--color-cursor); pointer-events: none; }
   /* Apuntes: lienzo sobre cada página; solo recibe el dedo/lápiz cuando está activado el modo Apuntes */
   .pagina canvas.apuntes { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   body.apuntando .pagina canvas.apuntes { pointer-events: auto; touch-action: pinch-zoom; cursor: crosshair; }
   /* Con lápiz detectado, la mano apoyada no debe ni escribir ni mover la página */
   body.apuntando.conLapiz .pagina canvas.apuntes { touch-action: none; }
   /* El botón del lápiz vive en la barra fija de abajo, para poder escribir también al final de la página */
-  .transporte button#vistaApuntes { flex: 0 0 auto; padding: 10px 14px; }
-  #vistaApuntes.activa { background: #fff7e6; border-color: #e39b2c; color: #8a5a00; }
-  #barraApuntes { display: none; margin: 0; padding: 6px 8px; background: #fff7e6; border: 1px solid #f3dcae; border-radius: 10px; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 13px; }
+  .transporte button#vistaApuntes { flex: 0 0 auto; padding: var(--space-2) var(--space-4); }
+  #vistaApuntes.activa { background: var(--color-note-bg); border-color: var(--color-note-border); color: var(--color-note-fg); }
+  #barraApuntes { display: none; margin: 0; padding: var(--space-2); background: var(--color-note-bg); border: 1px solid var(--color-note-border); border-radius: var(--radius-m); gap: var(--space-2); flex-wrap: wrap; align-items: center; font-size: var(--font-s); }
   body.apuntando #barraApuntes { display: flex; }
-  #barraApuntes button { padding: 6px 10px; min-width: 38px; border-radius: 8px; border: 1px solid var(--line); background: #fff; font: inherit; font-size: 14px; color: var(--fg); }
-  #barraApuntes button.activa { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(36,64,122,.25); font-weight: 600; }
-  #barraApuntes button.color::before { content: ''; display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--c); vertical-align: -2px; border: 1px solid rgba(0,0,0,.2); }
+  #barraApuntes button { min-height: var(--tap); min-width: var(--tap); padding: var(--space-2) var(--space-3); border-radius: var(--radius-s); border: 1px solid var(--color-border-control); background: var(--color-surface); font: inherit; font-size: var(--font-s); color: var(--color-fg); }
+  #barraApuntes button.activa { border-color: var(--color-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 25%, transparent); font-weight: 600; }
+  #barraApuntes button.color::before { content: ''; display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: var(--c); vertical-align: -3px; border: 1px solid rgba(0, 0, 0, .2); }
   #barraApuntes .sep { flex: 1; }
   /* Ajustes plegados: una fila que resume tempo, mezcla y sonido; al tocarla se despliegan los controles */
-  #resumenAjustes { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--soft); color: var(--fg); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+  #resumenAjustes { display: flex; align-items: center; gap: var(--space-2); width: 100%; min-height: var(--tap); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-control); border-radius: var(--radius-m); background: var(--color-surface-2); color: var(--color-fg); font: inherit; font-size: var(--font-s); text-align: left; cursor: pointer; }
   #resumenAjustes .etiqueta { font-weight: 600; }
-  #resumenAjustes .texto { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+  #resumenAjustes .texto { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-fg-muted); }
   #resumenAjustes .flecha { flex: 0 0 auto; }
   #resumenAjustes[aria-expanded=true] .flecha { transform: rotate(180deg); }
-  #panelAjustes { display: grid; gap: 8px; }
+  #panelAjustes { display: grid; gap: var(--space-2); }
   #panelAjustes[hidden] { display: none; }
+  #version { margin-left: auto; align-self: center; font-size: var(--font-xs); color: var(--color-fg-muted); }
 </style>
 </head>
 <body>
 <header>
   <h1><img src="icono-192.png" alt="">Coral Villa de Mengíbar</h1>
-  <span id="pantalla" title="Pantalla" style="cursor:pointer;font-size:18px;opacity:.7">🌙</span>
+  <span id="pantalla" title="Pantalla">🌙</span>
   <select id="obra" title="Obra"></select>
   <div id="barraCorregir" style="display:none"></div>
 </header>
 
-<div style="padding: 8px 12px 0">
+<div class="voces-wrap">
   <div class="voces" id="voces"></div>
 </div>
 <div class="vista" id="vista" style="display:none">
@@ -131,13 +170,13 @@
   </button>
   <div id="panelAjustes" hidden>
   <div class="fila">
-    <label>Tempo <input type="range" id="tempo" min="30" max="208" value="80"> <span id="tempoVal" title="Toca para volver al tempo de la partitura" style="cursor:pointer;min-width:5.5em">♩ = 80</span></label>
+    <label>Tempo <input type="range" id="tempo" min="30" max="208" value="80"> <span id="tempoVal" title="Toca para volver al tempo de la partitura">♩ = 80</span></label>
     <label>Otras voces <input type="range" id="mezcla" min="0" max="100" value="25"> <span id="mezclaVal">25%</span></label>
   </div>
   <div class="fila">
     <label class="chip"><input type="checkbox" id="bucle"> Repetir compases
-      <input type="number" id="desde" min="1" value="1" style="width:56px"> a
-      <input type="number" id="hasta" min="1" value="1" style="width:56px"></label>
+      <input type="number" id="desde" min="1" value="1"> a
+      <input type="number" id="hasta" min="1" value="1"></label>
     <label>Sonido
       <select id="timbre">
         <option value="choir_aahs">Coro (aah)</option>
@@ -148,7 +187,7 @@
         <option value="flute">Flauta</option>
       </select>
     </label>
-    <span id="version" title="Versión de la app instalada en este dispositivo" style="margin-left:auto;font-size:12px;opacity:.55;align-self:center"></span>
+    <span id="version" title="Versión de la app instalada en este dispositivo"></span>
   </div>
   </div>
 </div>
@@ -161,6 +200,8 @@
 import { Soundfont } from "https://cdn.jsdelivr.net/npm/smplr/+esm";
 
 const $ = id => document.getElementById(id);
+// Valor actual de un token de diseño (variable CSS de :root), para lo que se dibuja desde JS
+const token = nombre => getComputedStyle(document.documentElement).getPropertyValue(nombre).trim();
 
 // ---------- Coro por vocales ----------
 // Muestras de coro real por vocal (a, e, i, o, u) en voces/<vocal>/<midi>.mp3 (ver voces/vocales.json, con los créditos).
@@ -302,7 +343,7 @@ async function cargarObra(archivo) {
   if (!osmd) {
     osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay('partitura', {
       autoResize: true, drawTitle: true, drawPartNames: true, drawMeasureNumbers: true,
-      followCursor: false, cursorsOptions: [{ type: 0, color: '#e39b2c', alpha: 0.55, follow: false }],
+      followCursor: false, cursorsOptions: [{ type: 0, color: token('--color-cursor'), alpha: 0.55, follow: false }],
     });
   }
   if (modoCorregir) await cargarParaCorregir(archivo); else await cargarEnOsmd('partituras/' + archivo);
@@ -994,8 +1035,8 @@ function colorearNota(sel) {
   for (const el of [g, ...g.querySelectorAll('*')]) {
     if (!(el instanceof SVGElement)) continue;
     coloreados.push({ el, fill: el.style.fill, stroke: el.style.stroke });
-    if (el.getAttribute('fill') !== 'none') el.style.fill = '#e0782a';
-    if (el.getAttribute('stroke') && el.getAttribute('stroke') !== 'none') el.style.stroke = '#e0782a';
+    if (el.getAttribute('fill') !== 'none') el.style.fill = token('--color-cursor');
+    if (el.getAttribute('stroke') && el.getAttribute('stroke') !== 'none') el.style.stroke = token('--color-cursor');
   }
   return true;
 }
@@ -1188,7 +1229,7 @@ function pintarBarraCorregir() {
     html += `<div class="fila">${btn('↑', 'arriba', 'Subir')}${btn('↓', 'abajo', 'Bajar')}${btn('♯', 'sost', 'Sostenido')}${btn('♭', 'bemol', 'Bemol')}
       <select data-accion="figura" title="Figura">${Object.entries(Compases.FIGURAS).filter(([v]) => NEGRAS_C[v]).map(([v, t]) => `<option value="${v}" ${n && v === n.type ? 'selected' : ''}>${t}</option>`).join('')}</select>
       ${btn('·', 'puntillo', 'Puntillo')}${btn('𝄽', 'silencio', 'Nota ↔ silencio')}${btn('~', 'liga', 'Ligadura')}${btn('✕', 'borrar', 'Borrar', 'peligro')}${btn('+', 'anadir', 'Añadir una figura detrás')}${btn('♪♪', 'acorde', 'Añadir una nota a la vez (acorde)')}${btn('←', 'izq', 'Figura anterior')}${btn('→', 'der', 'Figura siguiente')}</div>`;
-    if (n && !n.silencio) html += `<div class="fila"><label>Letra <input type="text" id="corrLetra" value="${esc(n.letra)}" placeholder="sílaba" style="width:100px;padding:6px;border:1px solid var(--line);border-radius:8px;font-size:15px"></label>
+    if (n && !n.silencio) html += `<div class="fila"><label>Letra <input type="text" id="corrLetra" value="${esc(n.letra)}" placeholder="sílaba"></label>
       <select id="corrSilaba" title="Tipo de sílaba">${[['single', 'palabra'], ['begin', 'inicio-'], ['middle', '-medio-'], ['end', '-final']].map(([v, t]) => `<option value="${v}" ${v === n.silaba ? 'selected' : ''}>${t}</option>`).join('')}</select></div>`;
   }
   html += `<div class="fila"><span>${cambiosCorr ? cambiosCorr + ' cambio' + (cambiosCorr > 1 ? 's' : '') + ' sin enviar' : 'Sin cambios'}</span>${cambiosCorr ? btn('Enviar corrección', 'enviar', 'Comparte el XML corregido (Drive, WhatsApp, correo…)', 'principal') + btn('Deshacer todo', 'deshacer', 'Vuelve a la obra publicada', 'peligro') : ''}</div>`;
