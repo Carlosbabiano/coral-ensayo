@@ -46,6 +46,8 @@
     --shadow-card: 0 1px 6px rgba(0, 0, 0, .12);
     --shadow-bar: 0 -4px 16px rgba(0, 0, 0, .06);
     --tap: 44px;                       /* área táctil mínima */
+    --tap-primary: 56px;               /* botón principal de la barra de transporte */
+    --icon-s: 18px; --icon-m: 22px; --icon-l: 28px;
     --alto-controles: 200px;           /* lo ajusta la app al alto real de la barra fija */
     color-scheme: light;
   }
@@ -81,7 +83,7 @@
   header h1 { font-size: var(--font-l); margin: 0; font-weight: 600; flex: 1 1 auto; display: flex; align-items: center; gap: var(--space-2); }
   header h1 img { width: 40px; height: 40px; border-radius: 50%; }
   /* Iconos y estados de interacción comunes a todos los controles */
-  .ico { width: 22px; height: 22px; flex: 0 0 auto; }
+  .ico { width: var(--icon-m); height: var(--icon-m); flex: 0 0 auto; }
   button { cursor: pointer; transition: background-color .15s ease-out, border-color .15s ease-out, color .15s ease-out, filter .15s ease-out, transform .15s ease-out; }
   button:disabled { opacity: .5; cursor: not-allowed; }
   #resumenAjustes .flecha { transition: transform .2s ease-out; }
@@ -97,7 +99,6 @@
   .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   /* Pantalla siempre encendida: bombilla apagada (puede apagarse) o encendida (no se apagará) */
   #pantalla { display: inline-flex; align-items: center; justify-content: center; width: var(--tap); height: var(--tap); padding: 0; border: 0; border-radius: var(--radius-s); background: none; color: var(--color-fg-muted); }
-  #pantalla .ico { width: 24px; height: 24px; }
   #pantalla .si, #pantalla.activa .no { display: none; }
   #pantalla.activa .si { display: block; }
   #pantalla.activa { color: var(--color-primary); }
@@ -130,15 +131,29 @@
   .fila input[type=range] { flex: 1; min-width: 80px; height: var(--tap); margin: 0; }
   #tempoVal { display: inline-flex; align-items: center; min-height: var(--tap); min-width: 5.5em; cursor: pointer; color: var(--color-fg); }
   #desde, #hasta { width: 64px; padding: var(--space-1) var(--space-2); }
-  .transporte button { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); font: inherit; font-size: var(--font-l); min-height: var(--tap); min-width: var(--tap); padding: var(--space-2) 0; border-radius: var(--radius-m); border: 1px solid var(--color-border-control); background: var(--color-surface-2); color: var(--color-fg); flex: 1; white-space: nowrap; }
-  .transporte button.principal { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); flex: 2; }
-  .transporte button.principal .ico { width: 26px; height: 26px; }
-  /* En pantallas estrechas el botón principal se queda con el icono para que la fila no se parta en dos líneas */
-  @media (max-width: 399px) { .transporte button .txt { display: none; } }
+  /* Barra de transporte, con el patrón de cualquier reproductor: Reproducir/Pausa es un círculo mayor en el centro,
+     con «Al principio» y «Parar» a los lados; el compás queda a la izquierda y el lápiz de apuntes a la derecha */
+  .transporte { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-2); }
+  .transporte .grupo { display: flex; align-items: center; justify-content: center; gap: var(--space-3); }
+  .transporte .compas { justify-self: start; font-size: var(--font-s); color: var(--color-fg-muted); white-space: nowrap; }
+  .transporte .compas strong { font-size: var(--font-m); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--color-fg); }
+  .transporte button { display: inline-flex; align-items: center; justify-content: center; width: var(--tap); height: var(--tap); padding: 0; border-radius: 50%; border: 1px solid transparent; background: var(--color-surface-2); color: var(--color-fg); flex: 0 0 auto; }
+  .transporte button.principal { position: relative; width: var(--tap-primary); height: var(--tap-primary); background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); box-shadow: var(--shadow-card); }
+  .transporte button.principal .ico { width: var(--icon-l); height: var(--icon-l); }
+  /* Estados: en hover cambia el color (en claro se oscurece, en oscuro se aclara), al pulsar se encoge un poco */
+  @media (hover: hover) {
+    .transporte button:not(:disabled):hover { filter: none; background: color-mix(in srgb, var(--color-surface-2), var(--color-fg) 8%); }
+    .transporte button.principal:not(:disabled):hover { background: color-mix(in srgb, var(--color-primary), var(--color-fg) 12%); border-color: transparent; }
+  }
+  .transporte button:not(:disabled):active { filter: none; transform: scale(.94); }
+  .transporte button.principal:disabled { opacity: 1; background: var(--color-primary-soft); color: var(--color-primary); border-color: transparent; box-shadow: none; }
+  /* Mientras se descarga el sonido: un anillo que gira alrededor del botón principal (quieto si se pide menos movimiento) */
+  .transporte button.principal.cargando::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--color-primary) 25%, transparent); border-top-color: var(--color-primary); animation: gira .9s linear infinite; }
+  @keyframes gira { to { transform: rotate(360deg); } }
+  .transporte #vistaApuntes { justify-self: end; }
   .chip { font-size: var(--font-s); padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-surface-2); border: 1px solid var(--color-border); display: inline-flex; align-items: center; gap: var(--space-2); min-height: 36px; }
   label.chip { min-height: var(--tap); color: var(--color-fg); }
   .chip input[type=checkbox] { width: 20px; height: 20px; margin: 0; }
-  #compas { font-variant-numeric: tabular-nums; font-weight: 600; }
   #cargando { position: fixed; inset: 0; background: var(--color-scrim); display: grid; place-items: center; z-index: 10; font-size: var(--font-m); }
   .vista { display: flex; gap: var(--space-2); margin: var(--space-2) var(--space-3) 0; }
   .vista button { flex: 1; min-height: var(--tap); padding: var(--space-2) 0; border: 1px solid var(--color-border-control); background: var(--color-surface); border-radius: var(--radius-s); font: inherit; font-size: var(--font-s); color: var(--color-fg); }
@@ -154,7 +169,6 @@
   /* Con lápiz detectado, la mano apoyada no debe ni escribir ni mover la página */
   body.apuntando.conLapiz .pagina canvas.apuntes { touch-action: none; }
   /* El botón del lápiz vive en la barra fija de abajo, para poder escribir también al final de la página */
-  .transporte button#vistaApuntes { flex: 0 0 auto; padding: var(--space-2) var(--space-4); }
   #vistaApuntes.activa { background: var(--color-note-bg); border-color: var(--color-note-border); color: var(--color-note-fg); }
   #barraApuntes { display: none; margin: 0; padding: var(--space-2); background: var(--color-note-bg); border: 1px solid var(--color-note-border); border-radius: var(--radius-m); gap: var(--space-2); flex-wrap: wrap; align-items: center; font-size: var(--font-s); }
   body.apuntando #barraApuntes { display: flex; }
@@ -254,11 +268,13 @@
     <button id="apDeshacer" title="Deshacer el último trazo" aria-label="Deshacer el último trazo"><svg class="ico" aria-hidden="true"><use href="#i-undo"/></svg></button>
     <button id="apBorrar" title="Borrar todos los apuntes de esta obra" aria-label="Borrar todos los apuntes de esta obra"><svg class="ico" aria-hidden="true"><use href="#i-trash"/></svg></button>
   </div>
-  <div class="fila transporte">
-    <button id="inicio" title="Al principio" aria-label="Al principio"><svg class="ico" aria-hidden="true"><use href="#i-skip-back"/></svg></button>
-    <button id="play" class="principal" aria-label="Reproducir"><svg class="ico" aria-hidden="true"><use href="#i-play"/></svg><span class="txt">Reproducir</span></button>
-    <button id="stop" title="Parar" aria-label="Parar"><svg class="ico" aria-hidden="true"><use href="#i-stop"/></svg></button>
-    <span class="chip">Compás <span id="compas">–</span></span>
+  <div class="transporte">
+    <span class="compas">Compás <strong id="compas">–</strong></span>
+    <div class="grupo" role="group" aria-label="Transporte">
+      <button id="inicio" title="Al principio" aria-label="Al principio"><svg class="ico" aria-hidden="true"><use href="#i-skip-back"/></svg></button>
+      <button id="play" class="principal" title="Reproducir" aria-label="Reproducir"><svg class="ico" aria-hidden="true"><use href="#i-play"/></svg></button>
+      <button id="stop" title="Parar" aria-label="Parar"><svg class="ico" aria-hidden="true"><use href="#i-stop"/></svg></button>
+    </div>
     <button id="vistaApuntes" style="display:none" title="Escribir apuntes sobre la página" aria-label="Escribir apuntes sobre la página" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-pencil"/></svg></button>
   </div>
   <!-- Ajustes plegados: la fila resume los valores en uso y, al tocarla, despliega los controles -->
@@ -1023,13 +1039,13 @@ async function reproducir() {
   if (reproduciendo) { pausar(); return; }
   const enCanto = modoCanto();
   if (enCanto) {
-    if (!canto.listo) { cargarCanto().then(() => { if (!reproduciendo) $('estado').textContent = 'Voces cantadas listas: pulsa Reproducir.'; }).catch(() => {}); return; }
+    if (!canto.listo) { conCarga(cargarCanto()).then(() => { if (!reproduciendo) $('estado').textContent = 'Voces cantadas listas: pulsa Reproducir.'; }).catch(() => {}); return; }
     // con coro: el instrumento de vocales tiene que estar cargado antes (el audio solo arranca dentro del toque)
-    if (conCoro() && !(instrumento && instrumento.nombre === 'vocales')) { prepararAudio(true).then(() => { if (!reproduciendo) $('estado').textContent = 'Listo: pulsa Reproducir.'; }).catch(() => {}); return; }
+    if (conCoro() && !(instrumento && instrumento.nombre === 'vocales')) { conCarga(prepararAudio(true)).then(() => { if (!reproduciendo) $('estado').textContent = 'Listo: pulsa Reproducir.'; }).catch(() => {}); return; }
     if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
     if (ctx.state === 'suspended') ctx.resume();
     conectarCanto();
-  } else await prepararAudio();
+  } else await conCarga(prepararAudio());
   const b = rangoBucle();
   if (b && (indiceEvento < b.ini || indiceEvento >= b.fin)) indiceEvento = b.ini;
   reproduciendo = true;
@@ -1122,11 +1138,18 @@ function pausar() {
   pintarPlay(false);
 }
 function parar() { pausar(); }
-// Botón principal: icono y texto según esté sonando o no (en pantallas estrechas solo se ve el icono)
+// Botón principal: icono y nombre según esté sonando o no; el icono da un pequeño rebote al cambiar (no con menos movimiento)
 function pintarPlay(pausa) {
-  $('play').querySelector('use').setAttribute('href', pausa ? '#i-pause' : '#i-play');
-  $('play').querySelector('.txt').textContent = pausa ? 'Pausa' : 'Reproducir';
-  $('play').setAttribute('aria-label', pausa ? 'Pausa' : 'Reproducir');
+  const b = $('play'), use = b.querySelector('use'), icono = pausa ? '#i-pause' : '#i-play';
+  if (use.getAttribute('href') === icono) return;
+  use.setAttribute('href', icono);
+  b.setAttribute('aria-label', pausa ? 'Pausa' : 'Reproducir'); b.title = pausa ? 'Pausa' : 'Reproducir';
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) b.querySelector('.ico').animate([{ transform: 'scale(.75)' }, { transform: 'scale(1)' }], { duration: 180, easing: 'ease-out' });
+}
+// Mientras se descarga el sonido, el botón principal lo enseña (anillo girando) y lo anuncia a los lectores de pantalla
+function conCarga(promesa) {
+  const b = $('play'); b.classList.add('cargando'); b.setAttribute('aria-busy', 'true');
+  return promesa.finally(() => { b.classList.remove('cargando'); b.removeAttribute('aria-busy'); });
 }
 
 // ---------- Interacción ----------
