@@ -457,6 +457,8 @@ function incorporarEnApp(entrada, dirOrigen) {
   const lista = leerLista();
   const previa = lista.find(o => o.archivo === entrada.archivo) || {};
   const nueva = { titulo: entrada.titulo, archivo: entrada.archivo };
+  // Marca «en ensayo»: la del borrador si dice algo; si no, se conserva la que tenía la obra publicada
+  if (entrada.ensayo !== undefined ? entrada.ensayo : previa.ensayo) nueva.ensayo = true;
   if (entrada.paginas && entrada.paginas.length && entrada.posiciones) { nueva.posiciones = entrada.posiciones; nueva.paginas = entrada.paginas; }
   else if (previa.paginas) { nueva.posiciones = previa.posiciones; nueva.paginas = previa.paginas; } // conserva la página original anterior si esta vez se ha dado el PDF
   // Voces cantadas: las del borrador si las trae (o [] si se han quitado); si no dice nada, se conservan las que ya había
@@ -471,6 +473,16 @@ function incorporarEnApp(entrada, dirOrigen) {
   for (const c of previa.canto || []) for (const f of [c.archivo, c.consonantes]) if (f && !(nueva.canto || []).some(x => x.archivo === f || x.consonantes === f)) { try { fs.unlinkSync(path.join(DIR_PARTITURAS, f)); } catch {} }
   guardarLista([...lista.filter(o => o.archivo !== entrada.archivo), nueva]);
   return !!previa.archivo;
+}
+
+// Marca o desmarca una obra publicada como «en ensayo» (en la app sale la primera, en su propio grupo)
+function marcarEnsayo(archivo, ensayo) {
+  const lista = leerLista();
+  const o = lista.find(x => x.archivo === archivo);
+  if (!o) throw new Error('Esa obra no está en la app: ' + archivo);
+  if (ensayo) o.ensayo = true; else delete o.ensayo;
+  guardarLista(lista);
+  return o;
 }
 
 // Quita una obra de la app (lista y archivos)
@@ -516,5 +528,5 @@ module.exports = {
   RAIZ, DIR_APP, DIR_PARTITURAS, DIR_PDF, LISTA, NOMBRES_VOCES,
   clave, pdfPara, prepararObra, editarObra, huecosASilencios, leerPartes, tituloDe, tempoDe, limpiarNombreArchivo,
   sospechososDe, detalleCompas, fijarCompas, notasCompas, escribirCompas, FIGURA_NEGRAS,
-  leerLista, archivosDe, incorporarEnApp, retirarDeApp, subirVersionCache, versionCache, guardarEnGit, guardarPdf,
+  leerLista, archivosDe, incorporarEnApp, retirarDeApp, marcarEnsayo, subirVersionCache, versionCache, guardarEnGit, guardarPdf,
 };

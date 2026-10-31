@@ -92,6 +92,7 @@ function ajustar(id, ajustes) {
   xml = obra.editarObra(xml, { titulo: ajustes.titulo, nombres: ajustes.nombres || {}, quitar: ajustes.quitar || [], tempo: ajustes.tempo });
   fs.writeFileSync(ruta, xml);
   if (ajustes.titulo && ajustes.titulo.trim()) b.entrada.titulo = ajustes.titulo.trim();
+  if (ajustes.ensayo !== undefined) b.entrada.ensayo = !!ajustes.ensayo;
   b.partes = b.partes.filter(p => !(ajustes.quitar || []).includes(p.id)).map(p => ({ ...p, nombre: (ajustes.nombres || {})[p.id] || p.nombre }));
   b.tempo = obra.tempoDe(xml);
   b.sospechosos = obra.sospechososDe(xml);
@@ -294,6 +295,7 @@ function borradorDesdePublicada(archivo) {
   const entrada = { titulo: o.titulo, archivo: o.archivo };
   if (o.posiciones && o.paginas) { entrada.posiciones = o.posiciones; entrada.paginas = o.paginas; }
   if (o.canto && o.canto.length) entrada.canto = o.canto;
+  if (o.ensayo) entrada.ensayo = true;
   const pdf = obra.pdfPara(path.join(obra.DIR_PDF, o.archivo.replace(/\.xml$/, '.pdf')));
   const b = { id, creado: new Date().toISOString(), estado: 'listo', archivos: [o.archivo], origen: 'publicada', entrada, avisos: [], partes, sospechosos: obra.sospechososDe(xml), tempo: obra.tempoDe(xml), pdf: pdf ? path.basename(pdf) : null, log: ['Borrador creado a partir de la obra publicada «' + o.titulo + '». Al publicar, la sustituirá.'] };
   guardarBorrador(b);
@@ -306,6 +308,17 @@ function retirarObra(archivo) {
     const version = obra.subirVersionCache();
     registrar(`Retirada "${o.titulo}" de la app (caché ${version}).`);
     if (obra.guardarEnGit('Retirar obra: ' + o.titulo)) registrar('Guardado en el repositorio.');
+  } catch (e) { publicando = false; throw e; }
+  subirAInternet();
+}
+// Pone o quita la marca «en ensayo» de una obra publicada y lo publica para el coro
+function marcarEnsayo(archivo, ensayo) {
+  empezarPublicacion();
+  try {
+    const o = obra.marcarEnsayo(archivo, ensayo);
+    const version = obra.subirVersionCache();
+    registrar(`"${o.titulo}" ${ensayo ? 'marcada como en ensayo' : 'ya no está en ensayo'} (caché ${version}).`);
+    if (obra.guardarEnGit((ensayo ? 'En ensayo: ' : 'Fuera de ensayo: ') + o.titulo)) registrar('Guardado en el repositorio.');
   } catch (e) { publicando = false; throw e; }
   subirAInternet();
 }
@@ -471,6 +484,9 @@ const servidor = http.createServer(async (req, res) => {
     }
     if ((m = ruta.match(/^\/api\/publicadas\/([^/]+)\/borrador$/)) && req.method === 'POST') {
       try { return json(res, { id: borradorDesdePublicada(decodeURIComponent(m[1])) }); } catch (e) { return json(res, { error: e.message }, 400); }
+    }
+    if ((m = ruta.match(/^\/api\/publicadas\/([^/]+)\/ensayo$/)) && req.method === 'POST') {
+      try { const cuerpo = JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'); marcarEnsayo(m[1], !!cuerpo.ensayo); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/publicadas\/([^/]+)\/retirar$/)) && req.method === 'POST') {
       try { retirarObra(m[1]); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }

@@ -167,7 +167,10 @@ async function refrescar() {
   for (const o of estado.publicadas) {
     const li = document.createElement('li');
     li.style.cursor = 'default';
-    li.innerHTML = `<span class="t">${esc(o.titulo)}<br><span class="e">${o.paginas ? 'con página original' : 'solo partitura'}</span></span>`;
+    li.innerHTML = `<span class="t">${o.ensayo ? '★ ' : ''}${esc(o.titulo)}<br><span class="e">${o.ensayo ? 'en ensayo · ' : ''}${o.paginas ? 'con página original' : 'solo partitura'}</span></span>`;
+    const en = document.createElement('button'); en.className = 'mini'; en.textContent = o.ensayo ? 'Quitar de ensayo' : 'En ensayo'; en.title = o.ensayo ? 'La obra deja de salir en el grupo «En ensayo» de la app' : 'La obra sale la primera en la app, en el grupo «En ensayo»';
+    en.onclick = () => marcarEnsayo(o);
+    li.appendChild(en);
     const e = document.createElement('button'); e.className = 'mini'; e.textContent = 'Editar'; e.title = 'Crea un borrador a partir de la obra publicada para retocarla y volverla a publicar';
     e.onclick = async () => { e.disabled = true; try { const r = await api(`/api/publicadas/${encodeURIComponent(o.archivo)}/borrador`, { method: 'POST' }); await refrescar(); seleccionar(r.id); } catch (err) { alert(err.message); e.disabled = false; } };
     li.appendChild(e);
@@ -243,6 +246,7 @@ function pintarPanel() {
     html += `<div class="tarjeta"><h4>Revisar</h4><div class="campos">
       <label>Título</label><input type="text" id="ajTitulo" value="${esc(b.entrada.titulo)}">
       <label>Tempo</label><span><input type="number" id="ajTempo" min="20" max="300" value="${b.tempo || ''}" placeholder="80"> ♩ por minuto ${b.tempo ? '' : '<span class="ayuda">(la partitura no lo trae; sin dato la app usa 80)</span>'}</span>
+      <label>En ensayo</label><span><label class="ayuda"><input type="checkbox" id="ajEnsayo" ${b.entrada.ensayo ? 'checked' : ''}> se está ensayando: en la app sale la primera, en el grupo «En ensayo»</label></span>
       <label style="align-self:start">Voces</label><table class="voces">`;
     for (const p of b.partes) {
       const opciones = [...new Set([...VOCES, p.nombre])].map(v => `<option ${v === p.nombre ? 'selected' : ''}>${esc(v)}</option>`).join('');
@@ -679,7 +683,7 @@ async function aplicar() {
   if (quitar.length && !confirm(`¿Quitar ${quitar.length} voz/voces de la obra? (Solo afecta a la copia de la app, no a tus archivos.)`)) return;
   const tempo = +$('ajTempo').value || null;
   try {
-    await api(`/api/borradores/${b.id}/ajustes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo: $('ajTitulo').value, nombres, quitar, tempo }) });
+    await api(`/api/borradores/${b.id}/ajustes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo: $('ajTitulo').value, nombres, quitar, tempo, ensayo: $('ajEnsayo').checked }) });
     await seleccionar(b.id);
   } catch (e) { alert(e.message); }
 }
@@ -714,6 +718,13 @@ async function publicar() {
   const f = await abrirVelo('Publicando "' + b.entrada.titulo + '"…');
   try { await api(`/api/borradores/${b.id}/publicar`, { method: 'POST' }); }
   catch (e) { f.close(); $('veloTitulo').textContent = 'No se ha podido publicar'; $('veloLog').textContent = e.message; $('veloCerrar').disabled = false; }
+}
+async function marcarEnsayo(o) {
+  const poner = !o.ensayo;
+  if (!confirm(poner ? `¿Marcar "${o.titulo}" como en ensayo? Saldrá la primera en la app de todo el coro.` : `¿Quitar "${o.titulo}" del grupo «En ensayo»? Seguirá en la app, en el repertorio.`)) return;
+  const f = await abrirVelo((poner ? 'Marcando en ensayo "' : 'Quitando de ensayo "') + o.titulo + '"…');
+  try { await api(`/api/publicadas/${encodeURIComponent(o.archivo)}/ensayo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ensayo: poner }) }); }
+  catch (e) { f.close(); $('veloTitulo').textContent = 'No se ha podido cambiar'; $('veloLog').textContent = e.message; $('veloCerrar').disabled = false; }
 }
 async function retirar(o) {
   if (!confirm(`¿Retirar "${o.titulo}" de la app? Dejará de verse en los móviles del coro. (El PDF y el XML de tu carpeta no se borran.)`)) return;
