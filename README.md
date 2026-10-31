@@ -15,7 +15,9 @@ Publicada en: https://carlosbabiano.github.io/coral-ensayo/
 - `herramientas/` — scripts (Node): `gestor.js` (+ `gestor/index.html`), `obra.js`, `anadir-obra.js`, `letra.js`, `posiciones.js`, `paginas.js`, `publicar.js`.
 - `borradores/` — obras en preparación en el gestor (no se publican).
 - `Entrada/` — buzón: lo que se deje aquí (p. ej. desde el móvil vía Google Drive) aparece en el gestor para cargarlo.
+  En `Entrada/pendientes/` esperan los PDF de obras todavía sin XML del escáner.
 - `guia/` — guía para corregir notas en MuseScore.
+- `archivo/` — cosas viejas fuera de git (pruebas de voz, salidas antiguas, copias repetidas); se puede vaciar sin miedo.
 
 ## Añadir una obra (con previsualización): Gestor.cmd
 1. Exportar el MusicXML (`.xml`, sin comprimir) desde Escáner Musical.

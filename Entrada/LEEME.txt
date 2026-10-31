@@ -7,3 +7,6 @@ Desde el móvil: en Escáner Musical, "Compartir" el XML a Google Drive, dentro 
 En el Gestor de obras (Gestor.cmd) aparece lo que hay aquí con un botón "Cargar" por obra:
 al pulsarlo se crea el borrador, se prepara la obra y queda lista para revisar y publicar.
 Los archivos salen de aquí al cargarlos: pasan a la carpeta "borradores".
+
+La subcarpeta "pendientes" guarda los PDF de obras que aún no tienen XML del escáner (o que
+están a medias). El gestor no la mira: cuando una esté lista, deja su .xml y su .pdf aquí, en Entrada.
