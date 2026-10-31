@@ -312,14 +312,22 @@ function retirarObra(archivo) {
   subirAInternet();
 }
 // Pone o quita la marca «en ensayo» de una obra publicada y lo publica para el coro
+// (No se publica en el momento: el cambio queda guardado en git y el gestor avisa de que hay cambios sin publicar.)
 function marcarEnsayo(archivo, ensayo) {
+  if (publicando) throw new Error('Espera a que termine la publicación en marcha');
+  const o = obra.marcarEnsayo(archivo, ensayo);
+  obra.subirVersionCache();
+  obra.guardarEnGit((ensayo ? 'En ensayo: ' : 'Fuera de ensayo: ') + o.titulo);
+  return o;
+}
+// Cambios guardados en git que todavía no se han subido a internet (0 si no hay repositorio remoto)
+function cambiosSinPublicar() {
+  try { return +require('child_process').execSync('git rev-list --count origin/main..HEAD', { cwd: obra.RAIZ, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() || 0; } catch { return 0; }
+}
+// Publica en internet lo que haya pendiente
+function publicarPendiente() {
   empezarPublicacion();
-  try {
-    const o = obra.marcarEnsayo(archivo, ensayo);
-    const version = obra.subirVersionCache();
-    registrar(`"${o.titulo}" ${ensayo ? 'marcada como en ensayo' : 'ya no está en ensayo'} (caché ${version}).`);
-    if (obra.guardarEnGit((ensayo ? 'En ensayo: ' : 'Fuera de ensayo: ') + o.titulo)) registrar('Guardado en el repositorio.');
-  } catch (e) { publicando = false; throw e; }
+  registrar('Publicando los cambios pendientes...');
   subirAInternet();
 }
 function subirAInternet(alAcabar = () => {}) {
@@ -404,7 +412,7 @@ const servidor = http.createServer(async (req, res) => {
 
     // API
     if (ruta === '/api/estado' && req.method === 'GET') {
-      return json(res, { borradores: listarBorradores().map(resumen), publicadas: obra.leerLista(), publicando, version: obra.versionCache(), raiz: obra.RAIZ, preparando: [...trabajando], entrada: listarEntrada(), cantante: { ...canto.estadoCantante(), instalando: instalandoVoz, cantando } });
+      return json(res, { borradores: listarBorradores().map(resumen), publicadas: obra.leerLista(), publicando, sinPublicar: cambiosSinPublicar(), version: obra.versionCache(), raiz: obra.RAIZ, preparando: [...trabajando], entrada: listarEntrada(), cantante: { ...canto.estadoCantante(), instalando: instalandoVoz, cantando } });
     }
     if (ruta === '/api/borradores' && req.method === 'POST') {
       const id = nuevoId();
@@ -484,6 +492,9 @@ const servidor = http.createServer(async (req, res) => {
     }
     if ((m = ruta.match(/^\/api\/publicadas\/([^/]+)\/borrador$/)) && req.method === 'POST') {
       try { return json(res, { id: borradorDesdePublicada(decodeURIComponent(m[1])) }); } catch (e) { return json(res, { error: e.message }, 400); }
+    }
+    if (ruta === '/api/publicar' && req.method === 'POST') {
+      try { publicarPendiente(); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/publicadas\/([^/]+)\/ensayo$/)) && req.method === 'POST') {
       try { const cuerpo = JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'); marcarEnsayo(m[1], !!cuerpo.ensayo); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }
