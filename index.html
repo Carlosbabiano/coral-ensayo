@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Coral Villa de Mengíbar</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#24407a">
+<meta name="theme-color" content="#24407a" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15161a" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Coral Mengíbar">
@@ -45,6 +46,32 @@
     --shadow-bar: 0 -4px 16px rgba(0, 0, 0, .06);
     --tap: 44px;                       /* área táctil mínima */
     --alto-controles: 200px;           /* lo ajusta la app al alto real de la barra fija */
+    color-scheme: light;
+  }
+  /* Modo oscuro: mismos tokens con otros valores. La partitura sigue siendo papel blanco (notas negras), y la
+     interfaz alrededor se oscurece; el primario pasa a un azul claro con texto oscuro encima */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: #15161a;
+      --color-surface: #1e2026;
+      --color-surface-2: #292c34;
+      --color-fg: #ececea;
+      --color-fg-muted: #a9a9a3;
+      --color-border: #353840;
+      --color-border-control: #7f828b;
+      --color-primary: #9db3ee;
+      --color-on-primary: #0f1a33;
+      --color-primary-soft: #263252;
+      --color-danger: #f28b82;
+      --color-danger-border: #8a3a35;
+      --color-note-bg: #2e2616;
+      --color-note-border: #c9933f;
+      --color-note-fg: #f0c57a;
+      --color-scrim: rgba(21, 22, 26, .9);
+      --shadow-card: 0 1px 8px rgba(0, 0, 0, .6);
+      --shadow-bar: 0 -4px 16px rgba(0, 0, 0, .4);
+      color-scheme: dark;
+    }
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; overflow-x: hidden; background: var(--color-bg); color: var(--color-fg); font: var(--font-m)/var(--line-height) var(--font-family); }
@@ -76,7 +103,7 @@
   .voces button.activa { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); }
   /* Sin relleno lateral: OSMD dibuja el SVG al ancho del contenedor (relleno incluido) y el cursor se coloca en esos
      píxeles; si el SVG se encogiera para caber (max-width), el cursor se iría descuadrando hacia abajo y a la derecha */
-  #partitura { padding: var(--space-2) 0 calc(var(--alto-controles) + 20px); min-height: 60vh; position: relative; }
+  #partitura { padding: var(--space-2) 0 calc(var(--alto-controles) + 20px); min-height: 60vh; position: relative; background: var(--color-paper); color: #1d1d1b; }
   /* Modo Corregir (para el director): barra dentro de la cabecera, que ya es fija */
   #barraCorregir { flex-basis: 100%; background: var(--color-note-bg); border: 1px solid var(--color-note-border); border-radius: var(--radius-m); padding: var(--space-2) var(--space-3); font-size: var(--font-s); }
   #barraCorregir .fila { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; }
@@ -110,7 +137,7 @@
   .vista button { flex: 1; min-height: var(--tap); padding: var(--space-2) 0; border: 1px solid var(--color-border-control); background: var(--color-surface); border-radius: var(--radius-s); font: inherit; font-size: var(--font-s); color: var(--color-fg); }
   .vista button.activa { background: var(--color-primary-soft); border-color: var(--color-primary); color: var(--color-primary); font-weight: 600; }
   #pdfVista { display: none; padding: var(--space-2) var(--space-1) calc(var(--alto-controles) + 20px); }
-  .pagina { position: relative; margin: 0 auto var(--space-3); box-shadow: var(--shadow-card); background: var(--color-paper); }
+  .pagina { position: relative; margin: 0 auto var(--space-3); box-shadow: var(--shadow-card); background: var(--color-paper); border: 1px solid var(--color-border); }
   .pagina img { display: block; width: 100%; height: auto; aspect-ratio: auto 1 / 1.414; } /* hueco A4 mientras carga */
   .pagina .capa { position: absolute; inset: 0; }
   .pdfCursor { position: absolute; background: color-mix(in srgb, var(--color-cursor) 35%, transparent); border-left: 2px solid var(--color-cursor); pointer-events: none; }
