@@ -315,6 +315,52 @@ function marcarIncompleto(xml, numero, si = true) {
   });
 }
 
+// ---------- Voces internas de una parte (voz 2, 3…) ----------
+// Lo que lleva cada voz de cada parte: [{ id, nombre, voz, notas, silencios, compases }]. Audiveris a veces inventa
+// una segunda voz hecha de silencios (y alguna nota suelta) que en la partitura no existe.
+function vocesDe(xml) {
+  const out = [];
+  const nombres = Object.fromEntries(leerPartes(xml).map(p => [p.id, p.nombre]));
+  for (const [, id, cuerpo] of xml.matchAll(RE_PARTE)) {
+    const voces = {};
+    for (const [, num, m] of cuerpo.matchAll(RE_COMPAS)) {
+      for (const [n] of m.matchAll(RE_NOTA)) {
+        const v = +((n.match(/<voice>(\d+)<\/voice>/) || [, 1])[1]);
+        const x = voces[v] = voces[v] || { notas: 0, silencios: 0, compases: new Set() };
+        if (/<rest\b/.test(n)) x.silencios++; else x.notas++;
+        x.compases.add(num);
+      }
+    }
+    for (const [v, x] of Object.entries(voces)) out.push({ id, nombre: nombres[id] || id, voz: +v, notas: x.notas, silencios: x.silencios, compases: x.compases.size });
+  }
+  return out;
+}
+// Quita una voz entera (voz 2, 3…) de una parte: sus notas y silencios en todos los compases, y los <backup> que
+// ya no separan nada. La voz 1 no se quita por aquí (para eso está quitar la parte).
+function quitarVoz(xml, partId, numVoz) {
+  numVoz = +numVoz;
+  if (numVoz < 2) throw new Error('La voz 1 no se puede quitar: quita la parte entera');
+  return xml.replace(RE_PARTE, (todo, id, cuerpo) => {
+    if (id !== partId) return todo;
+    const c2 = cuerpo.replace(/(<measure number="[^"]+"[^>]*>)([\s\S]*?)(<\/measure>)/g, (m, ini, c, fin) => {
+      const elementos = []; let ultimo = 0;
+      for (const mm of c.matchAll(RE_ELEMENTO)) { if (mm.index > ultimo) elementos.push({ tipo: 'texto', xml: c.slice(ultimo, mm.index) }); elementos.push({ tipo: mm[1] || 'comentario', xml: mm[0] }); ultimo = mm.index + mm[0].length; }
+      if (ultimo < c.length) elementos.push({ tipo: 'texto', xml: c.slice(ultimo) });
+      const esDeLaVoz = e => (e.tipo === 'note' || e.tipo === 'forward') && +((e.xml.match(/<voice>(\d+)/) || [, 1])[1]) === numVoz;
+      if (!elementos.some(esDeLaVoz)) return m;
+      let resto = elementos.filter(e => !esDeLaVoz(e));
+      // un <backup> que ya no tenga notas detrás (hasta el final del compás u otro <backup>) sobra
+      resto = resto.filter((e, i) => {
+        if (e.tipo !== 'backup') return true;
+        for (let k = i + 1; k < resto.length; k++) { if (resto[k].tipo === 'note' || resto[k].tipo === 'forward') return true; if (resto[k].tipo === 'backup') return false; }
+        return false;
+      });
+      return ini + resto.map(e => e.xml).join('') + fin;
+    });
+    return `<part id="${id}">` + c2 + '</part>';
+  });
+}
+
 // ---------- Indicación de compás ----------
 function ponerTiempo(cuerpo, beats, bt) {
   const t = `<time><beats>${beats}</beats><beat-type>${bt}</beat-type></time>`;
@@ -654,5 +700,5 @@ function duracionCompas(xml, numero) {
   return r;
 }
 
-return { leerPartes, escapar, recorrerCompases, sumaCompas, sumasPorVoz, sospechososDe, detalleCompas, notasCompas, renumerar, negrasDe, midiDe, escribirCompas, ponerTiempo, fijarCompas, marcarIncompleto, partirCompas, fundirCompases, insertarCompas, quitarCompas, renumerarCompases, posicionDeNota, duracionCompas, analizarCompas, FIGURA_NEGRAS, FIGURAS, NOMBRES_NOTAS, DIV_EDITOR };
+return { leerPartes, escapar, recorrerCompases, sumaCompas, sumasPorVoz, sospechososDe, detalleCompas, notasCompas, renumerar, negrasDe, midiDe, escribirCompas, ponerTiempo, fijarCompas, marcarIncompleto, vocesDe, quitarVoz, partirCompas, fundirCompases, insertarCompas, quitarCompas, renumerarCompases, posicionDeNota, duracionCompas, analizarCompas, FIGURA_NEGRAS, FIGURAS, NOMBRES_NOTAS, DIV_EDITOR };
 });
