@@ -554,7 +554,34 @@ function editarObra(xml, { titulo, nombres = {}, quitar = [], tempo } = {}) {
 
 // Prepara una obra: repara el XML, nombra las voces, saca letra y página original del PDF y deja los archivos en dirSalida.
 // Devuelve { entrada, avisos, partes, sospechosos, tempo }. Lanza un error con mensaje claro si el XML no vale.
-function prepararObra({ xml: rutaXml, pdf: rutaPdf = null, dirSalida, log = console.log }) {
+// Compases de la obra (los de la primera parte, que es la que manda en la numeración): [{ num, barra, cambio }]
+// barra: 'final' (gruesa), 'doble' (dos finas) o null; cambio: el compás trae indicación de compás o armadura nueva
+function compasesDe(xml) {
+  const parte = (xml.match(/<part id="[^"]+">([\s\S]*?)<\/part>/) || ['', ''])[1];
+  return [...parte.matchAll(/<measure number="([^"]+)"[^>]*>([\s\S]*?)<\/measure>/g)].map(([, num, m], i) => {
+    const estilos = [...m.matchAll(/<barline\b([^>]*)>([\s\S]*?)<\/barline>/g)].filter(b => !/location="left"/.test(b[1])).map(b => (b[2].match(/<bar-style>([^<]*)/) || [, ''])[1]);
+    return { num, barra: estilos.some(e => /heavy/.test(e)) ? 'final' : estilos.some(e => e === 'light-light') ? 'doble' : null, cambio: i > 0 && /<(time|key)\b/.test(m) };
+  });
+}
+// Posiciones (pos.json) de la obra publicada con ese nombre, solo si están corregidas a mano
+function leerPosicionesPublicadas(base) {
+  try { const p = JSON.parse(fs.readFileSync(path.join(DIR_PARTITURAS, base + '.pos.json'), 'utf8')); return p && p.manual ? p : null; } catch { return null; }
+}
+// Primeras posiciones manuales de la lista que cuadren con la obra (mismas páginas y mismos compases); si las hay pero no cuadran, se avisa
+function posicionesManualesValidas(candidatas, nPaginas, nCompases, log = () => {}) {
+  for (const p of candidatas) {
+    if (!p || !p.manual || !Array.isArray(p.compases)) continue;
+    if (p.paginas === nPaginas && p.compases.length === nCompases) return { paginas: p.paginas, manual: true, compases: p.compases, filas: p.filas };
+    log(`  ! Había posiciones corregidas a mano, pero ya no cuadran con la obra (${p.paginas} página(s) y ${p.compases.length} compases frente a ${nPaginas} y ${nCompases}): se vuelven a detectar.`);
+  }
+  return null;
+}
+// ¿El pos.json tiene de verdad los compases colocados? (uno vacío o incompleto no sirve para la app)
+function posicionesCompletas(ruta) {
+  try { const p = JSON.parse(fs.readFileSync(ruta, 'utf8')); return !p.incompleto && Array.isArray(p.compases) && p.compases.length > 0; } catch { return false; }
+}
+
+function prepararObra({ xml: rutaXml, pdf: rutaPdf = null, dirSalida, posicionesManuales = null, log = console.log }) {
   if (!fs.existsSync(rutaXml)) throw new Error('No existe el archivo ' + rutaXml);
   if (/\.mxl$/i.test(rutaXml)) throw new Error('Es un .mxl (comprimido). Exporta como .xml / .musicxml sin comprimir.');
   let xml = fs.readFileSync(rutaXml, 'utf8');
@@ -606,18 +633,31 @@ function prepararObra({ xml: rutaXml, pdf: rutaPdf = null, dirSalida, log = cons
     // último recurso para situar los compases si la imagen no se deja leer.
     try {
       entrada.paginas = generarPaginas(pdf, dirSalida, base);
-      let pos;
-      try { pos = posicionesImagen(xml, entrada.paginas.map(p => path.join(dirSalida, p)), log); log('  Compases localizados en la imagen de cada página.'); }
-      catch (e) {
-        log('  ! No se han podido localizar los compases en la imagen (' + e.message + '): se intenta con la maquetación de Audiveris, menos exacta.');
-        let audXml;
-        try { audXml = leerConAudiveris(pdf, log); } catch (e2) { log('  ! ' + e2.message.split('\n')[0]); throw e; }
-        pos = posiciones(xml, audXml);
+      // Posiciones corregidas a mano en el gestor (las del propio borrador al volver a prepararlo, o las de la obra ya
+      // publicada con el mismo nombre): se conservan mientras cuadren con la obra, en vez de volver a pasar el detector
+      let pos = posicionesManualesValidas([posicionesManuales, leerPosicionesPublicadas(base)], entrada.paginas.length, compasesDe(xml).length, log);
+      if (pos) log('  Compases en la página: se conservan las posiciones corregidas a mano (no se vuelven a detectar).');
+      else {
+        try { pos = posicionesImagen(xml, entrada.paginas.map(p => path.join(dirSalida, p)), log); log('  Compases localizados en la imagen de cada página.'); }
+        catch (e) {
+          log('  ! No se han podido localizar los compases en la imagen (' + e.message + '): se intenta con la maquetación de Audiveris, menos exacta.');
+          let audXml;
+          try { audXml = leerConAudiveris(pdf, log); } catch (e2) { log('  ! ' + e2.message.split('\n')[0]); throw e; }
+          pos = posiciones(xml, audXml);
+        }
       }
       fs.writeFileSync(path.join(dirSalida, base + '.pos.json'), JSON.stringify(pos));
       entrada.posiciones = base + '.pos.json';
       log(`  Página original incorporada (${entrada.paginas.length} imagen(es)); vista "PDF original" disponible.`);
-    } catch (e) { delete entrada.paginas; delete entrada.posiciones; log('  ! No se ha podido incorporar la página original: ' + e.message.split('\n')[0]); }
+    } catch (e) {
+      if (entrada.paginas && entrada.paginas.length) {
+        // Las páginas sí están: se guardan con unas posiciones vacías para colocar los compases a mano en el gestor
+        // («Revisar compases en la página»). Hasta entonces la obra se publicaría sin página original.
+        fs.writeFileSync(path.join(dirSalida, base + '.pos.json'), JSON.stringify({ paginas: entrada.paginas.length, compases: [], incompleto: true }));
+        entrada.posiciones = base + '.pos.json';
+        log('  ! No se han podido localizar los compases en la página (' + e.message.split('\n')[0] + '). Colócalos a mano en el gestor con «Revisar compases en la página»; hasta entonces la obra iría sin página original.');
+      } else { delete entrada.paginas; delete entrada.posiciones; log('  ! No se ha podido incorporar la página original: ' + e.message.split('\n')[0]); }
+    }
   } else log('  (sin PDF: la obra irá sin vista de página original)');
 
   fs.writeFileSync(path.join(dirSalida, entrada.archivo), xml);
@@ -642,10 +682,12 @@ function incorporarEnApp(entrada, dirOrigen) {
   const nueva = { titulo: entrada.titulo, archivo: entrada.archivo };
   // Marca «en ensayo»: la del borrador si dice algo; si no, se conserva la que tenía la obra publicada
   if (entrada.ensayo !== undefined ? entrada.ensayo : previa.ensayo) nueva.ensayo = true;
-  if (entrada.paginas && entrada.paginas.length && entrada.posiciones) { nueva.posiciones = entrada.posiciones; nueva.paginas = entrada.paginas; }
+  // Página original: solo si las posiciones de los compases están de verdad (un pos.json vacío, pendiente de colocar a mano, no vale)
+  const conPagina = !!(entrada.paginas && entrada.paginas.length && entrada.posiciones && posicionesCompletas(path.join(dirOrigen, entrada.posiciones)));
+  if (conPagina) { nueva.posiciones = entrada.posiciones; nueva.paginas = entrada.paginas; }
   else if (previa.paginas) { nueva.posiciones = previa.posiciones; nueva.paginas = previa.paginas; } // conserva la página original anterior si esta vez se ha dado el PDF
   // Voces cantadas: las del borrador si las trae (o [] si se han quitado); si no dice nada, se conservan las que ya había
-  const copiar = [entrada.archivo, ...(entrada.paginas && entrada.posiciones ? [entrada.posiciones, ...entrada.paginas] : [])];
+  const copiar = [entrada.archivo, ...(conPagina ? [entrada.posiciones, ...entrada.paginas] : [])];
   if (Array.isArray(entrada.canto)) { if (entrada.canto.length) nueva.canto = entrada.canto; copiar.push(...entrada.canto.flatMap(c => [c.archivo, c.consonantes]).filter(Boolean)); }
   else if (previa.canto && previa.canto.length) nueva.canto = previa.canto;
   for (const f of copiar) {
@@ -710,6 +752,6 @@ function guardarPdf(rutaPdf, base) {
 module.exports = {
   RAIZ, DIR_APP, DIR_PARTITURAS, DIR_PDF, LISTA, NOMBRES_VOCES,
   clave, pdfPara, prepararObra, editarObra, huecosASilencios, leerPartes, tituloDe, tempoDe, limpiarNombreArchivo,
-  sospechososDe, detalleCompas, fijarCompas, notasCompas, escribirCompas, FIGURA_NEGRAS, repararCompases, recomponerPartesCorridas,
+  sospechososDe, detalleCompas, fijarCompas, notasCompas, escribirCompas, FIGURA_NEGRAS, repararCompases, recomponerPartesCorridas, compasesDe, posicionesCompletas,
   leerLista, archivosDe, incorporarEnApp, retirarDeApp, marcarEnsayo, subirVersionCache, versionCache, guardarEnGit, guardarPdf,
 };

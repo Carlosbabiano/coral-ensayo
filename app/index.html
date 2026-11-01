@@ -1280,6 +1280,13 @@ window.recargarObra = async () => {
   window.scrollTo(0, y);
   marcarNota(null);
 };
+// El gestor avisa aquí tras corregir a mano dónde está cada compás en la página: se releen las posiciones y la barra se recoloca
+window.recargarPosiciones = async () => {
+  if (!obraActual || !obraActual.posiciones) return false;
+  posiciones = await (await fetch('partituras/' + obraActual.posiciones + '?t=' + Date.now(), { cache: 'no-store' })).json();
+  if (modoPdf && pdfCargado) moverCursorPdf(eventos[indiceEvento], undefined, false);
+  return true;
+};
 function compasActual() { return eventos[indiceEvento]?.compas ?? 0; }
 window.addEventListener('resize', () => setTimeout(() => marcarNota(notaSel), 300));
 

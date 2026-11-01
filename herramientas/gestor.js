@@ -60,6 +60,9 @@ function procesar(id) {
   const pdfSubido = archivos.find(f => /\.pdf$/i.test(f));
   const pdf = pdfSubido ? path.join(dirEntrada, pdfSubido) : obra.pdfPara(path.join(dirEntrada, xml));
   const dirSalida = path.join(dirDe(id), 'partituras');
+  // Si los compases de la página se corrigieron a mano, se conservan (el detector no se vuelve a pasar si siguen cuadrando)
+  const previas = leerPosiciones(b);
+  const posicionesManuales = previas && previas.manual ? previas : null;
   fs.rmSync(dirSalida, { recursive: true, force: true });
 
   const cabecera = b.origen === 'entrada' ? ['Recogido de la carpeta Entrada: ' + archivos.join(' + ')] : [];
@@ -68,7 +71,7 @@ function procesar(id) {
   trabajando.add(id);
   const registrar = linea => { b.log.push(linea); guardarBorrador(b); emitir(id, { tipo: 'log', linea }); };
   registrar('== ' + xml + (pdf ? ' + ' + path.basename(pdf) : ' (sin PDF)') + ' ==');
-  const w = new Worker(path.join(__dirname, 'gestor-trabajo.js'), { workerData: { xml: path.join(dirEntrada, xml), pdf, dirSalida } });
+  const w = new Worker(path.join(__dirname, 'gestor-trabajo.js'), { workerData: { xml: path.join(dirEntrada, xml), pdf, dirSalida, posicionesManuales } });
   const terminar = () => { trabajando.delete(id); guardarBorrador(b); emitir(id, { tipo: 'estado', borrador: b }); };
   w.on('message', m => {
     if (m.tipo === 'log') registrar(m.linea);
@@ -140,6 +143,63 @@ function cambiarCompas(id, numero, { beats, bt, restaurar }) {
   fs.writeFileSync(ruta, xml);
   b.sospechosos = obra.sospechososDe(xml);
   b.log.push(`Compás ${numero} puesto en ${beats}/${bt}` + (restaurar !== false ? ' (el siguiente vuelve al compás anterior)' : ''));
+  guardarBorrador(b);
+  return b;
+}
+
+// ---------- Compases en la página original: posiciones corregidas a mano ----------
+// El pos.json del borrador: { paginas, compases: [{ p, x0, x1, y0, y1 }], manual?, filas? }. El gestor edita FILAS
+// ({ p, y0, y1, x: [divisorias de izquierda a derecha], omitidas: [cajas que están en la página pero no en el XML] })
+// y el servidor deriva las cajas en orden de lectura (página, fila de arriba abajo, caja de izquierda a derecha).
+const rutaPosiciones = b => b && b.entrada && b.entrada.posiciones ? path.join(dirDe(b.id), 'partituras', b.entrada.posiciones) : null;
+function leerPosiciones(b) { const r = rutaPosiciones(b); if (!r) return null; try { return JSON.parse(fs.readFileSync(r, 'utf8')); } catch { return null; } }
+// Resumen para la tarjeta del gestor: si están corregidas a mano, cuántas hay y cuántos compases tiene el XML
+function infoPosiciones(b) {
+  if (!b || b.estado !== 'listo' || !b.entrada || !b.entrada.paginas) return null;
+  const pos = leerPosiciones(b);
+  let nXml = null; try { nXml = obra.compasesDe(xmlDe(b)).length; } catch {}
+  return { manual: !!(pos && pos.manual), n: pos && Array.isArray(pos.compases) ? pos.compases.length : 0, nXml, incompleto: !pos || !!pos.incompleto || !(pos.compases || []).length };
+}
+const conInfo = b => b && b.estado === 'listo' && b.entrada ? { ...b, posicionesInfo: infoPosiciones(b) } : b;
+function datosPosiciones(id) {
+  const b = leerBorrador(id);
+  if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
+  if (!b.entrada.paginas || !b.entrada.paginas.length) throw new Error('La obra no tiene página original (hace falta el PDF)');
+  return { paginas: b.entrada.paginas, posiciones: leerPosiciones(b), compases: obra.compasesDe(xmlDe(b)) };
+}
+// Comprueba las filas y las convierte en cajas. Lanza un error en castellano si algo no cuadra.
+function construirPosiciones(filas, nPaginas) {
+  if (!Array.isArray(filas)) throw new Error('Faltan las filas de compases');
+  const num = v => typeof v === 'number' && isFinite(v);
+  const r4 = v => Math.round(v * 1e4) / 1e4;
+  const limpias = filas.map((f, i) => {
+    const donde = `Fila ${i + 1}` + (f && Number.isInteger(f.p) ? ` de la página ${f.p + 1}` : '');
+    if (!f || !Number.isInteger(f.p) || f.p < 0 || f.p >= nPaginas) throw new Error(`${donde}: la página no existe en la obra`);
+    if (!num(f.y0) || !num(f.y1) || f.y0 < 0 || f.y1 > 1 || f.y1 - f.y0 < 0.01) throw new Error(`${donde}: el alto se sale de la página`);
+    if (!Array.isArray(f.x) || f.x.length < 2) throw new Error(`${donde}: no tiene ninguna caja`);
+    const x = f.x.map(v => r4(+v));
+    for (let k = 0; k < x.length; k++) {
+      if (!num(x[k]) || x[k] < 0 || x[k] > 1) throw new Error(`${donde}: una divisoria se sale de la página`);
+      if (k && x[k] - x[k - 1] < 0.003) throw new Error(`${donde}: dos divisorias se pisan (un compás sin ancho)`);
+    }
+    const omitidas = [...new Set((f.omitidas || []).map(Number))].filter(k => Number.isInteger(k) && k >= 0 && k < x.length - 1).sort((a, b) => a - b);
+    return { p: f.p, y0: r4(f.y0), y1: r4(f.y1), x, omitidas };
+  });
+  limpias.sort((a, b) => a.p - b.p || a.y0 - b.y0);
+  const compases = [];
+  for (const f of limpias) for (let k = 0; k < f.x.length - 1; k++) if (!f.omitidas.includes(k)) compases.push({ p: f.p, x0: f.x[k], x1: f.x[k + 1], y0: f.y0, y1: f.y1 });
+  return { filas: limpias, compases };
+}
+function guardarPosiciones(id, { filas }) {
+  const b = leerBorrador(id);
+  if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
+  if (!b.entrada.paginas || !b.entrada.paginas.length) throw new Error('La obra no tiene página original');
+  const { filas: f, compases } = construirPosiciones(filas, b.entrada.paginas.length);
+  const n = obra.compasesDe(xmlDe(b)).length;
+  if (compases.length !== n) throw new Error(compases.length > n ? `En la página hay ${compases.length} compases y el XML tiene ${n}: sobran ${compases.length - n}. Funde cajas (toca una divisoria) o márcalas como «no está en el XML».` : `En la página hay ${compases.length} compases y el XML tiene ${n}: faltan ${n - compases.length}. Parte cajas (toca dentro de una) o añade la fila que falte.`);
+  if (!b.entrada.posiciones) b.entrada.posiciones = b.entrada.archivo.replace(/\.xml$/i, '') + '.pos.json';
+  fs.writeFileSync(rutaPosiciones(b), JSON.stringify({ paginas: b.entrada.paginas.length, manual: true, compases, filas: f }));
+  b.log.push(`Compases en la página corregidos a mano: ${compases.length} compases en ${f.length} fila(s).`);
   guardarBorrador(b);
   return b;
 }
@@ -465,7 +525,13 @@ const servidor = http.createServer(async (req, res) => {
       const b = leerBorrador(m[1]); if (!b) return json(res, { error: 'No existe' }, 404);
       // Recalcular los compases sospechosos con el motor actual (los borradores preparados con versiones anteriores pueden traer una lista vieja)
       if (b.estado === 'listo' && b.entrada) { try { const nuevos = obra.sospechososDe(xmlDe(b)); if (JSON.stringify(nuevos) !== JSON.stringify(b.sospechosos)) { b.sospechosos = nuevos; guardarBorrador(b); } } catch {} }
-      return json(res, conCanto(b));
+      return json(res, conInfo(conCanto(b)));
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/posiciones$/)) && req.method === 'GET') {
+      try { return json(res, datosPosiciones(m[1])); } catch (e) { return json(res, { error: e.message }, 400); }
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/posiciones$/)) && req.method === 'POST') {
+      try { return json(res, resumen(conInfo(guardarPosiciones(m[1], JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'))))); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/canto\/preparar$/)) && req.method === 'POST') {
       try { return json(res, prepararCanto(m[1], JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'))); } catch (e) { return json(res, { error: e.message }, 400); }
