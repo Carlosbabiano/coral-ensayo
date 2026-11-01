@@ -103,7 +103,9 @@
   #pantalla.activa .si { display: block; }
   #pantalla.activa { color: var(--color-primary); }
   button.enlace { background: none; border: 0; padding: 0 var(--space-1); font: inherit; color: var(--color-fg); text-decoration: underline dotted; text-underline-offset: 3px; }
-  select, input[type=number], input[type=text] { font: inherit; min-height: var(--tap); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-control); border-radius: var(--radius-s); background: var(--color-surface); color: var(--color-fg); }
+  /* Los campos van siempre a 16 px aunque estén dentro de un texto menor: con menos, Safari en iPhone y iPad amplía
+     toda la página al tocarlos y la barra fija de abajo se sale por los márgenes */
+  select, input[type=number], input[type=text] { font: inherit; font-size: var(--font-m); min-height: var(--tap); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-control); border-radius: var(--radius-s); background: var(--color-surface); color: var(--color-fg); }
   input[type=range], input[type=checkbox] { accent-color: var(--color-primary); }
   .voces-wrap { padding: var(--space-2) var(--space-3) 0; }
   .voces { display: flex; flex-wrap: wrap; gap: var(--space-2); }
@@ -119,7 +121,7 @@
   #barraCorregir button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap); min-width: var(--tap); padding: var(--space-2) var(--space-3); font: inherit; font-size: var(--font-l); border-radius: var(--radius-s); border: 1px solid var(--color-border-control); background: var(--color-surface); color: var(--color-fg); }
   #barraCorregir button.principal { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); font-size: var(--font-s); }
   #barraCorregir button.peligro { color: var(--color-danger); border-color: var(--color-danger-border); }
-  #barraCorregir select { font-size: var(--font-s); }
+  #barraCorregir select { font-size: var(--font-m); }
   #barraCorregir .cuadra-mal { color: var(--color-danger); font-weight: 600; }
   #corrLetra { width: 100px; }
   #notaSel { position: absolute; border: 2px solid var(--color-cursor); border-radius: 50%; background: color-mix(in srgb, var(--color-cursor) 28%, transparent); pointer-events: none; z-index: 3; box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-cursor) 25%, transparent); }
