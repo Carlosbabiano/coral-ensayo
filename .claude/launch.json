@@ -40,6 +40,15 @@
         "set PUERTO=5182&& set GESTOR_SIN_INTERNET=1&& set GESTOR_SIN_NAVEGADOR=1&& set GESTOR_SIN_APAGADO=1&& set CANTO_MAX_FRASES=2&& node herramientas/gestor.js"
       ],
       "port": 5182
+    },
+    {
+      "name": "gestor-prueba-ia",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": [
+        "/c",
+        "set PUERTO=5183&& set GESTOR_SIN_INTERNET=1&& set GESTOR_SIN_NAVEGADOR=1&& set GESTOR_SIN_APAGADO=1&& set GESTOR_IA_SIMULADA=1&& node herramientas/gestor.js"
+      ],
+      "port": 5183
     }
   ]
 }

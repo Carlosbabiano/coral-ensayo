@@ -11,6 +11,7 @@ const http = require('http'), fs = require('fs'), path = require('path'), { spaw
 const { Worker } = require('worker_threads');
 const obra = require('./obra.js');
 const canto = require('./canto.js');
+const revisionIA = require('./revision-ia.js');
 
 const PUERTO = +process.env.PUERTO || 5180;
 const DIR_GESTOR = path.join(__dirname, 'gestor');
@@ -147,6 +148,32 @@ function cambiarCompas(id, numero, { beats, bt, restaurar }) {
   b.log.push(`Compás ${numero} puesto en ${beats}/${bt}` + (restaurar !== false ? ' (el siguiente vuelve al compás anterior)' : ''));
   guardarBorrador(b);
   return b;
+}
+
+// ---------- Revisión con IA de los compases dudosos (la lógica está en revision-ia.js) ----------
+// La IA solo propone; aquí se escribe en el XML únicamente cuando el director pulsa «Aplicar»
+const errorIA = (res, e) => json(res, { error: e.message, tipo: e.tipo || 'error' }, e.codigo || 400);
+function aplicarPropuestaIA(id, numero, cuerpo) {
+  const b = leerBorrador(id);
+  if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
+  const guardada = revisionIA.propuestaGuardada(id, numero);
+  const voces = guardada ? guardada.voces : cuerpo && Array.isArray(cuerpo.voces) ? cuerpo.voces : null; // sin propuesta en memoria (el gestor se reinició) vale la copia de la página
+  if (!voces) throw new Error('No hay ninguna propuesta de la IA para el compás ' + numero + ': pide primero «Revisar con IA»');
+  const ruta = path.join(dirDe(id), 'partituras', b.entrada.archivo);
+  const { xml, aplicadas, saltadas } = revisionIA.aplicar(fs.readFileSync(ruta, 'utf8'), numero, voces);
+  if (!aplicadas.length) throw new Error('No se ha aplicado nada: ninguna voz de la propuesta cuadra con el compás');
+  fs.writeFileSync(ruta, xml);
+  b.sospechosos = obra.sospechososDe(xml);
+  const lista = l => l.length > 1 ? l.slice(0, -1).join(', ') + ' y ' + l[l.length - 1] : l[0];
+  b.log.push(`Compás ${numero}, ${lista(aplicadas)}: figuras propuestas por la IA aplicadas por el director (confianza ${guardada ? guardada.confianza : 'desconocida'}).` + (saltadas.length ? ` Sin aplicar porque no cuadraban: ${lista(saltadas)}.` : ''));
+  guardarBorrador(b);
+  revisionIA.marcarAplicada(id, numero);
+  return { borrador: resumen(b), aplicadas, saltadas, cuadra: !b.sospechosos.includes(String(numero)) };
+}
+function revisarTodosConIA(id) {
+  const b = leerBorrador(id);
+  if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
+  return revisionIA.empezarLote(id, b.sospechosos, n => revisionIA.revisar(dirDe(id), n), datos => emitir(id, datos));
 }
 
 // ---------- Compases en la página original: posiciones corregidas a mano ----------
@@ -625,6 +652,33 @@ const servidor = http.createServer(async (req, res) => {
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/(\d+)\/notas$/)) && req.method === 'POST') {
       try { return json(res, resumen(guardarNotas(m[1], m[2], JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}')))); } catch (e) { return json(res, { error: e.message }, 400); }
     }
+    // Revisión con IA: una propuesta por compás (no toca nada), aplicarla o descartarla, y todos los sospechosos en segundo plano
+    if (ruta === '/api/revision-ia' && req.method === 'GET') return json(res, revisionIA.estado());
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/(\d+)\/revisar$/)) && req.method === 'POST') {
+      if (!idValido(m[1])) return json(res, { error: 'No existe el borrador' }, 404);
+      try { return json(res, await revisionIA.revisar(dirDe(m[1]), m[2])); } catch (e) { return errorIA(res, e); }
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/(\d+)\/revisar$/)) && req.method === 'GET') {
+      return json(res, { propuesta: revisionIA.propuestaGuardada(m[1], m[2]) }); // null si no se ha pedido (o el gestor se reinició)
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/(\d+)\/revisar\/aplicar$/)) && req.method === 'POST') {
+      try { return json(res, aplicarPropuestaIA(m[1], m[2], JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'))); } catch (e) { return errorIA(res, e); }
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/(\d+)\/revisar\/descartar$/)) && req.method === 'POST') {
+      revisionIA.olvidar(m[1], m[2]); return json(res, { ok: true });
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/revisar-todos$/)) && req.method === 'POST') {
+      try { return json(res, revisarTodosConIA(m[1])); } catch (e) { return errorIA(res, e); }
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/revisar-todos$/)) && req.method === 'GET') {
+      return json(res, { lote: revisionIA.estadoLote(m[1]), propuestas: revisionIA.resumenPropuestas(m[1]) });
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/revisar-todos\/parar$/)) && req.method === 'POST') {
+      return json(res, { ok: revisionIA.cancelarLote(m[1]) });
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/revisar-todos\/quitar$/)) && req.method === 'POST') {
+      try { revisionIA.olvidarLote(m[1]); return json(res, { ok: true }); } catch (e) { return errorIA(res, e); }
+    }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/(\d+)\/tiempo$/)) && req.method === 'POST') {
       try { return json(res, resumen(cambiarCompas(m[1], m[2], JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}')))); } catch (e) { return json(res, { error: e.message }, 400); }
     }
@@ -665,7 +719,7 @@ const servidor = http.createServer(async (req, res) => {
     // Latido de la página (ver «Apagado» más abajo) y cierre desde el botón «Cerrar el gestor»
     if (ruta === '/api/latido' && req.method === 'POST') { ultimoLatido = Date.now(); return json(res, { ok: true, ocupado: ocupado() }); }
     if (ruta === '/api/salir' && req.method === 'POST') {
-      if (ocupado()) return json(res, { error: 'Hay un trabajo en marcha (una publicación, una obra preparándose, la comprobación en internet o el cantante). Espera a que termine.' }, 409);
+      if (ocupado()) return json(res, { error: 'Hay un trabajo en marcha (una publicación, una obra preparándose, la comprobación en internet, el cantante o la revisión con IA). Espera a que termine.' }, 409);
       console.log('Cerrado desde la página.');
       json(res, { ok: true }); setTimeout(() => process.exit(0), 300); return;
     }
@@ -683,7 +737,7 @@ const servidor = http.createServer(async (req, res) => {
 // nunca con un trabajo en marcha. GESTOR_SIN_APAGADO=1 lo desactiva (pruebas automáticas).
 const arranque = Date.now();
 let ultimoLatido = 0;
-const ocupado = () => publicando || trabajando.size > 0 || instalandoVoz || !!cantando || !!(comprobacion && comprobacion.estado === 'comprobando');
+const ocupado = () => publicando || trabajando.size > 0 || instalandoVoz || !!cantando || !!(comprobacion && comprobacion.estado === 'comprobando') || revisionIA.enMarcha();
 const SIN_LATIDO_MS = 3 * 60 * 1000;
 if (!process.env.GESTOR_SIN_APAGADO) setInterval(() => {
   if (Date.now() - Math.max(ultimoLatido, arranque) > SIN_LATIDO_MS && !ocupado()) { console.log('Sin ninguna pestaña del gestor abierta: se cierra.'); process.exit(0); }
