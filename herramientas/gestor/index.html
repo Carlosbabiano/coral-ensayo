@@ -185,7 +185,7 @@
       o haz clic para elegirlo. Si tienes el .xml del Escáner Musical, arrástralo con el PDF.
       <input type="file" id="elegir" multiple accept=".xml,.musicxml,.pdf">
     </label>
-    <p class="ayuda">Con el PDF solo, las notas las lee Audiveris en este PC (tarda unos minutos la primera vez). Con el XML del escáner, las notas salen de ahí y el PDF es la página que ve el coro; si está en <code>originales/pdf/</code> con el mismo nombre, se usa solo.</p>
+    <p class="ayuda">Con el PDF solo, eliges si las notas las lee Audiveris en este PC (gratis, unos minutos) o la IA (de pago, con el coste a la vista). Con el XML del escáner, las notas salen de ahí y el PDF es la página que ve el coro; si está en <code>originales/pdf/</code> con el mismo nombre, se usa solo.</p>
     <div class="ayuda" id="entrada" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px"></div>
     <h2>Borradores</h2>
     <ul class="lista" id="borradores"></ul>
@@ -210,6 +210,7 @@
 
 <script src="/gestor/posiciones.js"></script>
 <script src="/gestor/revision-ia.js"></script>
+<script src="/gestor/lectura-ia.js"></script>
 <script src="/gestor/compases-editor.js"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -241,11 +242,11 @@ async function refrescar() {
   let te = `<strong>Carpeta Entrada</strong> (desde el móvil: compartir el PDF, y el XML si lo hay, a Google Drive, carpeta <code>Entrada</code> del proyecto).`;
   if (!en.obras.length && !en.pdfsSueltos.length && !(en.pendientes || []).length) te += `<br><span>Vacía.</span>`;
   const fila = (nombre, detalle, boton) => `<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(nombre)}">${esc(nombre)}<br><span>${detalle}</span></span>${boton}</div>`;
-  const botonPdf = p => en.audiveris ? `<button class="mini" data-pdf="${esc(p)}" title="Audiveris lee las notas del PDF (tarda unos minutos la primera vez)">Preparar con Audiveris</button>` : '';
-  const sinAudiveris = en.audiveris ? '' : ' Audiveris no está instalado: añade el XML del escáner con el mismo nombre.';
+  const botonPdf = p => en.audiveris || en.ia ? `<button class="mini" data-pdf="${esc(p)}" title="Crea el borrador y deja elegir si las notas las lee Audiveris o la IA">Preparar…</button>` : '';
+  const sinLector = en.audiveris || en.ia ? '' : ' Ni Audiveris ni la clave de la IA están en este PC: añade el XML del escáner con el mismo nombre.';
   for (const o of en.obras) te += fila(o.xml, o.pdf ? 'con ' + esc(o.pdf) : 'sin PDF (se buscará en originales/pdf/)', `<button class="mini" data-xml="${esc(o.xml)}">Cargar</button>`);
-  for (const p of en.pdfsSueltos) te += fila(p, 'PDF solo, sin XML del escáner.' + sinAudiveris, botonPdf(p));
-  for (const p of en.pendientes || []) te += fila(p, 'en <code>pendientes/</code>: PDF a la espera.' + sinAudiveris, botonPdf(p));
+  for (const p of en.pdfsSueltos) te += fila(p, 'PDF solo, sin XML del escáner.' + sinLector, botonPdf(p));
+  for (const p of en.pendientes || []) te += fila(p, 'en <code>pendientes/</code>: PDF a la espera.' + sinLector, botonPdf(p));
   $('entrada').innerHTML = te;
   for (const b of $('entrada').querySelectorAll('button[data-xml], button[data-pdf]')) b.onclick = async () => {
     b.disabled = true;
@@ -257,7 +258,8 @@ async function refrescar() {
     const li = document.createElement('li');
     li.className = b.id === seleccionado ? 'activa' : '';
     const nombre = nombreBorrador(b);
-    const textoEstado = ({ nuevo: 'sin preparar', preparando: b.audiveris === null && !b.archivos?.some(a => /\.(xml|musicxml)$/i.test(a)) ? 'leyendo el PDF con Audiveris…' : 'preparando…', listo: 'lista para revisar', error: 'con errores' }[b.estado] || b.estado) + (b.cantando ? ' · cantando…' : (b.entrada && b.entrada.canto && b.entrada.canto.length) ? ' · con voces cantadas' : '') + ' · ' + new Date(b.creado).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const soloPdfLista = !b.archivos?.some(a => /\.(xml|musicxml)$/i.test(a)) && b.archivos?.some(a => /\.pdf$/i.test(a));
+    const textoEstado = ({ nuevo: soloPdfLista ? 'elige cómo leer las notas' : 'sin preparar', preparando: b.metodo === 'ia' ? 'leyendo la partitura con IA…' : soloPdfLista ? 'leyendo el PDF con Audiveris…' : 'preparando…', listo: 'lista para revisar', error: 'con errores' }[b.estado] || b.estado) + (b.cantando ? ' · cantando…' : (b.entrada && b.entrada.canto && b.entrada.canto.length) ? ' · con voces cantadas' : '') + ' · ' + new Date(b.creado).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     li.innerHTML = `<span class="punto ${b.estado}"></span><span class="t">${esc(nombre)}<br><span class="e">${textoEstado}</span></span>`;
     li.onclick = () => seleccionar(b.id);
     ul.appendChild(li);
@@ -291,20 +293,23 @@ $('elegir').addEventListener('change', e => { subir([...e.target.files]); e.targ
 async function subir(archivos) {
   const validos = archivos.filter(f => /\.(xml|musicxml|pdf)$/i.test(f.name));
   if (!validos.length) return alert('Solo se admiten el .pdf de la obra y, si lo tienes, el .xml / .musicxml del Escáner Musical');
-  // Un borrador por cada XML (el PDF con el mismo nombre va con él) y uno por cada PDF que venga solo (las notas las lee Audiveris)
+  // Un borrador por cada XML (el PDF con el mismo nombre va con él), que se prepara en el acto, y uno por cada PDF que
+  // venga solo, que se queda esperando a que elijas cómo leer las notas (Audiveris o IA)
   const clave = n => n.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const xmls = validos.filter(f => /\.(xml|musicxml)$/i.test(f.name));
   const pdfs = validos.filter(f => /\.pdf$/i.test(f.name));
   const grupos = xmls.map(x => [x, pdfs.find(p => clave(p.name) === clave(x.name))].filter(Boolean));
   const sueltos = pdfs.filter(p => !xmls.some(x => clave(x.name) === clave(p.name)));
-  if (sueltos.length && xmls.length && !confirm(`${sueltos.length === 1 ? 'El PDF ' + sueltos[0].name + ' no tiene' : 'Hay ' + sueltos.length + ' PDF sin'} un .xml con el mismo nombre. ¿Preparar${sueltos.length === 1 ? 'lo' : 'los'} aparte, leyendo las notas con Audiveris?`)) sueltos.length = 0;
+  if (sueltos.length && xmls.length && !confirm(`${sueltos.length === 1 ? 'El PDF ' + sueltos[0].name + ' no tiene' : 'Hay ' + sueltos.length + ' PDF sin'} un .xml con el mismo nombre. ¿Preparar${sueltos.length === 1 ? 'lo' : 'los'} aparte, leyendo las notas de la imagen (Audiveris o IA)?`)) sueltos.length = 0;
   grupos.push(...sueltos.map(p => [p]));
   let primero = null;
   for (const grupo of grupos) {
     const b = await api('/api/borradores', { method: 'POST' });
     for (const f of grupo) await api(`/api/borradores/${b.id}/archivos?nombre=${encodeURIComponent(f.name)}`, { method: 'POST', body: f });
-    try { await api(`/api/borradores/${b.id}/preparar`, { method: 'POST' }); }
-    catch (e) { alert(e.message); await api(`/api/borradores/${b.id}`, { method: 'DELETE' }).catch(() => {}); continue; }
+    if (grupo.some(f => /\.(xml|musicxml)$/i.test(f.name))) {
+      try { await api(`/api/borradores/${b.id}/preparar`, { method: 'POST' }); }
+      catch (e) { alert(e.message); await api(`/api/borradores/${b.id}`, { method: 'DELETE' }).catch(() => {}); continue; }
+    }
     primero = primero || b.id;
   }
   await refrescar();
@@ -327,6 +332,7 @@ async function seleccionar(id) {
     fuente.onmessage = ev => {
       const m = JSON.parse(ev.data);
       if (m.tipo === 'log') { borradorActual.log.push(m.linea); const pre = $('log'); if (pre) { pre.textContent += m.linea + '\n'; pre.scrollTop = pre.scrollHeight; } }
+      if (m.tipo === 'lectura-ia' && window.LecturaIA) LecturaIA.actualizar(m);
       if (m.tipo === 'estado') { fuente.close(); fuente = null; borradorActual = m.borrador; refrescar(); pintarPanel(); }
     };
   }
@@ -338,14 +344,20 @@ function pintarPanel() {
   const nombre = nombreBorrador(b);
   const soloPdf = !b.archivos?.some(a => /\.(xml|musicxml)$/i.test(a)) && b.archivos?.some(a => /\.pdf$/i.test(a));
   let html = `<div class="cab"><h3>${esc(nombre)}</h3>`;
-  if (b.estado === 'preparando') html += `<span class="progreso"></span> <span class="ayuda">${soloPdf ? 'Audiveris está leyendo las notas del PDF: tarda unos minutos la primera vez (las siguientes, segundos). Después se prepara la obra.' : 'Preparando la obra…'}</span>`;
+  if (b.estado === 'preparando') html += `<span class="progreso"></span> <span class="ayuda">${b.metodo === 'ia' ? 'La IA está leyendo la partitura, sistema a sistema. Después se prepara la obra.' : soloPdf ? 'Audiveris está leyendo las notas del PDF: tarda unos minutos la primera vez (las siguientes, segundos). Después se prepara la obra.' : 'Preparando la obra…'}</span>`;
   html += `</div>`;
+  // Lectura con IA en marcha: barra de progreso, coste hasta ahora y «Parar» (lectura-ia.js)
+  if (b.estado === 'preparando' && b.metodo === 'ia') html += `<div id="iaProgreso"></div>`;
 
   if (b.estado === 'error') {
     html += `<div class="aviso mal"><strong>No se ha podido preparar:</strong> ${esc(b.error)}</div>`;
   }
+  // Solo el PDF y sin preparar (o con error): elegir si las notas las lee Audiveris o la IA (lectura-ia.js)
+  if ((b.estado === 'nuevo' || b.estado === 'error') && soloPdf) html += `<div id="iaEleccion"></div>`;
   // Las notas no vienen del Escáner Musical, sino de Audiveris: se dice, con lo que tardó, porque la lectura es menos fiable
   if (b.estado === 'listo' && b.audiveris) html += `<div class="aviso">Las notas las ha leído <strong>Audiveris</strong> del PDF (no hay XML del Escáner Musical)${b.audiveris.cache ? ', recuperadas de una lectura anterior' : ' en ' + tiempoLegible(b.audiveris.segundos)}. Revisa con más cuidado los compases que no cuadran y la letra.</div>`;
+  // ... o de la IA: con qué modelo, cuánto costó y cuántos compases quedan dudosos
+  if (b.estado === 'listo' && b.lecturaIA && window.LecturaIA) html += LecturaIA.informeHtml(b);
 
   if (b.estado === 'listo') {
     // Ajustes
@@ -408,12 +420,14 @@ function pintarPanel() {
   }
 
   html += `<details ${b.estado === 'listo' ? '' : 'open'}><summary>Registro del proceso</summary><pre class="log" id="log">${esc((b.log || []).join('\n'))}\n</pre></details>`;
-  if (b.estado !== 'listo' && b.estado !== 'preparando') html += `<div class="acciones"><button id="reintentar">Volver a preparar</button><span class="hueco"></span><button class="peligro" id="descartar">Descartar borrador</button></div>`;
+  // Con solo el PDF, «volver a preparar» es elegir otra vez cómo leer las notas (la tarjeta de arriba); con XML, el botón
+  if (b.estado !== 'listo' && b.estado !== 'preparando') html += `<div class="acciones">${soloPdf ? '' : '<button id="reintentar">Volver a preparar</button>'}<span class="hueco"></span><button class="peligro" id="descartar">Descartar borrador</button></div>`;
   panel.innerHTML = html;
   const pre = $('log'); if (pre) pre.scrollTop = pre.scrollHeight;
 
   $('aplicar') && ($('aplicar').onclick = aplicar);
   pintarAvisoPosiciones(false);
+  if (window.LecturaIA) { if ($('iaEleccion')) LecturaIA.pintarEleccion(b); if ($('iaProgreso')) LecturaIA.pintarProgreso(b); }
   if (window.RevisionIA) RevisionIA.pintarLote(b);
   $('publicar') && ($('publicar').onclick = publicar);
   $('descartar') && ($('descartar').onclick = descartar);

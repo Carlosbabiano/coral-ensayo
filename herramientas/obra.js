@@ -729,11 +729,17 @@ function posicionesCompletas(ruta) {
 }
 
 // La obra puede llegar con el XML del Escáner Musical (y el PDF), o con el PDF solo: entonces las notas las lee Audiveris
-// y el resultado trae audiveris: { segundos, cache }.
-function prepararObra({ xml: rutaXml = null, pdf: rutaPdf = null, dirSalida, posicionesManuales = null, log = console.log }) {
+// y el resultado trae audiveris: { segundos, cache }. O con el XML ya leído por la IA (lectura-ia.js) en xmlTexto, con las
+// imágenes de página (paginasDadas, rutas) y las posiciones de los compases (posicionesDadas) que salieron de esa lectura;
+// lecturaIA es su resumen (modelo, coste…) y se devuelve tal cual.
+function prepararObra({ xml: rutaXml = null, xmlTexto = null, pdf: rutaPdf = null, dirSalida, posicionesManuales = null, posicionesDadas = null, paginasDadas = null, lecturaIA = null, log = console.log }) {
   let xml, xmlAudiveris = null, audiveris = null;
   const avisos = [];
-  if (rutaXml) {
+  if (xmlTexto) {
+    xml = xmlTexto;
+    if (!/<score-partwise/.test(xml)) throw new Error('Lo que ha leído la IA no es un MusicXML válido.');
+    if (lecturaIA && Array.isArray(lecturaIA.avisos)) avisos.push(...lecturaIA.avisos);
+  } else if (rutaXml) {
     if (!fs.existsSync(rutaXml)) throw new Error('No existe el archivo ' + rutaXml);
     if (/\.mxl$/i.test(rutaXml)) throw new Error('Es un .mxl (comprimido). Exporta como .xml / .musicxml sin comprimir.');
     xml = fs.readFileSync(rutaXml, 'utf8');
@@ -797,12 +803,20 @@ function prepararObra({ xml: rutaXml = null, pdf: rutaPdf = null, dirSalida, pos
     // La letra no se saca del PDF: el coro la lee en la página. Audiveris (lento, y a veces falla) solo se usa como
     // último recurso para situar los compases si la imagen no se deja leer.
     try {
-      entrada.paginas = generarPaginas(pdf, dirSalida, base);
+      // Las imágenes de página ya hechas (la lectura con IA las necesitó antes) se copian; si no, se generan del PDF
+      if (paginasDadas && paginasDadas.length && paginasDadas.every(r => fs.existsSync(r))) {
+        for (const f of fs.readdirSync(dirSalida)) if (f.startsWith(base + '-p') && /\.(png|jpg)$/.test(f)) fs.unlinkSync(path.join(dirSalida, f));
+        entrada.paginas = paginasDadas.map((ruta, i) => { const n = `${base}-p${i + 1}${path.extname(ruta).toLowerCase()}`; fs.copyFileSync(ruta, path.join(dirSalida, n)); return n; });
+      } else entrada.paginas = generarPaginas(pdf, dirSalida, base);
+      const nCompases = compasesDe(xml).length;
       // Posiciones corregidas a mano en el gestor (las del propio borrador al volver a prepararlo, o las de la obra ya
       // publicada con el mismo nombre): se conservan mientras cuadren con la obra, en vez de volver a pasar el detector
-      let pos = posicionesManualesValidas([posicionesManuales, leerPosicionesPublicadas(base)], entrada.paginas.length, compasesDe(xml).length, log);
+      let pos = posicionesManualesValidas([posicionesManuales, leerPosicionesPublicadas(base)], entrada.paginas.length, nCompases, log);
       if (pos) log('  Compases en la página: se conservan las posiciones corregidas a mano (no se vuelven a detectar).');
-      else {
+      else if (posicionesDadas && Array.isArray(posicionesDadas.compases) && posicionesDadas.compases.length === nCompases && posicionesDadas.paginas === entrada.paginas.length) {
+        pos = posicionesDadas; log('  Compases en la página: los que localizó la lectura con IA (no se vuelven a detectar).');
+      } else {
+        if (posicionesDadas) log('  ! Las posiciones de la lectura con IA no cuadran con la obra: se vuelven a detectar.');
         try { pos = posicionesImagen(xml, entrada.paginas.map(p => path.join(dirSalida, p)), log); log('  Compases localizados en la imagen de cada página.'); }
         catch (e) {
           log('  ! No se han podido localizar los compases en la imagen (' + e.message + '): se intenta con la maquetación de Audiveris, menos exacta.');
@@ -826,7 +840,7 @@ function prepararObra({ xml: rutaXml = null, pdf: rutaPdf = null, dirSalida, pos
   } else log('  (sin PDF: la obra irá sin vista de página original)');
 
   fs.writeFileSync(path.join(dirSalida, entrada.archivo), xml);
-  return { entrada, avisos, partes: resumenPartes, sospechosos, tempo: tempoDe(xml), pdf, audiveris };
+  return { entrada, avisos, partes: resumenPartes, sospechosos, tempo: tempoDe(xml), pdf, audiveris, lecturaIA: lecturaIA ? { ...lecturaIA, avisos: undefined } : null };
 }
 
 function leerLista() { try { return JSON.parse(fs.readFileSync(LISTA, 'utf8')); } catch { return []; } }

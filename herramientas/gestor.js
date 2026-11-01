@@ -12,6 +12,7 @@ const { Worker } = require('worker_threads');
 const obra = require('./obra.js');
 const canto = require('./canto.js');
 const revisionIA = require('./revision-ia.js');
+const lecturaIA = require('./lectura-ia.js');
 
 const PUERTO = +process.env.PUERTO || 5180;
 const DIR_GESTOR = path.join(__dirname, 'gestor');
@@ -49,8 +50,12 @@ function emitir(canal, datos) {
 }
 
 // ---------- Preparar una obra (en un hilo aparte) ----------
+// Con el PDF solo hay que elegir cómo leer las notas: metodo 'audiveris' (gratis, en este PC) o 'ia' (la API de Claude,
+// con el modelo elegido; cuesta dinero y se puede parar). Con XML del escáner no hay nada que elegir.
 const trabajando = new Set();
-function procesar(id) {
+const obreros = new Map(); // id del borrador -> Worker (para mandarle «parar»)
+const dirLecturaIA = id => path.join(dirDe(id), 'lectura-ia');
+function procesar(id, { metodo = null, modelo = null } = {}) {
   const b = leerBorrador(id);
   if (!b) throw new Error('No existe el borrador');
   if (trabajando.has(id)) throw new Error('Ya se está preparando');
@@ -58,9 +63,18 @@ function procesar(id) {
   const archivos = fs.existsSync(dirEntrada) ? fs.readdirSync(dirEntrada) : [];
   const xml = archivos.find(f => /\.(xml|musicxml)$/i.test(f));
   const pdfSubido = archivos.find(f => /\.pdf$/i.test(f));
-  if (!xml && !pdfSubido) throw new Error('Hace falta el PDF de la obra (las notas las lee Audiveris), o el .xml del Escáner Musical.');
-  // Sin XML, las notas las saca Audiveris del PDF (si no está instalado, prepararObra lo dice con claridad)
-  if (!xml) obra.comprobarAudiveris();
+  if (!xml && !pdfSubido) throw new Error('Hace falta el PDF de la obra, o el .xml del Escáner Musical.');
+  if (xml) metodo = 'xml';
+  else {
+    metodo = metodo || b.metodo || 'audiveris';
+    // Sin XML, las notas las saca Audiveris del PDF (si no está instalado, se dice con claridad) o las lee la IA
+    if (metodo === 'audiveris') obra.comprobarAudiveris();
+    else if (metodo === 'ia') {
+      if (!lecturaIA.estado().clave) throw revisionIA.SIN_CLAVE();
+      modelo = modelo || b.modeloIA || lecturaIA.estado().predeterminado;
+      if (!lecturaIA.MODELOS.some(m => m.id === modelo)) throw new Error('Modelo desconocido: ' + modelo);
+    } else throw new Error('No sé cómo leer las notas: elige Audiveris o la IA.');
+  }
   const pdf = pdfSubido ? path.join(dirEntrada, pdfSubido) : obra.pdfPara(path.join(dirEntrada, xml));
   const dirSalida = path.join(dirDe(id), 'partituras');
   // Si los compases de la página se corrigieron a mano, se conservan (el detector no se vuelve a pasar si siguen cuadrando)
@@ -69,24 +83,62 @@ function procesar(id) {
   fs.rmSync(dirSalida, { recursive: true, force: true });
 
   const cabecera = b.origen === 'entrada' ? ['Recogido de la carpeta Entrada: ' + archivos.join(' + ')] : [];
-  Object.assign(b, { estado: 'preparando', log: cabecera, error: null, entrada: null, avisos: [], partes: [], sospechosos: [], tempo: null, pdf: pdf ? path.basename(pdf) : null, audiveris: null });
+  Object.assign(b, { estado: 'preparando', log: cabecera, error: null, entrada: null, avisos: [], partes: [], sospechosos: [], tempo: null, pdf: pdf ? path.basename(pdf) : null, audiveris: null, metodo, modeloIA: metodo === 'ia' ? modelo : null, lecturaIA: null, progresoIA: null });
   guardarBorrador(b);
   trabajando.add(id);
   const registrar = linea => { b.log.push(linea); guardarBorrador(b); emitir(id, { tipo: 'log', linea }); };
-  registrar('== ' + (xml ? xml + (pdf ? ' + ' + path.basename(pdf) : ' (sin PDF)') : path.basename(pdf) + ' (solo el PDF: las notas las lee Audiveris)') + ' ==');
-  const w = new Worker(path.join(__dirname, 'gestor-trabajo.js'), { workerData: { xml: xml ? path.join(dirEntrada, xml) : null, pdf, dirSalida, posicionesManuales } });
-  const terminar = () => { trabajando.delete(id); guardarBorrador(b); emitir(id, { tipo: 'estado', borrador: b }); };
+  const nombreModelo = m => (lecturaIA.MODELOS.find(x => x.id === m) || { nombre: m }).nombre;
+  registrar('== ' + (xml ? xml + (pdf ? ' + ' + path.basename(pdf) : ' (sin PDF)') : path.basename(pdf) + (metodo === 'ia' ? ` (solo el PDF: la partitura la lee la IA, ${nombreModelo(modelo)})` : ' (solo el PDF: las notas las lee Audiveris)')) + ' ==');
+  const w = new Worker(path.join(__dirname, 'gestor-trabajo.js'), { workerData: { xml: xml ? path.join(dirEntrada, xml) : null, pdf, dirSalida, posicionesManuales, lecturaIA: metodo === 'ia' ? { dirTrabajo: dirLecturaIA(id), modelo } : null } });
+  obreros.set(id, w);
+  const terminar = () => { trabajando.delete(id); obreros.delete(id); b.progresoIA = null; guardarBorrador(b); emitir(id, { tipo: 'estado', borrador: b }); setTimeout(() => w.terminate().catch(() => {}), 500); };
   w.on('message', m => {
     if (m.tipo === 'log') registrar(m.linea);
+    else if (m.tipo === 'avance') { b.progresoIA = { hechas: m.hechas, total: m.total, coste: m.coste, texto: m.texto }; emitir(id, { tipo: 'lectura-ia', ...b.progresoIA }); }
     else if (m.tipo === 'fin') {
       const r = m.resultado;
-      Object.assign(b, { estado: 'listo', entrada: r.entrada, avisos: r.avisos, partes: r.partes, sospechosos: r.sospechosos, tempo: r.tempo, audiveris: r.audiveris || null });
+      Object.assign(b, { estado: 'listo', entrada: r.entrada, avisos: r.avisos, partes: r.partes, sospechosos: r.sospechosos, tempo: r.tempo, audiveris: r.audiveris || null, lecturaIA: r.lecturaIA || null });
       registrar('Lista para revisar.');
       terminar();
-    } else if (m.tipo === 'error') { b.estado = 'error'; b.error = m.mensaje; registrar('X ' + m.mensaje); terminar(); }
+    } else if (m.tipo === 'error') {
+      // Lectura con IA parada por el director: el borrador vuelve a «sin preparar» (lo ya leído queda guardado y no se vuelve a pagar)
+      if (m.tipoError === 'cancelado') { b.estado = 'nuevo'; registrar('Lectura con IA parada a petición tuya. Las consultas ya hechas se guardan: si vuelves a leer con el mismo modelo, no se pagan otra vez.'); }
+      else { b.estado = 'error'; b.error = m.mensaje; registrar('X ' + m.mensaje); }
+      terminar();
+    }
   });
   w.on('error', e => { b.estado = 'error'; b.error = e.message; registrar('X ' + e.message); terminar(); });
   w.on('exit', code => { if (trabajando.has(id)) { b.estado = 'error'; b.error = 'El proceso terminó de forma inesperada (' + code + ')'; terminar(); } });
+}
+// Pide al hilo que pare la lectura con IA (la consulta en marcha se aborta)
+function pararLectura(id) {
+  const w = obreros.get(id);
+  if (!w) throw new Error('Este borrador no se está preparando');
+  w.postMessage({ tipo: 'cancelar' });
+}
+// Mira las páginas del PDF de un borrador (sin consultar la API) para contar compases y estimar el coste de leerlo con
+// IA. Tarda unos segundos por página; el resultado se guarda en el borrador. Devuelve una promesa.
+const analizando = new Map(); // id -> promesa en marcha
+function analizarParaIA(id) {
+  const b = leerBorrador(id);
+  if (!b) throw new Error('No existe el borrador');
+  if (b.analisisIA && b.analisisIA.ok) return Promise.resolve(b.analisisIA);
+  if (analizando.has(id)) return analizando.get(id);
+  const dirEntrada = path.join(dirDe(id), 'entrada');
+  const pdfSubido = (fs.existsSync(dirEntrada) ? fs.readdirSync(dirEntrada) : []).find(f => /\.pdf$/i.test(f));
+  if (!pdfSubido) throw new Error('El borrador no tiene PDF');
+  const p = new Promise((ok, mal) => {
+    const w = new Worker(path.join(__dirname, 'gestor-trabajo.js'), { workerData: { tarea: 'analizar', pdf: path.join(dirEntrada, pdfSubido), dirTrabajo: dirLecturaIA(id) } });
+    let fin = false;
+    w.on('message', m => {
+      if (m.tipo === 'fin') { fin = true; const bb = leerBorrador(id); if (bb) { bb.analisisIA = { ok: true, ...m.resultado }; guardarBorrador(bb); } ok({ ok: true, ...m.resultado }); }
+      else if (m.tipo === 'error') { fin = true; mal(new Error(m.mensaje)); }
+    });
+    w.on('error', e => { if (!fin) { fin = true; mal(e); } });
+    w.on('exit', code => { if (!fin) { fin = true; mal(new Error('El análisis terminó de forma inesperada (' + code + ')')); } });
+  }).finally(() => analizando.delete(id));
+  analizando.set(id, p);
+  return p;
 }
 
 // ---------- Ajustes (título, voces, tempo) sobre el XML ya preparado ----------
@@ -515,11 +567,12 @@ function listarEntrada() {
   const xmls = nombres.filter(n => /.(xml|musicxml)$/i.test(n)).map(xml => ({ xml, pdf: pdfs.find(p => obra.clave(p) === obra.clave(xml)) || null }));
   const sueltos = pdfs.filter(p => !xmls.some(x => x.pdf === p));
   const pendientes = listarArchivos(DIR_PENDIENTES).filter(n => /.pdf$/i.test(n));
-  return { ruta: DIR_ENTRADA, obras: xmls, pdfsSueltos: sueltos, pendientes, audiveris: obra.hayAudiveris() };
+  return { ruta: DIR_ENTRADA, obras: xmls, pdfsSueltos: sueltos, pendientes, audiveris: obra.hayAudiveris(), ia: lecturaIA.estado().clave };
 }
-// Carga una obra de la carpeta Entrada: por su XML (con el PDF del mismo nombre, si lo hay) o por un PDF solo
-// (de Entrada/ o de Entrada/pendientes/), que se prepara con Audiveris
-function cargarDeEntrada({ xml, pdf }) {
+// Carga una obra de la carpeta Entrada: por su XML (con el PDF del mismo nombre, si lo hay), que se prepara en el acto, o
+// por un PDF solo (de Entrada/ o de Entrada/pendientes/), que queda como borrador «sin preparar» hasta que el director
+// elija en el gestor cómo leer las notas (Audiveris o IA); con metodo 'audiveris' se prepara en el acto, como antes
+function cargarDeEntrada({ xml, pdf, metodo = null, modelo = null }) {
   const en = listarEntrada();
   let archivos, dirOrigen = DIR_ENTRADA;
   if (xml) {
@@ -531,7 +584,7 @@ function cargarDeEntrada({ xml, pdf }) {
     if (en.pdfsSueltos.includes(pdf)) archivos = [pdf];
     else if (en.pendientes.includes(pdf)) { archivos = [pdf]; dirOrigen = DIR_PENDIENTES; }
     else throw new Error('No está en la carpeta Entrada: ' + pdf);
-    obra.comprobarAudiveris();
+    if (metodo === 'audiveris') obra.comprobarAudiveris();
   }
   const id = nuevoId();
   const dirEntrada = path.join(dirDe(id), 'entrada');
@@ -540,9 +593,9 @@ function cargarDeEntrada({ xml, pdf }) {
     const origen = path.join(dirOrigen, f), destino = path.join(dirEntrada, f);
     try { fs.renameSync(origen, destino); } catch { fs.copyFileSync(origen, destino); fs.unlinkSync(origen); }
   }
-  const b = { id, creado: new Date().toISOString(), estado: 'nuevo', archivos, log: [], origen: 'entrada' };
+  const b = { id, creado: new Date().toISOString(), estado: 'nuevo', archivos, log: ['Recogido de la carpeta Entrada: ' + archivos.join(' + ')], origen: 'entrada' };
   guardarBorrador(b);
-  procesar(id);
+  if (xml || metodo) procesar(id, { metodo, modelo });
   return id;
 }
 
@@ -603,7 +656,16 @@ const servidor = http.createServer(async (req, res) => {
       return json(res, resumen(b));
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/preparar$/)) && req.method === 'POST') {
-      try { procesar(m[1]); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }
+      try { const cuerpo = JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'); procesar(m[1], { metodo: cuerpo.metodo || null, modelo: cuerpo.modelo || null }); return json(res, { ok: true }); } catch (e) { return errorIA(res, e); }
+    }
+    // Lectura con IA: estado (clave, modelos), análisis del PDF para el coste y parada de una lectura en marcha
+    if (ruta === '/api/lectura-ia' && req.method === 'GET') return json(res, { ...lecturaIA.estado(), audiveris: obra.hayAudiveris() });
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/lectura-ia\/analizar$/)) && req.method === 'POST') {
+      if (!idValido(m[1])) return json(res, { error: 'No existe el borrador' }, 404);
+      try { return json(res, await analizarParaIA(m[1])); } catch (e) { return errorIA(res, e); }
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/preparar\/parar$/)) && req.method === 'POST') {
+      try { pararLectura(m[1]); return json(res, { ok: true }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/eventos$/)) && req.method === 'GET') return suscribir(m[1], res);
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)$/)) && req.method === 'GET') {

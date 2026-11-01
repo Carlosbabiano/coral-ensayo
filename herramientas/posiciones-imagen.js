@@ -538,4 +538,4 @@ if (require.main === module) {
     console.log(`${r.compases.length} compases en ${r.paginas} página(s)`);
   } catch (e) { console.error('! ' + e.message); process.exit(2); }
 }
-module.exports = { posicionesImagen, leerGris, pentagramas, sistemas, columnaOscura, tieneCabeza, lineasLargas };
+module.exports = { posicionesImagen, leerGris, enderezar, pentagramas, sistemas, compasesDePagina, columnaOscura, tieneCabeza, lineasLargas };

@@ -1,13 +1,14 @@
 Carpeta de entrada del Gestor de obras.
 
 Deja aquí el .pdf de la obra. Si además tienes el .xml del Escáner Musical, déjalo también
-(con el mismo nombre): las notas saldrán de él. Si solo hay PDF, las notas las lee Audiveris.
+(con el mismo nombre): las notas saldrán de él. Si solo hay PDF, las notas las lee Audiveris (gratis) o la IA
+(de pago, con el coste a la vista): se elige en el gestor.
 Desde el móvil: "Compartir" el PDF (y el XML, si lo hay) a Google Drive, dentro de esta carpeta
 (CORAL VILLA DE MENGIBAR / Entrada).
 
 En el Gestor de obras aparece lo que hay aquí con un botón por obra: "Cargar" (XML + PDF) o
-"Preparar con Audiveris" (PDF solo). Al pulsarlo se crea el borrador, se prepara la obra y queda
-lista para revisar y publicar. Los archivos salen de aquí al cargarlos: pasan a la carpeta "borradores".
+"Preparar…" (PDF solo). Al pulsarlo se crea el borrador (con PDF solo, el gestor pregunta antes si
+las notas las lee Audiveris o la IA), se prepara la obra y queda lista para revisar y publicar. Los archivos salen de aquí al cargarlos: pasan a la carpeta "borradores".
 
 La subcarpeta "pendientes" sirve para aparcar PDF de obras para más adelante: el gestor los
-enseña aparte, también con su botón "Preparar con Audiveris".
+enseña aparte, también con su botón "Preparar…".

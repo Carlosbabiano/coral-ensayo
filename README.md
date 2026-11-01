@@ -15,29 +15,32 @@ Publicada en: https://carlosbabiano.github.io/coral-ensayo/
 - `herramientas/` — scripts (Node): `gestor.js` (+ `gestor/index.html`), `obra.js`, `anadir-obra.js`, `letra.js`, `posiciones.js`, `paginas.js`, `publicar.js`.
 - `borradores/` — obras en preparación en el gestor (no se publican).
 - `Entrada/` — buzón: lo que se deje aquí (p. ej. desde el móvil vía Google Drive) aparece en el gestor para cargarlo.
-  Un PDF solo también vale (las notas las lee Audiveris). En `Entrada/pendientes/` se pueden aparcar PDF para más
-  adelante: el gestor los enseña con su botón «Preparar con Audiveris».
+  Un PDF solo también vale (las notas las lee Audiveris o la IA, a elegir). En `Entrada/pendientes/` se pueden aparcar
+  PDF para más adelante: el gestor los enseña con su botón «Preparar…».
 - `guia/` — guía para corregir notas en MuseScore.
 - `archivo/` — cosas viejas fuera de git (pruebas de voz, salidas antiguas, copias repetidas); se puede vaciar sin miedo.
 
 ## Añadir una obra (con previsualización): el Gestor de obras
 1. Hace falta el `.pdf` de la obra. El MusicXML del Escáner Musical (`.xml`, sin comprimir) es opcional: si se
-   aporta, las notas salen de ahí (suele leer mejor); si no, las lee Audiveris del PDF en el propio PC (tarda un par de
-   minutos la primera vez; la lectura se guarda en `herramientas/cache/audiveris/` y las siguientes son inmediatas).
+   aporta, las notas salen de ahí (suele leer mejor); si no, se elige en el gestor quién las lee del PDF: Audiveris en el
+   propio PC (gratis; tarda un par de minutos la primera vez y la lectura se guarda en `herramientas/cache/audiveris/`)
+   o la IA (la API de Claude, de pago: el gestor enseña el coste estimado antes de empezar, el progreso por tramos con
+   botón «Parar», y anota el coste real en el informe; hace falta la clave en `herramientas/clave-api.txt`).
 2. Abrir el gestor con el acceso directo «Gestor de obras» (o con `Gestor.vbs`): arranca el servidor local sin ninguna
    ventana y abre el gestor en el navegador (http://localhost:5180). Se apaga solo unos minutos después de cerrar la
    pestaña, o al momento con el botón «Cerrar el gestor». `Gestor.cmd` hace lo mismo con una ventana de consola, por si
    hace falta ver un error o instalar los módulos la primera vez.
 3. Arrastrar el `.pdf` (y el `.xml`, si se tiene, con el mismo nombre) a la zona de la página, o elegirlos con un clic.
    O, desde el móvil, compartirlos a Google Drive en la carpeta `Entrada/` del proyecto: el gestor los muestra con un
-   botón «Cargar» por obra, o «Preparar con Audiveris» si solo hay PDF (si el XML no trae PDF, busca uno con el mismo
-   nombre en `originales/pdf/`).
+   botón «Cargar» por obra, o «Preparar…» si solo hay PDF, que deja elegir Audiveris o IA (si el XML no trae PDF, busca
+   uno con el mismo nombre en `originales/pdf/`).
 4. El gestor prepara la obra (nombra las voces, separa en dos voces las partes de dos pentagramas sin acordes —tenor y bajo
    escritos juntos, por ejemplo— y quita las que llevan acordes —el piano—, revisa los compases, convierte las páginas
    del PDF en imágenes y localiza en ellas cada compás) y la muestra en el mismo reproductor que usa el coro. Con el XML
    del escáner la letra no se saca del PDF (el coro la lee en la página); con Audiveris sí viene la letra que haya
    leído, y el informe del borrador dice que las notas las leyó Audiveris y cuánto tardó: conviene revisar con más
-   cuidado los compases que no cuadran. Ahí se pueden cambiar el
+   cuidado los compases que no cuadran. Con la IA viene también la letra (la primera estrofa) y el informe dice el
+   modelo, las consultas, el coste real y cuántos compases quedan dudosos. Ahí se pueden cambiar el
    título, el nombre de cada voz, el tempo y quitar voces (por ejemplo el piano), y saltar a los compases dudosos.
 5. «Publicar para el coro» la mete en la app, sube la versión de la caché, la guarda en git y la publica.
    «Retirar» quita una obra publicada. «En ensayo» marca una obra que se está ensayando: en la app sale la primera,
@@ -47,7 +50,10 @@ Publicada en: https://carlosbabiano.github.io/coral-ensayo/
 
 La lectura de Audiveris (tanto la de las notas como la que a veces se usa para situar los compases) se guarda en
 `herramientas/cache/audiveris/` para no repetirla con el mismo PDF. Si Audiveris no está instalado, el gestor lo dice y
-pide el XML del escáner.
+pide el XML del escáner (o la lectura con IA). La lectura con IA (`herramientas/lectura-ia.js`) guarda en
+`borradores/<id>/lectura-ia/` las imágenes, el análisis de la página y cada respuesta del modelo: si se para a medias y se
+vuelve a leer con el mismo modelo, lo ya leído no se paga otra vez. Suelto: `node herramientas/lectura-ia.js obra.pdf`
+(`--estimar` solo calcula el coste; `--modelo <id>` elige el modelo; `GESTOR_MODELO_LECTURA=<id>` cambia el predeterminado).
 
 ## Modo corregir (para el director)
 Abrir la app con `?corregir=1` al final de la dirección (https://carlosbabiano.github.io/coral-ensayo/?corregir=1).

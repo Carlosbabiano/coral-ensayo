@@ -432,7 +432,7 @@ function olvidarLote(id) {
 }
 const enMarcha = () => [...lotes.values()].some(l => l.estado === 'en marcha');
 
-module.exports = { estado, leerClave, revisar, aplicar, propuestaGuardada, resumenPropuestas, marcarAplicada, olvidar, empezarLote, estadoLote, cancelarLote, olvidarLote, enMarcha, costeDe, costeEstimado, ErrorIA, ARCHIVO_CLAVE, MODELO,
+module.exports = { estado, leerClave, revisar, aplicar, propuestaGuardada, resumenPropuestas, marcarAplicada, olvidar, empezarLote, estadoLote, cancelarLote, olvidarLote, enMarcha, costeDe, costeEstimado, precioDe, PRECIOS, SIN_CLAVE, ErrorIA, ARCHIVO_CLAVE, MODELO,
   // para pruebas
   recortar, cajasDelRecorte, textoCompas, convertir, contextoPartes, ESQUEMA, SISTEMA };
 
