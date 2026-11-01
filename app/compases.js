@@ -24,6 +24,7 @@ const SEMITONO = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const DIV_EDITOR = 8;
 const RE_PARTE = /<part id="([^"]+)">([\s\S]*?)<\/part>/g;
 const RE_COMPAS = /<measure number="([^"]+)"[^>]*>([\s\S]*?)<\/measure>/g;
+const RE_COMPAS_ATRIBUTOS = /<measure number="([^"]+)"([^>]*)>([\s\S]*?)<\/measure>/g; // igual, pero con los atributos (implicit="yes" = anacrusa)
 const RE_NOTA = /<note(?:\s[^>]*)?>[\s\S]*?<\/note>/g;
 // Elementos de primer nivel dentro de un compás (no se anidan entre sí)
 const RE_ELEMENTO = /<(note|backup|forward|attributes|direction|barline|print|sound|harmony|figured-bass|grouping|link|bookmark)\b[^>]*?(?:\/>|>[\s\S]*?<\/\1>)|<!--[\s\S]*?-->/g;
@@ -50,10 +51,10 @@ function recorrerCompases(xml, f) {
   const nombres = Object.fromEntries(leerPartes(xml).map(p => [p.id, p.nombre]));
   for (const [, id, cuerpo] of xml.matchAll(RE_PARTE)) {
     let div = 1, beats = 4, bt = 4;
-    for (const [, num, m] of cuerpo.matchAll(RE_COMPAS)) {
+    for (const [, num, atributos, m] of cuerpo.matchAll(RE_COMPAS_ATRIBUTOS)) {
       const d = m.match(/<divisions>(\d+)/); if (d) div = +d[1];
       const b = m.match(/<beats>(\d+)<\/beats>\s*<beat-type>(\d+)/); if (b) { beats = +b[1]; bt = +b[2]; }
-      f({ id, nombre: nombres[id] || id, num, cuerpo: m, div, beats, bt, cambio: !!b });
+      f({ id, nombre: nombres[id] || id, num, cuerpo: m, div, beats, bt, cambio: !!b, implicito: /implicit="yes"/.test(atributos) });
     }
   }
 }
@@ -95,7 +96,8 @@ function sospechososDe(xml) {
   const malos = new Set();
   recorrerCompases(xml, c => {
     const esperado = 4 * c.beats / c.bt;
-    for (const s of Object.values(sumasPorVoz(c.cuerpo, c.div))) if (Math.abs(s - esperado) > 0.01) malos.add(c.num);
+    // un compás marcado incompleto a propósito (anacrusa, o el que la completa) puede sumar menos, nunca más
+    for (const s of Object.values(sumasPorVoz(c.cuerpo, c.div))) if (c.implicito ? s > esperado + 0.01 : Math.abs(s - esperado) > 0.01) malos.add(c.num);
     if (!/<note\b/.test(c.cuerpo)) malos.add(c.num);
   });
   return [...malos];
@@ -300,6 +302,17 @@ function escribirCompas(xml, partId, numero, notas, numVoz = 1) {
   });
   if (!hecho) throw new Error('No existe el compás ' + numero + ' en la voz ' + partId);
   return nuevo;
+}
+
+// Marca (o desmarca) un compás como incompleto a propósito (una anacrusa, o el compás que la completa):
+// implicit="yes" en todas las voces. La revisión de duraciones deja de avisar de él mientras no sume de más.
+function marcarIncompleto(xml, numero, si = true) {
+  numero = String(numero);
+  return xml.replace(/<measure number="([^"]+)"([^>]*)>/g, (m, n, atributos) => {
+    if (n !== numero) return m;
+    const limpio = atributos.replace(/\s+implicit="[^"]*"/g, '');
+    return `<measure number="${n}"${limpio}${si ? ' implicit="yes"' : ''}>`;
+  });
 }
 
 // ---------- Indicación de compás ----------
@@ -641,5 +654,5 @@ function duracionCompas(xml, numero) {
   return r;
 }
 
-return { leerPartes, escapar, recorrerCompases, sumaCompas, sumasPorVoz, sospechososDe, detalleCompas, notasCompas, renumerar, negrasDe, midiDe, escribirCompas, ponerTiempo, fijarCompas, partirCompas, fundirCompases, insertarCompas, quitarCompas, renumerarCompases, posicionDeNota, duracionCompas, analizarCompas, FIGURA_NEGRAS, FIGURAS, NOMBRES_NOTAS, DIV_EDITOR };
+return { leerPartes, escapar, recorrerCompases, sumaCompas, sumasPorVoz, sospechososDe, detalleCompas, notasCompas, renumerar, negrasDe, midiDe, escribirCompas, ponerTiempo, fijarCompas, marcarIncompleto, partirCompas, fundirCompases, insertarCompas, quitarCompas, renumerarCompases, posicionDeNota, duracionCompas, analizarCompas, FIGURA_NEGRAS, FIGURAS, NOMBRES_NOTAS, DIV_EDITOR };
 });

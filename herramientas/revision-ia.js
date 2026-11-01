@@ -159,6 +159,7 @@ Convenciones del JSON:
 - letra: la sílaba escrita bajo la nota, y silaba: single (palabra entera), begin (primera sílaba, lleva guion detrás), middle, end. Si el escáner ya traía letra en la nota equivalente, cópiala tal cual salvo error evidente. Los silencios llevan letra "".
 - origen: el índice (el número que precede a cada figura en la lista del escáner, dentro de esa misma voz) de la figura leída que corresponde a esta nota, para conservar sus detalles (acentos, calderones, ligaduras de expresión). null si es una nota que el escáner no tenía. No repitas un origen.
 - indicacion: si en la imagen el compás lleva otra indicación de compás distinta de la que se dice (por ejemplo un 3/4 que el escáner no leyó), escríbela como "3/4"; si no, "".
+- incompleto: true solo si el compás está incompleto a propósito en la página: una anacrusa (al principio de la obra o tras una doble barra, antes de una estrofa) o el compás que la completa. Entonces la suma de figuras es menor que la indicación y está bien así. false en cualquier otro caso (un compás al que le faltan notas por un error del escáner no es incompleto a propósito).
 - explicacion: una a tres frases en castellano, para el director del coro, diciendo qué sobra o qué falta respecto a lo que leyó el escáner (por ejemplo "El escáner dejó el divisi de la contralto a medias: la segunda nota del acorde faltaba en los dos últimos tiempos"). Si lo que leyó el escáner es correcto y el problema es otro (la indicación de compás, un compás incompleto de anacrusa, un calderón), dilo.
 - confianza: alta si se lee con claridad y las figuras suman lo que marca el compás; media si has tenido que interpretar algo; baja si la imagen no se ve bien o no estás seguro.
 
@@ -201,7 +202,7 @@ function textoCompas(xml, numero, zona) {
 }
 
 const ESQUEMA = {
-  type: 'object', additionalProperties: false, required: ['voces', 'indicacion', 'explicacion', 'confianza'],
+  type: 'object', additionalProperties: false, required: ['voces', 'indicacion', 'incompleto', 'explicacion', 'confianza'],
   properties: {
     voces: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'voz', 'notas'], properties: {
       id: { type: 'string' }, voz: { type: 'integer' },
@@ -216,7 +217,7 @@ const ESQUEMA = {
           origen: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
         } } },
     } } },
-    indicacion: { type: 'string' }, explicacion: { type: 'string' }, confianza: { type: 'string', enum: ['alta', 'media', 'baja'] },
+    indicacion: { type: 'string' }, incompleto: { type: 'boolean' }, explicacion: { type: 'string' }, confianza: { type: 'string', enum: ['alta', 'media', 'baja'] },
   },
 };
 
@@ -311,6 +312,23 @@ function convertir(json, edicion) {
 // ---------- Revisar un compás de un borrador ----------
 // Devuelve la propuesta sin tocar nada: { numero, voces, explicacion, confianza, indicacion, recorte, uso, coste, modelo, duracion }
 const propuestas = new Map(); // id del borrador -> Map(numero -> propuesta), para volver a enseñarlas sin pagar otra vez
+// Las propuestas se guardan además en borradores/<id>/propuestas-ia.json: si el gestor se cierra (se apaga solo al
+// cerrar la pestaña) no se pierde lo que ya se ha pagado
+const dirs = new Map(); // id del borrador -> carpeta
+const archivoPropuestas = dir => path.join(dir, 'propuestas-ia.json');
+function cargar(id, dir) {
+  if (dir) dirs.set(id, dir);
+  if (!propuestas.has(id)) {
+    const m = new Map(), d = dirs.get(id);
+    if (d) { try { for (const p of JSON.parse(fs.readFileSync(archivoPropuestas(d), 'utf8'))) m.set(+p.numero, p); } catch {} }
+    propuestas.set(id, m);
+  }
+  return propuestas.get(id);
+}
+function guardar(id) {
+  const d = dirs.get(id), m = propuestas.get(id); if (!d || !m) return;
+  try { if (m.size) fs.writeFileSync(archivoPropuestas(d), JSON.stringify([...m.values()])); else fs.rmSync(archivoPropuestas(d), { force: true }); } catch {}
+}
 async function revisar(dirBorrador, numero) {
   numero = +numero;
   const inicio = Date.now();
@@ -330,36 +348,40 @@ async function revisar(dirBorrador, numero) {
   const propuesta = {
     numero, titulo: b.entrada.titulo, voces, avisos,
     explicacion: String(r.json.explicacion || ''), confianza: ['alta', 'media', 'baja'].includes(r.json.confianza) ? r.json.confianza : 'baja', indicacion: /^\d+\/\d+$/.test(r.json.indicacion || '') ? r.json.indicacion : '',
-    cuadra: voces.every(v => v.cuadra), cambia: voces.some(v => !v.igual && !v.sinPropuesta),
+    cuadra: voces.every(v => v.cuadra), cambia: voces.some(v => !v.igual && !v.sinPropuesta), incompleto: !!r.json.incompleto,
     recorte: { imagen: 'data:image/png;base64,' + recorte.png.toString('base64'), ancho: recorte.ancho, alto: recorte.alto, marco: recorte.marco },
     uso: { entrada: r.uso.input_tokens || 0, salida: r.uso.output_tokens || 0, cacheLeida: r.uso.cache_read_input_tokens || 0, cacheEscrita: r.uso.cache_creation_input_tokens || 0 },
     coste: costeDe(r.uso, r.modelo), modelo: r.modelo, duracion: Date.now() - inicio, hora: new Date().toISOString(), aplicada: false,
   };
-  if (!propuestas.has(b.id)) propuestas.set(b.id, new Map());
-  propuestas.get(b.id).set(numero, propuesta);
+  cargar(b.id, dirBorrador).set(numero, propuesta);
+  guardar(b.id);
   return propuesta;
 }
-function propuestaGuardada(id, numero) { const m = propuestas.get(id); return m ? m.get(+numero) || null : null; }
+function propuestaGuardada(id, numero, dir) { return cargar(id, dir).get(+numero) || null; }
 // Propuestas que hay en memoria de un borrador, sin la imagen (para la lista)
-function resumenPropuestas(id) {
-  const m = propuestas.get(id); if (!m) return {};
-  return Object.fromEntries([...m.values()].map(p => [p.numero, { numero: p.numero, confianza: p.confianza, cuadra: p.cuadra, cambia: p.cambia, explicacion: p.explicacion, coste: p.coste, aplicada: p.aplicada, indicacion: p.indicacion }]));
+function resumenPropuestas(id, dir) {
+  const m = cargar(id, dir);
+  return Object.fromEntries([...m.values()].map(p => [p.numero, { numero: p.numero, confianza: p.confianza, cuadra: p.cuadra, incompleto: !!p.incompleto, cambia: p.cambia, explicacion: p.explicacion, coste: p.coste, aplicada: p.aplicada, indicacion: p.indicacion }]));
 }
-function olvidar(id, numero) { const m = propuestas.get(id); if (!m) return; if (numero === undefined) propuestas.delete(id); else m.delete(+numero); }
+function olvidar(id, numero, dir) { const m = cargar(id, dir); if (numero === undefined) m.clear(); else m.delete(+numero); guardar(id); }
 
 // ---------- Aplicar una propuesta (escribe en el XML lo que cuadra; el gestor guarda el archivo y el registro) ----------
-function aplicar(xml, numero, voces, { soloCuadran = true } = {}) {
+// incompleto: la propuesta dice que el compás es una anacrusa (o el que la completa): vale aunque sume menos, y el
+// compás queda marcado como incompleto a propósito. soloCuadran=false: se aplica aunque no cuadre (lo pide el director).
+function aplicar(xml, numero, voces, { soloCuadran = true, incompleto = false } = {}) {
   const aplicadas = [], saltadas = [];
   for (const v of voces || []) {
     if (!Array.isArray(v.notas) || v.sinPropuesta) continue;
-    if (soloCuadran && !v.cuadra) { saltadas.push(v.nombre); continue; }
+    const vale = v.cuadra || (incompleto && v.suma <= v.esperado + 0.01);
+    if (soloCuadran && !vale) { saltadas.push(v.nombre); continue; }
     if (v.notas.length > 64) throw new ErrorIA('propuesta', 'La propuesta tiene demasiadas notas en ' + v.nombre);
     xml = C.escribirCompas(xml, v.id, numero, v.notas, v.voz);
     aplicadas.push(v.nombre);
   }
+  if (aplicadas.length && incompleto) xml = C.marcarIncompleto(xml, numero, true);
   return { xml, aplicadas, saltadas };
 }
-function marcarAplicada(id, numero) { const p = propuestaGuardada(id, numero); if (p) p.aplicada = true; }
+function marcarAplicada(id, numero) { const p = propuestaGuardada(id, numero); if (p) { p.aplicada = true; guardar(id); } }
 
 // ---------- Revisar todos los sospechosos de una obra, en segundo plano, con avisos ----------
 const lotes = new Map(); // id del borrador -> lote

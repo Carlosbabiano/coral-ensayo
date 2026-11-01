@@ -156,11 +156,13 @@ const errorIA = (res, e) => json(res, { error: e.message, tipo: e.tipo || 'error
 function aplicarPropuestaIA(id, numero, cuerpo) {
   const b = leerBorrador(id);
   if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
-  const guardada = revisionIA.propuestaGuardada(id, numero);
+  const guardada = revisionIA.propuestaGuardada(id, numero, dirDe(id));
   const voces = guardada ? guardada.voces : cuerpo && Array.isArray(cuerpo.voces) ? cuerpo.voces : null; // sin propuesta en memoria (el gestor se reinició) vale la copia de la página
   if (!voces) throw new Error('No hay ninguna propuesta de la IA para el compás ' + numero + ': pide primero «Revisar con IA»');
   const ruta = path.join(dirDe(id), 'partituras', b.entrada.archivo);
-  const { xml, aplicadas, saltadas } = revisionIA.aplicar(fs.readFileSync(ruta, 'utf8'), numero, voces);
+  // forzar: el director aplica la propuesta aunque no sume lo que marca el compás (el compás seguirá marcado como dudoso)
+  const incompleto = !!(guardada ? guardada.incompleto : cuerpo && cuerpo.incompleto);
+  const { xml, aplicadas, saltadas } = revisionIA.aplicar(fs.readFileSync(ruta, 'utf8'), numero, voces, { soloCuadran: !(cuerpo && cuerpo.forzar), incompleto });
   if (!aplicadas.length) throw new Error('No se ha aplicado nada: ninguna voz de la propuesta cuadra con el compás');
   fs.writeFileSync(ruta, xml);
   b.sospechosos = obra.sospechososDe(xml);
@@ -662,19 +664,19 @@ const servidor = http.createServer(async (req, res) => {
       try { return json(res, await revisionIA.revisar(dirDe(m[1]), m[2])); } catch (e) { return errorIA(res, e); }
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/(\d+)\/revisar$/)) && req.method === 'GET') {
-      return json(res, { propuesta: revisionIA.propuestaGuardada(m[1], m[2]) }); // null si no se ha pedido (o el gestor se reinició)
+      return json(res, { propuesta: revisionIA.propuestaGuardada(m[1], m[2], dirDe(m[1])) }); // null si no se ha pedido
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/(\d+)\/revisar\/aplicar$/)) && req.method === 'POST') {
       try { return json(res, aplicarPropuestaIA(m[1], m[2], JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'))); } catch (e) { return errorIA(res, e); }
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/(\d+)\/revisar\/descartar$/)) && req.method === 'POST') {
-      revisionIA.olvidar(m[1], m[2]); return json(res, { ok: true });
+      revisionIA.olvidar(m[1], m[2], dirDe(m[1])); return json(res, { ok: true });
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/revisar-todos$/)) && req.method === 'POST') {
       try { return json(res, revisarTodosConIA(m[1])); } catch (e) { return errorIA(res, e); }
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/revisar-todos$/)) && req.method === 'GET') {
-      return json(res, { lote: revisionIA.estadoLote(m[1]), propuestas: revisionIA.resumenPropuestas(m[1]) });
+      return json(res, { lote: revisionIA.estadoLote(m[1]), propuestas: revisionIA.resumenPropuestas(m[1], dirDe(m[1])) });
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/revisar-todos\/parar$/)) && req.method === 'POST') {
       return json(res, { ok: revisionIA.cancelarLote(m[1]) });

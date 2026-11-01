@@ -90,8 +90,8 @@
   }
   function pintarPropuesta(cont, b, p) {
     const n = p.numero;
-    const aplicables = p.voces.filter(v => v.cuadra && !v.igual && !v.sinPropuesta);
-    let html = `<div class="ia-caja" aria-live="polite"><div class="ia-cab"><strong>Propuesta de la IA para el compás ${n}</strong> ${chipConfianza(p.confianza)}${p.aplicada ? ' <span class="ia-chip bien">Aplicada</span>' : ''}<span class="ayuda">${esc(p.modelo)} · ${dinero(p.coste)} · ${Math.round((p.duracion || 0) / 1000)} s</span></div>`;
+    const aplicables = p.voces.filter(v => !v.igual && !v.sinPropuesta && (v.cuadra || p.incompleto));
+    let html = `<div class="ia-caja" aria-live="polite"><div class="ia-cab"><strong>Propuesta de la IA para el compás ${n}</strong> ${chipConfianza(p.confianza)}${p.aplicada ? ' <span class="ia-chip bien">Aplicada</span>' : ''}${p.incompleto ? ' <span class="ia-chip aviso" title="Una anacrusa, o el compás que la completa: en la página está incompleto a propósito y al aplicarlo queda marcado así">Incompleto a propósito</span>' : ''}<span class="ayuda">${esc(p.modelo)} · ${dinero(p.coste)} · ${Math.round((p.duracion || 0) / 1000)} s</span></div>`;
     html += `<p class="ia-explica">${esc(p.explicacion)}</p>`;
     if (p.indicacion) { const [bt1, bt2] = p.indicacion.split('/'); html += `<div class="aviso">La IA ve en la página un compás de <strong>${esc(p.indicacion)}</strong>, distinto del que dice el XML. <button class="mini" id="iaCompas34" data-beats="${esc(bt1)}" data-bt="${esc(bt2)}">Poner ${esc(p.indicacion)} en este compás</button> <span class="ayuda">(el siguiente vuelve al compás de antes)</span></div>`; }
     for (const a of p.avisos || []) html += `<div class="aviso">${esc(a)}</div>`;
@@ -108,12 +108,13 @@
       const sinNada = !aplicables.length;
       const parcial = aplicables.length && aplicables.length < p.voces.filter(v => !v.igual && !v.sinPropuesta).length;
       html += `<div class="acciones"><button class="principal" id="iaAplicar" ${sinNada ? 'disabled' : ''} title="${sinNada ? 'No hay nada que aplicar' : 'Escribe en el XML las figuras propuestas'}">${parcial ? 'Aplicar las voces que cuadran' : 'Aplicar'}</button><button id="iaDescartar">Descartar</button>
-        <span class="ayuda">${sinNada ? (p.cambia ? 'La propuesta no cuadra, así que no se aplica: corrige el compás con «Editar» mirando el recorte.' : 'La IA no propone cambios en las figuras.') : parcial ? 'Las voces que no cuadran se dejan como están.' : 'Lo aplicado queda anotado en el registro del borrador.'}</span>
-        <span class="hueco"></span><button class="mini" id="iaOtraVez">Volver a preguntar</button></div>`;
+        <span class="ayuda">${sinNada ? (p.cambia ? 'La propuesta no suma lo que marca el compás (a menudo porque el escáner partió o juntó compases). Puedes aplicarla igualmente, y el compás seguirá marcado como dudoso hasta que lo partas o lo unas, o corregirlo con «Editar» mirando el recorte.' : 'La IA no propone cambios en las figuras.') : parcial ? 'Las voces que no cuadran se dejan como están.' : 'Lo aplicado queda anotado en el registro del borrador.'}</span>
+        ${sinNada && p.cambia ? '<button class="mini" id="iaAplicarForzar">Aplicar de todos modos</button>' : ''}<span class="hueco"></span><button class="mini" id="iaOtraVez">Volver a preguntar</button></div>`;
     }
     html += `</div>`;
     cont.innerHTML = html;
     if ($('iaAplicar')) $('iaAplicar').onclick = () => aplicar(cont, b, n);
+    if ($('iaAplicarForzar')) $('iaAplicarForzar').onclick = () => { if (confirm('La propuesta no suma lo que marca el compás. ¿Aplicarla igualmente? El compás seguirá marcado como dudoso.')) aplicar(cont, b, n, { forzar: true }); };
     if ($('iaDescartar')) $('iaDescartar').onclick = async () => { try { await api(`/api/borradores/${b.id}/compas/${n}/revisar/descartar`, { method: 'POST' }); } catch {} pintarBoton(cont, b, n); };
     if ($('iaOtraVez')) $('iaOtraVez').onclick = () => pedir(cont, b, n);
     if ($('iaCompas34')) $('iaCompas34').onclick = async () => {
@@ -121,10 +122,10 @@
       try { await api(`/api/borradores/${b.id}/compas/${n}/tiempo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ beats: +bt.dataset.beats, bt: +bt.dataset.bt, restaurar: true }) }); await seleccionar(b.id); } catch (e) { alert(e.message); }
     };
   }
-  async function aplicar(cont, b, n) {
+  async function aplicar(cont, b, n, opciones = {}) {
     const bt = $('iaAplicar'); if (bt) { bt.disabled = true; bt.textContent = 'Aplicando…'; }
     try {
-      const r = await api(`/api/borradores/${b.id}/compas/${n}/revisar/aplicar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      const r = await api(`/api/borradores/${b.id}/compas/${n}/revisar/aplicar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(opciones) });
       borradorActual.sospechosos = r.borrador.sospechosos; pintarChips();
       await seleccionar(b.id); // vuelve a dibujar el compás con las figuras nuevas y recarga la previsualización
     } catch (e) {
@@ -186,7 +187,7 @@
     const numeros = l.numeros;
     const filas = numeros.map(n => ({ n, r: l.resultados[n], p: propuestas[n] }));
     const ok = filas.filter(f => f.p), errores = filas.filter(f => f.r && !f.r.ok);
-    const aplicables = ok.filter(f => f.p.cuadra && f.p.cambia && !f.p.aplicada), aplicadas = ok.filter(f => f.p.aplicada), noCuadran = ok.filter(f => !f.p.cuadra), sinCambios = ok.filter(f => f.p.cuadra && !f.p.cambia && !f.p.aplicada);
+    const aplicables = ok.filter(f => (f.p.cuadra || f.p.incompleto) && f.p.cambia && !f.p.aplicada), aplicadas = ok.filter(f => f.p.aplicada), noCuadran = ok.filter(f => !f.p.cuadra && !f.p.incompleto && f.p.cambia && !f.p.aplicada), sinCambios = ok.filter(f => f.p.cuadra && !f.p.cambia && !f.p.aplicada);
     const quedan = b.sospechosos.length;
     let html = `<div class="ia-caja"><div class="ia-cab"><strong>Revisión con IA</strong><span>${plural(numeros.length, 'un compás revisado', '# compases revisados')} · ${dinero(l.coste)}${l.estado === 'cancelado' ? ' · parada antes de terminar' : ''}</span></div>`;
     const partes = [];
@@ -203,16 +204,19 @@
       if (f.r && !f.r.ok) { estado = '<span class="ia-chip mal">Error</span>'; texto = esc(f.r.error); }
       else if (!f.p) { estado = '<span class="ayuda">sin revisar</span>'; }
       else { estado = chipConfianza(f.p.confianza) + ' ' + (f.p.aplicada ? '<span class="ia-chip bien">Aplicada</span>' : f.p.cuadra ? (f.p.cambia ? '<span class="ia-chip bien">Cuadra</span>' : '<span class="ia-chip aviso">Sin cambios</span>') : '<span class="ia-chip mal">No cuadra</span>'); texto = esc(f.p.explicacion) + (f.p.indicacion ? ` <strong>(ve un compás de ${esc(f.p.indicacion)})</strong>` : ''); }
-      const boton = f.p && f.p.cuadra && f.p.cambia && !f.p.aplicada ? `<button class="mini" data-ia-aplicar="${f.n}">Aplicar</button>` : '';
+      const boton = f.p && f.p.cambia && !f.p.aplicada ? ((f.p.cuadra || f.p.incompleto) ? `<button class="mini" data-ia-aplicar="${f.n}">Aplicar</button>` : `<button class="mini" data-ia-forzar="${f.n}" title="No suma lo que marca el compás: se aplica y el compás sigue marcado como dudoso">Aplicar igualmente</button>`) : '';
       html += `<tr><td><a data-ia-ver="${f.n}" href="#" aria-label="Ver el compás ${f.n}">${f.n}</a></td><td style="white-space:nowrap">${estado}</td><td>${texto}</td><td>${boton}</td></tr>`;
     }
     html += `</tbody></table><div class="acciones">`;
     if (aplicables.length) html += `<button class="principal" id="iaAplicarTodas">Aplicar las ${aplicables.length === 1 ? 'que cuadra' : aplicables.length + ' que cuadran'}</button>`;
+    if (noCuadran.length) html += `<button class="mini" id="iaAplicarForzadas">Aplicar también ${noCuadran.length === 1 ? 'la que no cuadra' : 'las ' + noCuadran.length + ' que no cuadran'}</button>`;
     if (b.sospechosos.length) html += `<button class="mini" id="iaOtraVuelta">Volver a revisar los que no cuadran</button>`;
     html += `<span class="hueco"></span><button class="mini" id="iaCerrarResumen">Quitar este resumen</button></div></div>`;
     cont.innerHTML = html;
     for (const a of cont.querySelectorAll('a[data-ia-ver]')) a.onclick = e => { e.preventDefault(); revisarCompas(+a.dataset.iaVer); };
     for (const bt of cont.querySelectorAll('button[data-ia-aplicar]')) bt.onclick = () => aplicarVarias(b, [+bt.dataset.iaAplicar]);
+    for (const bt of cont.querySelectorAll('button[data-ia-forzar]')) bt.onclick = () => { if (confirm('Esa propuesta no suma lo que marca el compás. ¿Aplicarla igualmente? El compás seguirá marcado como dudoso.')) aplicarVarias(b, [+bt.dataset.iaForzar], true); };
+    if ($('iaAplicarForzadas')) $('iaAplicarForzadas').onclick = () => { if (confirm(`Esas ${noCuadran.length} propuestas no suman lo que marca el compás (a menudo son compases que el escáner partió o juntó). ¿Aplicarlas igualmente? Esos compases seguirán marcados como dudosos hasta que los partas o los unas.`)) aplicarVarias(b, noCuadran.map(f => f.n), true); };
     if ($('iaAplicarTodas')) $('iaAplicarTodas').onclick = () => { if (confirm(`¿Aplicar las ${aplicables.length} propuestas que cuadran? Cada una queda anotada en el registro y puedes retocarlas después con «Editar».`)) aplicarVarias(b, aplicables.map(f => f.n)); };
     if ($('iaOtraVuelta')) $('iaOtraVuelta').onclick = async () => {
       $('iaOtraVuelta').disabled = true;
@@ -220,10 +224,10 @@
     };
     if ($('iaCerrarResumen')) $('iaCerrarResumen').onclick = async () => { try { await api(`/api/borradores/${b.id}/revisar-todos/quitar`, { method: 'POST' }); } catch (e) { return alert(e.message); } pintarBotonLote(cont, b); };
   }
-  async function aplicarVarias(b, numeros) {
+  async function aplicarVarias(b, numeros, forzar = false) {
     for (const bt of document.querySelectorAll('#iaLote button')) bt.disabled = true;
     const fallos = [];
-    for (const n of numeros) { try { await api(`/api/borradores/${b.id}/compas/${n}/revisar/aplicar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); } catch (e) { fallos.push(`compás ${n}: ${e.message}`); } }
+    for (const n of numeros) { try { await api(`/api/borradores/${b.id}/compas/${n}/revisar/aplicar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ forzar }) }); } catch (e) { fallos.push(`compás ${n}: ${e.message}`); } }
     if (fallos.length) alert('No se ha podido aplicar en:\n' + fallos.join('\n'));
     await seleccionar(b.id);
   }
