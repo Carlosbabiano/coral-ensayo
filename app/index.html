@@ -1393,7 +1393,9 @@ async function mostrarVersion() {
 }
 mostrarVersion();
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js").then(reg => { try { reg.update(); } catch {} }).catch(e => console.warn("Sin modo offline:", e));
+  // updateViaCache none: sw.js se comprueba siempre en el servidor (GitHub Pages lo sirve con 10 minutos de caché), así
+  // la versión nueva llega al abrir la app y no al cabo de un rato
+  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => { try { reg.update(); } catch {} }).catch(e => console.warn("Sin modo offline:", e));
   navigator.serviceWorker.addEventListener("controllerchange", () => setTimeout(mostrarVersion, 1500));
   // Cuando se instala una versión nueva de la app, recargar una vez para usarla
   let recargado = false; const habiaControlador = !!navigator.serviceWorker.controller;
