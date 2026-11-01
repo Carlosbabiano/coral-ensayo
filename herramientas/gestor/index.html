@@ -356,7 +356,7 @@ function pintarPanel() {
       <label style="align-self:start">Voces</label><table class="voces">`;
     for (const p of b.partes) {
       const opciones = [...new Set([...VOCES, p.nombre])].map(v => `<option ${v === p.nombre ? 'selected' : ''}>${esc(v)}</option>`).join('');
-      html += `<tr><td><select data-id="${esc(p.id)}" class="ajVoz">${opciones}</select></td><td class="d">${p.tesitura ? `tesitura media ${esc(p.tesitura)}, clave ${esc(p.clave)}` : ''}${p.nombreActual && p.nombreActual !== p.nombre ? `, en el archivo: "${esc(p.nombreActual)}"` : ''}</td><td><label class="ayuda"><input type="checkbox" class="ajQuitar" data-id="${esc(p.id)}"> quitar</label></td></tr>`;
+      html += `<tr><td><select data-id="${esc(p.id)}" class="ajVoz">${opciones}</select></td><td class="d">${p.tesitura ? `tesitura media ${esc(p.tesitura)}, clave ${esc(p.clave)}` : ''}${p.nombreActual && p.nombreActual !== p.nombre ? `, en el archivo: "${esc(p.nombreActual)}"` : ''}</td><td><label class="ayuda"><input type="checkbox" class="ajQuitar" data-id="${esc(p.id)}"> quitar</label>${(p.vocesExtra || []).map(v => `<br><label class="ayuda" title="Una segunda voz dentro de este pentagrama. Si en la partitura no existe (Audiveris las inventa a veces), quítala"><input type="checkbox" class="ajQuitarVoz" data-id="${esc(p.id)}" data-voz="${v.voz}"> quitar la voz ${v.voz} (${v.notas} nota${v.notas === 1 ? '' : 's'}, ${v.silencios} silencio${v.silencios === 1 ? '' : 's'} en ${v.compases} compas${v.compases === 1 ? '' : 'es'})</label>`).join('')}</td></tr>`;
     }
     html += `</table><label></label><span><button id="aplicar">Aplicar cambios</button> <span class="ayuda">La previsualización se recarga con los cambios.</span></span></div></div>`;
 
@@ -862,10 +862,12 @@ async function aplicar() {
   const b = borradorActual;
   const nombres = {}; for (const s of document.querySelectorAll('.ajVoz')) nombres[s.dataset.id] = s.value;
   const quitar = [...document.querySelectorAll('.ajQuitar:checked')].map(c => c.dataset.id);
+  const quitarVoces = [...document.querySelectorAll('.ajQuitarVoz:checked')].map(c => ({ id: c.dataset.id, voz: +c.dataset.voz }));
   if (quitar.length && !confirm(`¿Quitar ${quitar.length} voz/voces de la obra? (Solo afecta a la copia de la app, no a tus archivos.)`)) return;
+  if (quitarVoces.length && !confirm(`¿Quitar ${quitarVoces.length === 1 ? 'esa voz interna' : 'esas ' + quitarVoces.length + ' voces internas'}? Se borran sus notas y silencios de todos los compases (solo en la copia de la app).`)) return;
   const tempo = +$('ajTempo').value || null;
   try {
-    await api(`/api/borradores/${b.id}/ajustes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo: $('ajTitulo').value, nombres, quitar, tempo, ensayo: $('ajEnsayo').checked }) });
+    await api(`/api/borradores/${b.id}/ajustes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo: $('ajTitulo').value, nombres, quitar, quitarVoces, tempo, ensayo: $('ajEnsayo').checked }) });
     await seleccionar(b.id);
   } catch (e) { alert(e.message); }
 }

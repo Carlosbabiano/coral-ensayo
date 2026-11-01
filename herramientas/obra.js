@@ -600,6 +600,16 @@ function limpiarXmlAudiveris(xml) {
     } else avisos.push('Audiveris no ha leído ninguna indicación de compás y no se ha podido deducir: la app supondrá 4/4.');
   }
   xml = bajarTenorOctavado(xml, avisos);
+  // Audiveris inventa a veces una segunda voz hecha solo de silencios: fuera. Si lleva alguna nota suelta se deja,
+  // con aviso, para que el director decida (en «Voces» del gestor se puede quitar)
+  const vacias = [], casiVacias = [];
+  for (const v of vocesDe(xml)) {
+    if (v.voz < 2) continue;
+    if (!v.notas) { xml = quitarVoz(xml, v.id, v.voz); vacias.push(`${v.nombre || v.id} (voz ${v.voz}, ${v.silencios} silencios)`); }
+    else if (v.notas <= 3) casiVacias.push(`${v.nombre || v.id} (voz ${v.voz}: ${v.notas} nota${v.notas === 1 ? '' : 's'} y ${v.silencios} silencios en ${v.compases} compases)`);
+  }
+  if (vacias.length) avisos.push(`Audiveris había puesto una segunda voz hecha solo de silencios en ${vacias.join(', ')}: se ha quitado.`);
+  if (casiVacias.length) avisos.push(`Audiveris ha puesto una segunda voz casi vacía en ${casiVacias.join(', ')}. Si en la partitura no existe, quítala en «Voces».`);
   return { xml, avisos };
 }
 
@@ -641,7 +651,7 @@ function limpiarNombreArchivo(titulo) {
   return titulo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'Obra';
 }
 
-const { leerPartes, escapar, recorrerCompases, sumaCompas, sospechososDe, detalleCompas, notasCompas, escribirCompas, ponerTiempo, fijarCompas, FIGURA_NEGRAS } = require('../app/compases.js');
+const { leerPartes, escapar, recorrerCompases, sumaCompas, sospechososDe, detalleCompas, notasCompas, escribirCompas, ponerTiempo, fijarCompas, FIGURA_NEGRAS, vocesDe, quitarVoz } = require('../app/compases.js');
 
 function tituloDe(xml) { return (xml.match(/<work-title>([^<]*)/) || [, ''])[1].trim(); }
 
@@ -654,7 +664,11 @@ function tempoDe(xml) {
 
 
 // Cambia título, nombres de voces, quita voces y fija el tempo. Devuelve el XML nuevo.
-function editarObra(xml, { titulo, nombres = {}, quitar = [], tempo } = {}) {
+// Voces internas (voz 2, 3…) de una parte, para la tabla «Voces» del gestor: [{ voz, notas, silencios, compases }]
+function vocesExtraDe(xml, partId) { return vocesDe(xml).filter(v => v.id === partId && v.voz >= 2).map(({ voz, notas, silencios, compases }) => ({ voz, notas, silencios, compases })); }
+// quitarVoces: [{ id, voz }] voces internas (voz 2, 3…) que se quitan de una parte sin quitar la parte
+function editarObra(xml, { titulo, nombres = {}, quitar = [], quitarVoces = [], tempo } = {}) {
+  for (const { id, voz } of quitarVoces) if (!quitar.includes(id) && +voz >= 2) xml = quitarVoz(xml, id, +voz);
   if (titulo && titulo.trim()) {
     const t = escapar(titulo.trim());
     xml = /<work-title>/.test(xml) ? xml.replace(/<work-title>[^<]*<\/work-title>/, `<work-title>${t}</work-title>`)
@@ -766,7 +780,7 @@ function prepararObra({ xml: rutaXml = null, pdf: rutaPdf = null, dirSalida, pos
     const m = Math.round(p.media);
     const tesitura = NOTAS[m % 12] + (Math.floor(m / 12) - 1);
     log(`  ${nombres.get(p.id).padEnd(10)} (antes: ${p.nombreActual || 'sin nombre'} - tesitura media ${tesitura}, clave ${p.clave || '?'})`);
-    return { id: p.id, nombre: nombres.get(p.id), nombreActual: p.nombreActual, tesitura, clave: p.clave || '?' };
+    return { id: p.id, nombre: nombres.get(p.id), nombreActual: p.nombreActual, tesitura, clave: p.clave || '?', vocesExtra: vocesExtraDe(xml, p.id) };
   });
   // Mismo criterio que al revisar después: cualquier voz cuyas figuras no sumen el compás (también si está vacía)
   const sospechosos = sospechososDe(xml);
@@ -902,7 +916,7 @@ function guardarPdf(rutaPdf, base) {
 
 module.exports = {
   RAIZ, DIR_APP, DIR_PARTITURAS, DIR_PDF, LISTA, NOMBRES_VOCES,
-  clave, pdfPara, prepararObra, editarObra, huecosASilencios, leerPartes, tituloDe, tempoDe, limpiarNombreArchivo,
+  clave, pdfPara, prepararObra, editarObra, huecosASilencios, leerPartes, tituloDe, tempoDe, limpiarNombreArchivo, vocesExtraDe,
   hayAudiveris, comprobarAudiveris, leerConAudiveris, limpiarXmlAudiveris, nombreCanonico,
   sospechososDe, detalleCompas, fijarCompas, notasCompas, escribirCompas, FIGURA_NEGRAS, repararCompases, recomponerPartesCorridas, compasesDe, posicionesCompletas,
   leerLista, archivosDe, incorporarEnApp, retirarDeApp, marcarEnsayo, subirVersionCache, versionCache, guardarEnGit, guardarPdf,

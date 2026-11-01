@@ -95,11 +95,11 @@ function ajustar(id, ajustes) {
   if (!b || b.estado !== 'listo') throw new Error('El borrador no está listo');
   const ruta = path.join(dirDe(id), 'partituras', b.entrada.archivo);
   let xml = fs.readFileSync(ruta, 'utf8');
-  xml = obra.editarObra(xml, { titulo: ajustes.titulo, nombres: ajustes.nombres || {}, quitar: ajustes.quitar || [], tempo: ajustes.tempo });
+  xml = obra.editarObra(xml, { titulo: ajustes.titulo, nombres: ajustes.nombres || {}, quitar: ajustes.quitar || [], quitarVoces: ajustes.quitarVoces || [], tempo: ajustes.tempo });
   fs.writeFileSync(ruta, xml);
   if (ajustes.titulo && ajustes.titulo.trim()) b.entrada.titulo = ajustes.titulo.trim();
   if (ajustes.ensayo !== undefined) b.entrada.ensayo = !!ajustes.ensayo;
-  b.partes = b.partes.filter(p => !(ajustes.quitar || []).includes(p.id)).map(p => ({ ...p, nombre: (ajustes.nombres || {})[p.id] || p.nombre }));
+  b.partes = b.partes.filter(p => !(ajustes.quitar || []).includes(p.id)).map(p => ({ ...p, nombre: (ajustes.nombres || {})[p.id] || p.nombre, vocesExtra: obra.vocesExtraDe(xml, p.id) }));
   b.tempo = obra.tempoDe(xml);
   b.sospechosos = obra.sospechososDe(xml);
   b.log.push('Ajustes aplicados: ' + JSON.stringify(ajustes));
