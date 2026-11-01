@@ -1,5 +1,5 @@
 // Service worker: guarda la app, las partituras y los sonidos para funcionar sin conexión.
-const VERSION = 'coral-v122';
+const VERSION = 'coral-v123';
 const BASE = ['./', './index.html', './compases.js', './manifest.json', './icono-192.png', './icono-512.png', './icono-512-maskable.png', './apple-touch-icon.png', './pantalla.mp4', './partituras/lista.json'];
 
 // Instalación: solo lo imprescindible (si un archivo fallara, la versión nueva no se instalaría nunca)
@@ -27,7 +27,8 @@ async function precargarObras() {
     const archivos = lista.flatMap(o => [o.archivo, o.posiciones, ...(o.paginas || []), ...(o.canto || []).flatMap(c => [c.archivo, c.consonantes])].filter(Boolean).map(a => './partituras/' + a));
     for (const f of archivos) {
       if (await cache.match(f)) continue;
-      try { await cache.add(f); } catch (err) { console.warn('No se pudo precargar', f); }
+      // no-cache: que el navegador no reutilice de su caché HTTP una página o partitura vieja con el mismo nombre
+      try { await cache.add(new Request(f, { cache: 'no-cache' })); } catch (err) { console.warn('No se pudo precargar', f); }
     }
   } catch (err) { console.warn('No se pudieron precargar las obras', err); }
 }
@@ -48,10 +49,12 @@ self.addEventListener('fetch', e => {
         return r;
       } catch { return (await cache.match(e.request, { ignoreSearch: true })) || Response.error(); }
     }
-    // Partituras, imágenes, librerías y sonidos: primero caché (rápido y fiable), si no está, red y se guarda
+    // Partituras, imágenes, librerías y sonidos: primero caché (rápido y fiable), si no está, red y se guarda.
+    // La primera vez de cada versión se pide comprobando con el servidor (no-cache): al actualizar una obra, sus
+    // páginas y su partitura se llaman igual que antes, y el navegador las tenía guardadas hasta 10 minutos
     const hit = await cache.match(e.request, { ignoreSearch: true });
     if (hit) return hit;
-    const r = await fetch(e.request);
+    const r = await fetch(propio ? new Request(e.request, { cache: 'no-cache' }) : e.request);
     if (r.ok || r.type === 'opaque') cache.put(e.request, r.clone());
     return r;
   })());
