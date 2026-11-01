@@ -45,6 +45,10 @@
     ]
   },
   {
+    "titulo": "Aveverumcorpus-Mozart",
+    "archivo": "Aveverumcorpus_Mozart.xml"
+  },
+  {
     "titulo": "Brindis",
     "archivo": "Brindis.xml",
     "posiciones": "Brindis.pos.json",
