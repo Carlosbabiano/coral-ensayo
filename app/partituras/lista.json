@@ -105,6 +105,14 @@
     ]
   },
   {
+    "titulo": "Eccomi",
+    "archivo": "Eccomi.xml",
+    "posiciones": "Eccomi.pos.json",
+    "paginas": [
+      "Eccomi-p1.png"
+    ]
+  },
+  {
     "titulo": "Gloria in excelsis (Vivaldi)",
     "archivo": "Gloria_in_excelsis_Vivaldi.xml",
     "posiciones": "Gloria_in_excelsis_Vivaldi.pos.json",
