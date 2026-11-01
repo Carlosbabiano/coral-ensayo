@@ -23,11 +23,16 @@ if (!remoto) {
   sh('git push origin main');
 }
 
-// La rama gh-pages contiene solo la carpeta app/ (es lo que se publica)
+// La rama gh-pages contiene solo la carpeta app/ (es lo que se publica). Se crea un commit nuevo con ese árbol tal
+// cual, encima del último publicado: `git subtree split` recorría toda la historia y tardaba más a cada obra
+// (más de un minuto con 170 commits)
 console.log('Publicando la carpeta app/ en GitHub Pages...');
-try { sh('git branch -D gh-pages', true); } catch {}
-sh('git subtree split --prefix app -b gh-pages', true);
-sh('git push -f origin gh-pages:gh-pages', true);
+const arbol = out('git rev-parse HEAD:app');
+let padre = '';
+try { padre = out('git rev-parse origin/gh-pages'); } catch { try { padre = out('git rev-parse gh-pages'); } catch {} }
+const commitPages = out(`git commit-tree ${arbol}${padre ? ' -p ' + padre : ''} -m "Publicar la app (${out('git rev-parse --short HEAD')})"`);
+sh(`git push -f origin ${commitPages}:refs/heads/gh-pages`, true);
+try { sh(`git branch -f gh-pages ${commitPages}`, true); } catch {}
 
 const repo = remoto.replace(/\.git$/, '').split('/').slice(-2).join('/');
 try {

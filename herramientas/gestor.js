@@ -259,12 +259,40 @@ function quitarCanto(id) {
 // ---------- Publicar ----------
 // Cada publicación lleva su número. Su registro se guarda para reenviarlo a la ventana de progreso que se conecte
 // (o se vuelva a conectar) mientras dura; la ventana pide el número de SU publicación, para no recibir el de la anterior
-let publicando = false, publicacion = { id: 0, registro: [], fin: null };
+let publicando = false, publicacion = { id: 0, registro: [], fin: null, pasos: [], paso: -1, inicioPaso: 0, tiempos: {} };
 const registrar = linea => { publicacion.registro.push(linea); emitir('publicacion', { tipo: 'log', id: publicacion.id, linea }); };
-function empezarPublicacion() {
+// Pasos de una publicación, para la barra de progreso de la ventana. Lo que tardó cada paso la última vez se guarda
+// en herramientas/cache/publicacion.json y sirve para estimar lo que queda (si no hay dato, una duración típica).
+const PASOS = { preparar: 'Preparando los archivos de la app', git: 'Guardando en el repositorio', subir: 'Subiendo los cambios a GitHub', paginas: 'Publicando la app en GitHub Pages' };
+const DURACION_TIPICA = { preparar: 5, git: 10, subir: 30, paginas: 20 };
+const ARCHIVO_TIEMPOS = path.join(__dirname, 'cache', 'publicacion.json');
+let tiemposPublicacion = {};
+try { tiemposPublicacion = JSON.parse(fs.readFileSync(ARCHIVO_TIEMPOS, 'utf8')); } catch {}
+function empezarPublicacion(claves = ['preparar', 'git', 'subir', 'paginas']) {
   if (publicando) throw new Error('Ya hay una publicación en marcha');
-  publicando = true; publicacion = { id: publicacion.id + 1, registro: [], fin: null };
+  publicando = true;
+  const pasos = claves.map(clave => ({ clave, nombre: PASOS[clave], estimado: tiemposPublicacion[clave] || DURACION_TIPICA[clave] }));
+  publicacion = { id: publicacion.id + 1, registro: [], fin: null, pasos, paso: -1, inicioPaso: 0, tiempos: {} };
   return publicacion.id;
+}
+// Lo que se manda a la ventana para la barra: el paso en curso y cuánto lleva
+const eventoPaso = () => ({ tipo: 'paso', id: publicacion.id, paso: publicacion.paso, pasos: publicacion.pasos, transcurrido: publicacion.inicioPaso ? (Date.now() - publicacion.inicioPaso) / 1000 : 0 });
+function cerrarPaso() {
+  if (publicacion.paso < 0 || !publicacion.inicioPaso) return;
+  publicacion.tiempos[publicacion.pasos[publicacion.paso].clave] = Math.max(1, Math.round((Date.now() - publicacion.inicioPaso) / 1000));
+}
+function paso(clave) {
+  const i = publicacion.pasos.findIndex(p => p.clave === clave);
+  if (i < 0 || i === publicacion.paso) return;
+  cerrarPaso();
+  publicacion.paso = i; publicacion.inicioPaso = Date.now();
+  emitir('publicacion', eventoPaso());
+}
+// Al acabar bien se recuerdan los tiempos de esta vez para estimar la siguiente
+function guardarTiempos() {
+  cerrarPaso();
+  tiemposPublicacion = { ...tiemposPublicacion, ...publicacion.tiempos };
+  try { fs.mkdirSync(path.dirname(ARCHIVO_TIEMPOS), { recursive: true }); fs.writeFileSync(ARCHIVO_TIEMPOS, JSON.stringify(tiemposPublicacion)); } catch {}
 }
 // Las tres funciones que publican devuelven el número de la publicación, para que la ventana de progreso la siga
 function publicarBorrador(id) {
@@ -273,12 +301,14 @@ function publicarBorrador(id) {
   const idPub = empezarPublicacion();
   const dirSalida = path.join(dirDe(id), 'partituras');
   try {
+    paso('preparar');
     const existia = obra.incorporarEnApp(b.entrada, dirSalida);
     const base = b.entrada.archivo.replace(/\.xml$/, '');
     const pdfEntrada = b.pdf ? path.join(dirDe(id), 'entrada', b.pdf) : null;
     if (pdfEntrada && fs.existsSync(pdfEntrada)) obra.guardarPdf(pdfEntrada, base);
     const version = obra.subirVersionCache();
     registrar(`${existia ? 'Actualizada' : 'Añadida'} "${b.entrada.titulo}" en la app (caché ${version}).`);
+    paso('git');
     if (obra.guardarEnGit((existia ? 'Actualizar obra: ' : 'Añadir obra: ') + b.entrada.titulo)) registrar('Guardado en el repositorio.');
     else registrar('(No se ha guardado en git: no hay cambios o no hay repositorio.)');
   } catch (e) { publicando = false; throw e; }
@@ -308,9 +338,11 @@ function borradorDesdePublicada(archivo) {
 function retirarObra(archivo) {
   const idPub = empezarPublicacion();
   try {
+    paso('preparar');
     const o = obra.retirarDeApp(archivo);
     const version = obra.subirVersionCache();
     registrar(`Retirada "${o.titulo}" de la app (caché ${version}).`);
+    paso('git');
     if (obra.guardarEnGit('Retirar obra: ' + o.titulo)) registrar('Guardado en el repositorio.');
   } catch (e) { publicando = false; throw e; }
   subirAInternet();
@@ -331,7 +363,7 @@ function cambiosSinPublicar() {
 }
 // Publica en internet lo que haya pendiente
 function publicarPendiente() {
-  const idPub = empezarPublicacion();
+  const idPub = empezarPublicacion(['subir', 'paginas']);
   registrar('Publicando los cambios pendientes...');
   subirAInternet();
   return idPub;
@@ -339,12 +371,18 @@ function publicarPendiente() {
 // Sube con publicar.js sin esperar a su comprobación de internet (dos minutos): la publicación termina en cuanto
 // está subida y la comprobación la hace el gestor aparte, en segundo plano, sin bloquear la siguiente acción
 function subirAInternet(alAcabar = () => {}) {
-  const fin = ok => { publicando = false; publicacion.fin = { tipo: 'fin', id: publicacion.id, ok }; if (ok) alAcabar(); emitir('publicacion', publicacion.fin); if (ok && !process.env.GESTOR_SIN_INTERNET) comprobarEnInternet(); };
-  if (process.env.GESTOR_SIN_INTERNET) { registrar('(Modo de prueba: no se sube a internet.)'); return setTimeout(() => fin(true), 500); }
+  const fin = ok => { if (ok && !process.env.GESTOR_SIN_INTERNET) guardarTiempos(); publicando = false; publicacion.fin = { tipo: 'fin', id: publicacion.id, ok }; if (ok) alAcabar(); emitir('publicacion', publicacion.fin); if (ok && !process.env.GESTOR_SIN_INTERNET) comprobarEnInternet(); };
+  if (process.env.GESTOR_SIN_INTERNET) {
+    // Modo de prueba: los dos pasos de internet se simulan con una pequeña espera, para ver la barra
+    registrar('(Modo de prueba: no se sube a internet.)');
+    paso('subir'); return setTimeout(() => { paso('paginas'); setTimeout(() => fin(true), 1500); }, 1500);
+  }
   registrar('Publicando en internet...');
+  paso('subir');
   const p = spawn(process.execPath, [path.join(__dirname, 'publicar.js'), '--sin-comprobar'], { cwd: obra.RAIZ, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
   let resto = '';
-  const trocear = chunk => { resto += chunk.toString('utf8'); const lineas = resto.split(/\r?\n/); resto = lineas.pop(); for (const l of lineas) if (l.trim()) registrar(l); };
+  // publicar.js va contando lo que hace; por sus líneas se sabe en qué paso está
+  const trocear = chunk => { resto += chunk.toString('utf8'); const lineas = resto.split(/\r?\n/); resto = lineas.pop(); for (const l of lineas) if (l.trim()) { if (l.startsWith('Publicando la carpeta app/')) paso('paginas'); registrar(l); } };
   p.stdout.on('data', trocear); p.stderr.on('data', trocear);
   p.on('close', code => { if (resto.trim()) registrar(resto); registrar(code === 0 ? 'Publicación terminada.' : 'X La publicación ha fallado (código ' + code + ').'); fin(code === 0); });
   p.on('error', e => { registrar('X No se pudo ejecutar la publicación: ' + e.message); fin(false); });
@@ -538,6 +576,7 @@ const servidor = http.createServer(async (req, res) => {
       suscribir('publicacion', res);
       if (id !== publicacion.id) { res.write('data: ' + JSON.stringify({ tipo: 'fin', id, ok: false, linea: 'No hay registro de esa publicación.' }) + '\n\n'); return; }
       for (const linea of publicacion.registro) res.write('data: ' + JSON.stringify({ tipo: 'log', id, linea }) + '\n\n');
+      if (publicacion.paso >= 0 && !publicacion.fin) res.write('data: ' + JSON.stringify(eventoPaso()) + '\n\n');
       if (publicacion.fin) res.write('data: ' + JSON.stringify(publicacion.fin) + '\n\n');
       return;
     }
