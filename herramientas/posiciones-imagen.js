@@ -97,7 +97,9 @@ function lineasLargas(img) {
   return fund;
 }
 
-// Pentagramas de una página: grupos de 5 líneas largas seguidas a distancia regular
+// Pentagramas de una página: grupos de 5 líneas largas seguidas a distancia regular. Los extremos x0/x1 del pentagrama
+// son la mediana de los de sus líneas: en un escaneo, una mota en la misma fila que una línea la alarga hasta el margen
+const mediana = v => { const o = v.slice().sort((a, b) => a - b); return o[Math.floor((o.length - 1) / 2)]; };
 function pentagramas(img) {
   const { w } = img, lineas = lineasLargas(img);
   const pents = [];
@@ -107,7 +109,7 @@ function pentagramas(img) {
     const med = gaps.slice().sort((a, b) => a - b)[2];
     const regular = med >= w / 400 && med <= w / 40 && gaps.every(d => d >= med * 0.7 && d <= med * 1.3);
     if (regular) {
-      pents.push({ y1: q[0].y, y5: q[4].y, esp: med, alto: q[4].y - q[0].y, lineas: q.map(l => l.y), grosor: Math.max(...q.map(l => l.yFin - l.yIni + 1)), x0: Math.min(...q.map(l => l.x0)), x1: Math.max(...q.map(l => l.x1)) });
+      pents.push({ y1: q[0].y, y5: q[4].y, esp: med, alto: q[4].y - q[0].y, lineas: q.map(l => l.y), grosor: Math.max(...q.map(l => l.yFin - l.yIni + 1)), x0: mediana(q.map(l => l.x0)), x1: mediana(q.map(l => l.x1)) });
       i += 5;
       continue;
     }
@@ -119,7 +121,7 @@ function pentagramas(img) {
       const dobles = g4.filter(d => d >= m4 * 1.7 && d <= m4 * 2.3).length, simples = g4.filter(d => d >= m4 * 0.7 && d <= m4 * 1.3).length;
       if (m4 >= w / 400 && m4 <= w / 40 && ((dobles === 1 && simples === 2) || (simples === 3 && !(i + 4 < lineas.length && lineas[i + 4].y - q4[3].y <= m4 * 1.3)))) {
         const alto = simples === 3 ? m4 * 4 : q4[3].y - q4[0].y, esp = alto / 4;
-        pents.push({ y1: q4[0].y, y5: q4[0].y + alto, esp, alto, lineas: [0, 1, 2, 3, 4].map(k => q4[0].y + k * esp), grosor: Math.max(...q4.map(l => l.yFin - l.yIni + 1)), x0: Math.min(...q4.map(l => l.x0)), x1: Math.max(...q4.map(l => l.x1)) });
+        pents.push({ y1: q4[0].y, y5: q4[0].y + alto, esp, alto, lineas: [0, 1, 2, 3, 4].map(k => q4[0].y + k * esp), grosor: Math.max(...q4.map(l => l.yFin - l.yIni + 1)), x0: mediana(q4.map(l => l.x0)), x1: mediana(q4.map(l => l.x1)) });
         i += 4;
         continue;
       }
@@ -330,7 +332,9 @@ function barras(img, s) {
     const umbralGrueso = Math.max(3, esp * 0.3);
     const gruesa = enGrupo.filter(ts => ts.some(t => t.ancho >= umbralGrueso)).length >= Math.ceil(n / 2);
     const doble = enGrupo.filter(ts => ts.length >= 2).length >= Math.ceil(n / 2);
-    const c = { x, votos: g.xs.length, limpias, ok: true, gruesa, doble };
+    // la barra inicial del sistema (o el corchete, grueso) no es una barra final ni doble: no cierra ningún compás
+    const inicial = x <= s.x0 + esp * 1.5;
+    const c = { x, votos: g.xs.length, limpias, ok: true, gruesa: gruesa && !inicial, doble: doble && !inicial };
     s.candidatas.push(c);
     if (g.xs.length < minVotos) { c.ok = false; continue; }
     // La mayoría no basta (dos voces homorrítmicas alinean sus plicas): en algún pentagrama ha de verse limpia

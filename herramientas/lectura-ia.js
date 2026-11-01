@@ -39,12 +39,14 @@ const MODELO_PREDETERMINADO = process.env.GESTOR_MODELO_LECTURA || 'claude-sonne
 const ANCHO_PAGINA = 1600;   // las imágenes de página de la app (y las que mira el detector de compases)
 const ANCHO_ALTA = 3200;     // las imágenes de las que se recortan los pentagramas para el modelo (el doble de detalle)
 const LADO_MAX = 1568;       // la API reduce las imágenes con un lado mayor que esto: no merece la pena mandar más
-const ANCHO_CLAVE = 11;      // espacios de pentagrama que ocupan la clave y la armadura al principio de la fila (se pegan a la izquierda de los tramos que no la empiezan)
-const RECORTE_VERSION = 2;   // cambia si cambia la forma de recortar: las respuestas guardadas de otra versión no sirven
+const ANCHO_ETIQUETA = 10;   // espacios de pentagrama a la izquierda del principio de la fila donde van las etiquetas de las voces (S., A., Tenor, Órgano…)
+const ANCHO_CLAVE = 11 + ANCHO_ETIQUETA; // lo que se pega a la izquierda de los tramos que no empiezan la fila: etiqueta, clave y armadura
+const ESCALA_MAX = 2.5;      // un escaneo flojo se amplía hasta aquí: no añade detalle, pero el modelo lee mejor los símbolos grandes
+const RECORTE_VERSION = 3;   // cambia si cambia la forma de recortar: las respuestas guardadas de otra versión no sirven
 const ESP_OBJETIVO = 22;     // píxeles entre líneas del pentagrama en los recortes: con eso el modelo lee bien alteraciones y puntillos
 // Escala de los recortes de una fila respecto a la imagen de página: la que deja el pentagrama a ESP_OBJETIVO, sin pasar
 // de la que da la imagen de alta resolución (más píxeles no son más detalle)
-const escalaFila = (a, f) => Math.min(a.escalas[f.p], Math.max(1, ESP_OBJETIVO / f.esp));
+const escalaFila = (a, f) => Math.min(Math.max(a.escalas[f.p], ESCALA_MAX), Math.max(1, ESP_OBJETIVO / f.esp));
 const MAX_COMPASES = 6;      // compases por consulta como mucho (la respuesta crece con compases × voces)
 const DIVISIONES = 48;       // divisiones por negra del XML (admite fusas con puntillo y tresillos)
 const CONCURRENCIA = 2;
@@ -126,7 +128,7 @@ function planificar(a) {
     for (let i = 0; i < f.cajas.length;) {
       const inicio = i === 0 ? Math.min(f.x0, f.cajas[0].xa) : f.cajas[i].xa;
       let j = i;
-      const conClave = i > 0 ? ANCHO_CLAVE * f.esp : 0; // los tramos que no empiezan la fila llevan delante la clave y la armadura
+      const conClave = (i > 0 ? ANCHO_CLAVE : ANCHO_ETIQUETA) * f.esp; // delante van las etiquetas de las voces (y, si el tramo no empieza la fila, la clave y la armadura)
       while (j + 1 < f.cajas.length && j + 1 - i < MAX_COMPASES && (f.cajas[j + 1].xb - inicio + 2 * margen + conClave) * escalaFila(a, f) <= LADO_MAX) j++;
       consultas.push({ k: consultas.length, fila: fi, p: f.p, desde: i, hasta: j, numero, xIni: inicio, xFin: f.cajas[j].xb });
       numero += j - i + 1; i = j + 1;
@@ -161,9 +163,10 @@ function recortarTiras(a, dirTrabajo, c, indices) {
   const f = a.filas[c.fila], esc = a.escalas[f.p];
   const ruta = path.join(dirTrabajo, a.alta[f.p]);
   const margen = f.esp * 1.5;
-  const xa = Math.max(0, c.xIni - margen), xb = Math.min(f.w, c.xFin + margen);
+  // el primer tramo de la fila empieza en el margen izquierdo, donde están las etiquetas de las voces
+  const xa = Math.max(0, c.xIni - (c.desde === 0 ? ANCHO_ETIQUETA * f.esp : margen)), xb = Math.min(f.w, c.xFin + margen);
   // Si el tramo no empieza la fila, delante va el principio de la fila (clave y armadura), separado por una franja gris
-  const clave = c.desde > 0 ? { xa: Math.max(0, f.x0 - 0.5 * f.esp), xb: Math.min(f.w, f.x0 + (ANCHO_CLAVE - 0.5) * f.esp) } : null;
+  const clave = c.desde > 0 ? { xa: Math.max(0, f.x0 - ANCHO_ETIQUETA * f.esp), xb: Math.min(f.w, f.x0 + (ANCHO_CLAVE - ANCHO_ETIQUETA - 0.5) * f.esp) } : null;
   const anchoClave = clave ? clave.xb - clave.xa : 0, HUECO = 14;
   const s = Math.min(escalaFila(a, f) / esc, LADO_MAX / ((xb - xa + anchoClave) * esc)); // reducción sobre la imagen de alta resolución (un compás solo demasiado ancho se reduce más)
   const cx = f.w / 2, t = f.t, dMin = Math.min((xa - cx) * t, (xb - cx) * t), dMax = Math.max((xa - cx) * t, (xb - cx) * t);
@@ -245,8 +248,8 @@ const NOTA = { type: 'object', additionalProperties: false,
 const ESQUEMA_TRAMO = {
   type: 'object', additionalProperties: false, required: ['pentagramas', 'tempo', 'avisos'],
   properties: {
-    pentagramas: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['voz', 'clave', 'armadura', 'compases'], properties: {
-      voz: { type: 'string' }, clave: CLAVE, armadura: { type: 'integer' },
+    pentagramas: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['voz', 'tipo', 'voz2Nombre', 'clave', 'armadura', 'compases'], properties: {
+      voz: { type: 'string' }, tipo: { type: 'string', enum: ['coro', 'solista', 'instrumento'] }, voz2Nombre: { type: 'string' }, clave: CLAVE, armadura: { type: 'integer' },
       compases: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['numero', 'abarca', 'indicacion', 'barra', 'anacrusa', 'notas', 'voz2'], properties: {
         numero: { type: 'integer' }, abarca: { type: 'integer' }, indicacion: { type: 'string' }, barra: { type: 'string', enum: ['normal', 'doble', 'final'] }, anacrusa: { type: 'boolean' },
         notas: { type: 'array', items: NOTA }, voz2: { type: 'array', items: NOTA } } } } } } },
@@ -271,12 +274,15 @@ const SISTEMA_TRAMO = `Eres un copista experto en notación musical coral. Te da
 
 Cómo mirar las imágenes:
 - Cada imagen es un pentagrama (una voz) con lo que hay encima (matices, tempo) y debajo (la letra). La franja blanca de arriba lleva, en naranja, el número de cada compás; las líneas naranjas verticales marcan dónde el programa cree que están las divisorias. Transcribe SOLO los compases numerados, en orden; lo que asome a los lados es contexto (ligaduras que entran o salen).
-- Si el tramo no empieza la fila, a la izquierda de cada imagen, separado por una raya gris, va el principio de esa misma fila: la clave y la armadura de ese pentagrama (y a veces la indicación de compás). Úsalo para leer las alturas; no es un compás que transcribir.
+- A la izquierda de cada imagen está el margen de la fila, con la etiqueta de la voz si la hay (S., A., T., B., Sopr., Tenor, Órgano, Org.…). Si el tramo no empieza la fila, ese principio de fila (etiqueta, clave y armadura del pentagrama, y a veces la indicación de compás) va separado del tramo por una raya gris. Úsalo para saber qué voz es y leer las alturas; no es un compás que transcribir.
+- El número y el orden de los pentagramas pueden cambiar de un sistema a otro (un solo, luego el coro entero, con o sin órgano): decide qué es cada pentagrama en ESTE sistema, por su etiqueta y, si no la hay, por la clave y la tesitura (sol, sol, sol con 8, fa = Soprano, Contralto, Tenor, Bajo; una sola voz en clave de sol con 8 es Tenor).
 - Si una línea naranja no cae sobre una divisoria de verdad (parte un compás por la mitad), devuelve ese compás entero una sola vez, con abarca igual al número de tramos naranjas que ocupa (2 si ocupa dos). Si dentro de un tramo numerado hay en realidad dos compases (falta una línea naranja), devuelve dos entradas seguidas con el mismo numero. Lo normal es una entrada por número con abarca 1.
 - Las anotaciones a mano (números, flechas, círculos, textos) no son notas: ignóralas.
 
 Convenciones del JSON (las mismas en todas las voces):
-- voz: el nombre de la voz de ese pentagrama (el que se te indica en el texto, salvo que la partitura diga claramente otro).
+- voz: el nombre de la voz de ese pentagrama, en castellano y con uno de estos nombres cuando encaje: Soprano, Mezzosoprano, Contralto, Tenor, Barítono, Bajo, Solista (S./A./T./B., Cantus/Altus/Tenor/Bassus, Sopr./Contr./Ten./Bajo… se traducen); si no hay etiqueta, el que deduzcas por clave y tesitura. Para un instrumento, su nombre (Órgano, Piano…).
+- tipo: coro para una voz del coro, solista para un solista, instrumento para órgano, piano, reducción o cualquier acompañamiento (pentagramas con llave, acordes y sin letra). Un pentagrama de instrumento se devuelve con compases [] (no se transcribe).
+- voz2Nombre: si en el pentagrama cantan DOS voces distintas con plicas separadas (por ejemplo etiquetado «T/B» o «S/A», o tenor y bajo en el mismo pentagrama de fa), el nombre de la de abajo (la de las plicas hacia abajo), que va en voz2 de cada compás; "" en los demás casos (un divisi ocasional de la misma voz no es otra voz: va como acorde o en voz2 sin nombre).
 - clave: la clave del pentagrama en estas imágenes (si no se ve ninguna, la que se te indica en el texto). sign G (sol), F (fa) o C (do); line la línea de la clave (sol 2, fa 4); octava -1 cuando es clave de sol con un 8 debajo (tenor), 0 normalmente.
 - armadura: las alteraciones de la armadura en quintas: sostenidos positivos, bemoles negativos (1 bemol = -1, 2 sostenidos = 2, nada = 0).
 - step/alter/octave: altura en notación científica con Do central = C octava 4. En clave de Sol la segunda línea es Sol4; en clave de Fa la cuarta línea es Fa3; en clave de Sol con 8 abajo todo suena (y se escribe aquí) una octava más grave de lo que se leería. alter es la alteración que SUENA: 1 sostenido, -1 bemol, 0 natural; incluye la de la armadura, las accidentales que arrastra el compás (una alteración vale hasta el final del compás para esa nota) y la de una nota ligada desde el compás anterior.
@@ -293,7 +299,7 @@ Convenciones del JSON (las mismas en todas las voces):
 - tempo: la indicación metronómica (♩ = 80) si aparece en este tramo, en negras por minuto; 0 si no hay.
 - avisos: una frase en castellano si hay algo que el director deba saber (una línea naranja mal puesta, un compás ilegible, un pentagrama que no es una voz del coro); si no, "".
 
-Comprueba antes de responder que, en cada compás y voz, la suma de las figuras (sin contar las notas con acorde true) es la que marca la indicación de compás, salvo en una anacrusa. Devuelve exactamente un pentagrama por imagen, en el mismo orden, con la voz que se te indica para cada uno, y todos los compases numerados.`;
+Comprueba antes de responder que, en cada compás y voz, la suma de las figuras (sin contar las notas con acorde true) es la que marca la indicación de compás, salvo en una anacrusa. Devuelve exactamente un pentagrama por imagen, en el mismo orden (los de instrumento también, con compases []), y todos los compases numerados en cada voz del coro.`;
 
 // Con las notas alteradas por su nombre: Sonnet olvidaba a veces el Re♭ de una armadura de cuatro bemoles
 function textoArmadura(fifths) {
@@ -317,10 +323,13 @@ function textoTramo({ titulo, c, plan, fila, sugeridas, indicacion }) {
   const nC = c.hasta - c.desde + 1;
   let t = `Obra: «${titulo || 'sin título'}». Consulta ${c.k + 1} de ${plan.length}: compases ${c.numero} a ${c.numero + nC - 1} (sistema de la página ${c.p + 1}, ${nC} compás${nC === 1 ? '' : 'es'} numerado${nC === 1 ? '' : 's'}).\n`;
   t += `Indicación de compás vigente: ${indicacion || 'desconocida'}${indicacion ? ` (caben ${negrasDeIndicacion(indicacion)} negras por compás)` : ''}.\n`;
-  t += `Imágenes, de arriba abajo (una por pentagrama):\n`;
-  sugeridas.forEach((s, i) => { t += ` ${i + 1}. ${s.nombre} — ${textoClave(s.clave)}, armadura: ${textoArmadura(s.armadura)}\n`; });
-  if (fila.pents.length !== sugeridas.length) t += `(Este sistema tiene ${fila.pents.length} pentagramas; en la primera página eran ${fila.nVista}. Si alguna voz no es la indicada, pon en voz la que sea.)\n`;
-  t += `\nDevuelve los ${nC} compases numerados de cada uno de los ${sugeridas.length} pentagramas, con su letra.`;
+  t += `Imágenes, de arriba abajo (una por pentagrama de este sistema, ${fila.pents.length} en total):\n`;
+  for (let i = 0; i < fila.pents.length; i++) {
+    const s = sugeridas && sugeridas[i];
+    t += s ? ` ${i + 1}. probablemente ${s.nombre}${s.tipo === 'instrumento' ? ' (instrumento)' : ''} — ${textoClave(s.clave)}, armadura: ${textoArmadura(s.armadura)}\n` : ` ${i + 1}. (voz por identificar: mira la etiqueta del margen izquierdo, la clave y la tesitura)\n`;
+  }
+  if (!sugeridas) t += `(Este sistema tiene ${fila.pents.length} pentagramas; el primero de la obra tenía ${fila.nVista}: la plantilla cambia, así que identifica cada pentagrama por su etiqueta, clave y tesitura.)\n`;
+  t += `\nDevuelve los ${nC} compases numerados de cada voz del coro (${fila.pents.length} entradas en pentagramas, en el mismo orden que las imágenes; los instrumentos con compases []), con su letra.`;
   return t;
 }
 
@@ -422,7 +431,7 @@ function simularTramo({ c, sugeridas, indicacion }) {
       for (let q = 0; q < Math.floor(negras); q++) notas.push({ silencio: false, step: ESCALA[(n + q + si * 2) % 7], alter: 0, octave: s.clave && s.clave.sign === 'F' ? 3 : 4, type: 'quarter', dot: 0, acorde: false, ligaEmpieza: false, ligaTermina: false, tresillo: false, letra: ['la', 'le', 'li', 'lo'][q % 4] });
       compases.push({ numero: n, abarca: 1, indicacion: '', barra: 'normal', anacrusa: false, notas, voz2: [] });
     }
-    return { voz: s.nombre, clave: s.clave, armadura: s.armadura || 0, compases };
+    return { voz: s.nombre, tipo: 'coro', voz2Nombre: '', clave: s.clave, armadura: s.armadura || 0, compases };
   });
   return { json: { pentagramas, tempo: 0, avisos: '' }, uso: {}, modelo: 'simulado' };
 }
@@ -474,27 +483,50 @@ function xmlDeNota(n, voz, fifths, acordeValido, alteradas) {
 }
 const nombreNormal = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
 
-// Empareja los pentagramas que devuelve el modelo con las partes de la obra: por el nombre de voz y, si no, por su orden
-function emparejar(pentagramasModelo, sugeridas, partes) {
-  const libres = new Set(partes.map(p => p.id));
-  const out = pentagramasModelo.map((pm, i) => {
-    const nombre = nombreNormal(pm.voz);
-    let parte = partes.find(p => libres.has(p.id) && nombreNormal(p.nombre) === nombre);
-    if (!parte && sugeridas[i]) parte = partes.find(p => libres.has(p.id) && p.id === sugeridas[i].id);
-    if (parte) libres.delete(parte.id);
-    return { parte: parte || null, datos: pm };
-  });
-  // lo que haya quedado sin pareja, por orden, a las partes que sigan libres
-  for (const o of out) if (!o.parte) { const id = [...libres][0]; if (id) { o.parte = partes.find(p => p.id === id); libres.delete(id); } }
-  return out.filter(o => o.parte);
+// Nombre de voz en castellano a partir de lo que diga el modelo (S., Alto, Bassus, Org.…); null si es un instrumento
+const RANGO_VOZ = { Solista: 0, Soprano: 1, Mezzosoprano: 2, Contralto: 3, Tenor: 4, Barítono: 5, Bajo: 6 };
+function nombreVoz(nombre) {
+  const n = String(nombre || '').split('/')[0].trim().replace(/[.:]+$/, '').toLowerCase(); // «T/B»: la primera; la segunda va en voz2Nombre
+  if (!n) return 'Voz';
+  if (/piano|órgano|organo|organ\b|org\b|teclado|reducci|acomp|clave\b|cembalo|arpa|guitar|instrum/.test(n)) return null;
+  if (/mezzo/.test(n)) return 'Mezzosoprano';
+  if (/^(s|sop|sopr|soprano|sopranos|cantus|canto|superius|discantus|c)$/.test(n) || /soprano|cantus|superius/.test(n)) return 'Soprano';
+  if (/^(a|alt|alto|altos|altus|contralto|contraltos|contr)$/.test(n) || /contralto|altus|^alto\b/.test(n)) return 'Contralto';
+  if (/^(t|ten|tenor|tenore|tenores)$/.test(n) || /tenor/.test(n)) return 'Tenor';
+  if (/bar[ií]ton/.test(n)) return 'Barítono';
+  if (/^(b|bajo|bajos|bass|basso|bassus|baixo)$/.test(n) || /\bbajo\b|\bbass|basso/.test(n)) return 'Bajo';
+  if (/^solo\b|solista|^sol$/.test(n)) return 'Solista';
+  return String(nombre).trim().charAt(0).toUpperCase() + String(nombre).trim().slice(1);
+}
+// Los pentagramas que devuelve el modelo para un tramo → [{ nombre, datos }], solo las voces del coro: un pentagrama con dos
+// voces nombradas (voz2Nombre) se desdobla en dos, y un nombre repetido en el mismo sistema se numera
+function vocesDelTramo(pentagramasModelo) {
+  const out = [];
+  for (const pm of pentagramasModelo || []) {
+    if (pm.tipo === 'instrumento') continue;
+    const nombre = nombreVoz(pm.voz); if (!nombre) continue;
+    const segunda = pm.voz2Nombre ? nombreVoz(pm.voz2Nombre) : null;
+    if (segunda && segunda !== nombre && (pm.compases || []).some(c => Array.isArray(c.voz2) && c.voz2.length)) {
+      out.push({ nombre, datos: { ...pm, compases: (pm.compases || []).map(c => ({ ...c, voz2: [] })) } });
+      out.push({ nombre: segunda, datos: { ...pm, voz: segunda, compases: (pm.compases || []).map(c => ({ ...c, notas: c.voz2 || [], voz2: [] })) } });
+    } else out.push({ nombre, datos: pm });
+  }
+  const vistos = {};
+  for (const o of out) { vistos[o.nombre] = (vistos[o.nombre] || 0) + 1; if (vistos[o.nombre] > 1) o.nombre += ' ' + vistos[o.nombre]; }
+  return out;
 }
 
 // Monta el MusicXML y las posiciones a partir de la vista general y las respuestas de cada consulta.
 // Devuelve { xml, posiciones: { paginas, compases }, avisos, compases, dudosos }
-function construirXml({ vista, plan, respuestas, a, sugeridasDe }) {
+function construirXml({ vista, plan, respuestas, a }) {
   const avisos = [];
-  const partes = vista.pentagramas.map((p, i) => ({ ...p, idx: i })).filter(p => p.tipo !== 'instrumento').map((p, i) => ({ id: 'P' + (i + 1), nombre: p.nombre || 'Voz ' + (i + 1), clave: p.clave, armadura: +p.armadura || 0, idx: p.idx }));
-  if (!partes.length) throw new ErrorLectura('sin-voces', 'La IA no ha encontrado ninguna voz del coro en la primera página (solo instrumentos).');
+  // Las partes se van creando según las voces que el modelo ve en cada sistema (la plantilla puede cambiar a mitad de
+  // obra); al final se ordenan de aguda a grave (Solista, Soprano… Bajo, y las demás por orden de aparición)
+  const porNombre = new Map();
+  const parteDe = (nombre, datos) => {
+    if (!porNombre.has(nombre)) porNombre.set(nombre, { id: 'P' + (porNombre.size + 1), nombre, clave: datos.clave, armadura: Number.isInteger(datos.armadura) ? datos.armadura : 0, orden: porNombre.size });
+    return porNombre.get(nombre);
+  };
   if (vista.avisos) avisos.push('Vista general: ' + vista.avisos);
   // 1) Las medidas finales, con la estructura decidida por mayoría entre los pentagramas de cada consulta
   const medidas = []; // { k, fila, cajas: [{ i, f0, f1 }], voces: { [id]: entrada }, k }
@@ -502,7 +534,8 @@ function construirXml({ vista, plan, respuestas, a, sugeridasDe }) {
     const r = respuestas[c.k];
     if (!r) { avisos.push(`Falta la respuesta de la consulta ${c.k + 1} (compases ${c.numero}–${c.numero + c.hasta - c.desde}).`); for (let i = c.desde; i <= c.hasta; i++) medidas.push({ k: c.k, fila: c.fila, cajas: [{ i, f0: 0, f1: 1 }], voces: {} }); continue; }
     if (r.avisos) avisos.push(`Compases ${c.numero}–${c.numero + c.hasta - c.desde}: ${r.avisos}`);
-    const asignados = emparejar(r.pentagramas || [], sugeridasDe(c), partes);
+    const asignados = vocesDelTramo(r.pentagramas).map(v => ({ parte: parteDe(v.nombre, v.datos), datos: v.datos }));
+    if (!asignados.length) { avisos.push(`Sistema de la página ${c.p + 1} (tramo ${c.numero}): la IA no ha visto ninguna voz del coro (solo instrumentos); no aporta compases.`); continue; }
     const ultimo = c.numero + c.hasta - c.desde;
     let n = c.numero;
     while (n <= ultimo) {
@@ -536,6 +569,10 @@ function construirXml({ vista, plan, respuestas, a, sugeridasDe }) {
     }
     if (r.tempo > 0 && !vista.tempo) vista.tempo = r.tempo;
   }
+  const rango = p => { const r = RANGO_VOZ[p.nombre.replace(/ \d+$/, '')]; return r === undefined ? 7 + p.orden : r; };
+  const partes = [...porNombre.values()].sort((x, y) => rango(x) - rango(y) || x.orden - y.orden).map((p, i) => ({ ...p, id: 'P' + (i + 1), viejoId: p.id }));
+  if (!partes.length) throw new ErrorLectura('sin-voces', 'La IA no ha encontrado ninguna voz del coro en la partitura (solo instrumentos).');
+  for (const m of medidas) { const voces = {}; for (const p of partes) if (m.voces[p.viejoId]) voces[p.id] = m.voces[p.viejoId]; m.voces = voces; }
   // 2) Decisiones por compás (mayoría entre voces): indicación, barra, anacrusa
   const mayoria = (m, f) => { const votos = {}; for (const v of Object.values(m.voces)) { const x = f(v); if (x != null && x !== '') votos[x] = (votos[x] || 0) + 1; } const mejor = Object.entries(votos).sort((p, q) => q[1] - p[1])[0]; return mejor ? mejor[0] : null; };
   let indicacion = /^\d+\/\d+$/.test(vista.indicacion || '') ? vista.indicacion : null;
@@ -589,7 +626,7 @@ function construirXml({ vista, plan, respuestas, a, sugeridasDe }) {
       const entero = { silencio: true, step: 'C', alter: 0, octave: 4, type: 'whole', dot: 0, acorde: false, ligaEmpieza: false, ligaTermina: false, tresillo: false, letra: '', entero: true, duracionEntera: esperado };
       if (v && esEntero(v.notas)) v.notas = [entero];
       for (const n of (v && v.notas) || []) { const x = xmlDeNota(n, 1, fifths, suma1 > 0, alteradas); if (x) { notas1 += '\t\t\t' + x.xml + '\n'; suma1 += x.dur; } }
-      if (!notas1) { notas1 = `\t\t\t<note><rest measure="yes"/><duration>${esperado}</duration><voice>1</voice><type>whole</type><staff>1</staff></note>\n`; suma1 = esperado; if (!v) { dudososSet.add(i + 1); } }
+      if (!notas1) { notas1 = `\t\t\t<note><rest measure="yes"/><duration>${esperado}</duration><voice>1</voice><type>whole</type><staff>1</staff></note>\n`; suma1 = esperado; } // una voz que no canta en ese sistema descansa
       cuerpo += notas1;
       if (v && Array.isArray(v.voz2) && v.voz2.length) {
         let suma2 = 0, notas2 = '';
@@ -676,17 +713,13 @@ async function leer({ pdf, dirTrabajo, modelo = MODELO_PREDETERMINADO, log = () 
   // La voz que corresponde a cada pentagrama de una fila: por posición respecto a la primera página (los pentagramas
   // de instrumentos se saltan y no se mandan). Si la fila tiene otro número de pentagramas, se mandan todos con los
   // nombres que se puedan y el modelo dice cuál es cada uno.
-  const partesIds = voces.map((v, i) => ({ ...v, id: 'P' + (i + 1) }));
+  // Se mandan todos los pentagramas de la fila (el modelo dice cuál es cada uno y deja los instrumentos sin transcribir);
+  // si la fila tiene los mismos que el primer sistema de la obra, se le sugiere lo que vio la vista general
   const indicesYSugeridas = c => {
     const f = a.filas[c.fila];
-    const n = f.pents.length;
-    if (n === vista.pentagramas.length) {
-      const idx = [], sug = [];
-      vista.pentagramas.forEach((p, i) => { if (p.tipo !== 'instrumento') { idx.push(i); sug.push(partesIds[sug.length]); } });
-      return { indices: idx, sugeridas: sug };
-    }
-    const idx = Array.from({ length: n }, (_, i) => i);
-    return { indices: idx, sugeridas: idx.map(i => partesIds[Math.min(i, partesIds.length - 1)] || partesIds[0]) };
+    const indices = f.pents.map((_, i) => i);
+    const sugeridas = f.pents.length === vista.pentagramas.length ? vista.pentagramas : null;
+    return { indices, sugeridas };
   };
   for (const f of a.filas) f.nVista = vista.pentagramas.length;
   const respuestas = {};
@@ -700,8 +733,8 @@ async function leer({ pdf, dirTrabajo, modelo = MODELO_PREDETERMINADO, log = () 
       const c = cola.shift();
       const { indices, sugeridas } = indicesYSugeridas(c);
       const nC = c.hasta - c.desde + 1;
-      const r = await consultar('tramo-' + c.k, async () => {
-        if (SIMULADA) { await espera(900); return simularTramo({ c, sugeridas, indicacion }); }
+      const r = await consultar(`tramo-${c.k}-p${c.p}-${Math.round(c.xIni)}-${Math.round(c.xFin)}`, async () => { // el nombre lleva la geometría del tramo: si cambia el análisis, la respuesta guardada no vale
+        if (SIMULADA) { await espera(900); return simularTramo({ c, sugeridas: sugeridas || a.filas[c.fila].pents.map((_, i) => ({ nombre: 'Voz ' + (i + 1), clave: null, armadura: 0 })), indicacion }); }
         const tiras = recortarTiras(a, dirTrabajo, c, indices);
         const texto = textoTramo({ titulo: vista.titulo, c, plan, fila: a.filas[c.fila], sugeridas, indicacion });
         return llamar({ clave, modelo, sistema: SISTEMA_TRAMO, imagenes: tiras.map(t => t.png), texto, esquema: ESQUEMA_TRAMO, maxTokens: 48000, effort: 'high', senal: control.signal });
@@ -715,7 +748,7 @@ async function leer({ pdf, dirTrabajo, modelo = MODELO_PREDETERMINADO, log = () 
     }
   };
   await Promise.all(Array.from({ length: Math.min(CONCURRENCIA, cola.length) }, obrero));
-  const r = construirXml({ vista, plan, respuestas, a, sugeridasDe: c => indicesYSugeridas(c).sugeridas }); // sus avisos los enseña prepararObra
+  const r = construirXml({ vista, plan, respuestas, a }); // sus avisos los enseña prepararObra
   const segundos = Math.round((Date.now() - inicio) / 1000);
   const informe = { modelo: vista.modelo, coste, uso, consultas: total, cacheadas, compases: r.compases, dudosos: r.dudosos, segundos, hora: new Date().toISOString(), titulo: vista.titulo };
   try { fs.writeFileSync(path.join(dirTrabajo, 'lectura.xml'), r.xml); fs.writeFileSync(path.join(dirTrabajo, 'lectura.pos.json'), JSON.stringify(r.posiciones)); fs.writeFileSync(path.join(dirTrabajo, 'informe.json'), JSON.stringify(informe, null, 1)); } catch {}
@@ -723,7 +756,7 @@ async function leer({ pdf, dirTrabajo, modelo = MODELO_PREDETERMINADO, log = () 
   return { xml: r.xml, posiciones: r.posiciones, paginas: a.paginas.map(f => path.join(dirTrabajo, f)), titulo: vista.titulo, modelo: vista.modelo, coste, uso, consultas: total, cacheadas, compases: r.compases, dudosos: r.dudosos, avisos: r.avisos, segundos, partes: r.partes };
 }
 
-module.exports = { analizar, planificar, estimar, estimaciones, estado, leer, construirXml, recortarTiras, llamar, MODELOS, MODELO_PREDETERMINADO, ErrorLectura, SIMULADA,
+module.exports = { analizar, planificar, estimar, estimaciones, estado, leer, construirXml, recortarTiras, llamar, nombreVoz, vocesDelTramo, MODELOS, MODELO_PREDETERMINADO, ErrorLectura, SIMULADA,
   // para pruebas
   ESQUEMA_TRAMO, ESQUEMA_VISTA, SISTEMA_TRAMO, SISTEMA_VISTA, textoTramo, silabaDe, xmlDeNota };
 
