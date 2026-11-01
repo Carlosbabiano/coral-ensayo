@@ -18,6 +18,16 @@
     ]
   },
   {
+    "titulo": "Aita Gurea",
+    "archivo": "aita_gurea_4vm.xml",
+    "posiciones": "aita_gurea_4vm.pos.json",
+    "paginas": [
+      "aita_gurea_4vm-p1.jpg",
+      "aita_gurea_4vm-p2.jpg",
+      "aita_gurea_4vm-p3.jpg"
+    ]
+  },
+  {
     "titulo": "Anima Christi (Frisina)",
     "archivo": "Anima_Christi_Frisina.xml",
     "posiciones": "Anima_Christi_Frisina.pos.json",
