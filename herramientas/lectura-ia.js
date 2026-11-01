@@ -57,6 +57,9 @@ const NOMBRE_CLAVE = { G: 'clave de Sol', F: 'clave de Fa', C: 'clave de Do' };
 
 class ErrorLectura extends R.ErrorIA {}
 const ps1 = s => s.replace(/'/g, "''");
+// Tipo real de la imagen por sus primeros bytes: las tiras son PNG, pero la vista general manda la página tal cual,
+// que en un escaneo es JPEG (y la API rechaza un JPEG declarado como PNG)
+const tipoImagen = buf => buf && buf[0] === 0xff && buf[1] === 0xd8 ? 'image/jpeg' : 'image/png';
 // Ancho y alto de un PNG o JPEG leyendo solo su cabecera
 function dimensiones(archivo) {
   const b = fs.readFileSync(archivo);
@@ -328,7 +331,7 @@ async function llamar({ clave, modelo, sistema, imagenes, texto, esquema, maxTok
     model: modelo, max_tokens: maxTokens, stream: true,
     system: [{ type: 'text', text: sistema, cache_control: { type: 'ephemeral' } }],
     output_config: { effort, format: { type: 'json_schema', schema: esquema } },
-    messages: [{ role: 'user', content: [...imagenes.map(png => ({ type: 'image', source: { type: 'base64', media_type: 'image/png', data: png.toString('base64') } })), { type: 'text', text: texto }] }],
+    messages: [{ role: 'user', content: [...imagenes.map(png => ({ type: 'image', source: { type: 'base64', media_type: tipoImagen(png), data: png.toString('base64') } })), { type: 'text', text: texto }] }],
   };
   if (CON_FALLBACK(modelo)) cuerpo.fallbacks = 'default';
   const control = new AbortController();
