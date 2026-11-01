@@ -1061,6 +1061,21 @@ async function reproducir() {
   raf = requestAnimationFrame(seguirCursor);
 }
 
+// Las muestras del coro «aah» del Soundfont duran unos 3 s y no tienen bucle: una nota más larga (una redonda
+// ligada a otra) se callaba antes de tiempo. Se encadenan lanzamientos de la misma nota con un pequeño solape,
+// que en un coro suena como una respiración escalonada. El coro de vocales (con bucle) y el piano (que decae
+// solo) no lo necesitan. Devuelve las funciones de corte de cada tramo.
+const TRAMO_MUESTRA = 2.2, SOLAPE_MUESTRA = 0.25;
+function tocarNota(nota) {
+  if (!instrumento) return [];
+  if (instrumento.nombre !== 'choir_aahs' || nota.duration <= TRAMO_MUESTRA + SOLAPE_MUESTRA) return [instrumento.start(nota)];
+  const cortes = [];
+  for (let d = 0; d < nota.duration - SOLAPE_MUESTRA; d += TRAMO_MUESTRA) {
+    cortes.push(instrumento.start({ ...nota, time: nota.time + d, duration: Math.min(nota.duration - d, TRAMO_MUESTRA + SOLAPE_MUESTRA) }));
+  }
+  return cortes;
+}
+
 // Programa las notas que caen en los próximos 0,4 s
 function planificar() {
   const f = factorTempo(), mezcla = $('mezcla').value / 100, b = rangoBucle();
@@ -1076,7 +1091,7 @@ function planificar() {
         const e = eventos[indiceEvento], t = desfase + e.seg / f;
         if (t >= ctx.currentTime - 0.05) for (const n of e.notas) {
           const vel = esMia(n, e.compas) ? 95 : Math.round(95 * mezcla);
-          if (vel > 0) sonando.push(instrumento.start({ note: n.midi, velocity: vel, time: Math.max(t, ctx.currentTime), duration: Math.max(0.05, n.dur / f - 0.03), vocal: n.vocal }));
+          if (vel > 0) sonando.push(...tocarNota({ note: n.midi, velocity: vel, time: Math.max(t, ctx.currentTime), duration: Math.max(0.05, n.dur / f - 0.03), vocal: n.vocal }));
         }
         indiceEvento++;
       }
@@ -1097,8 +1112,7 @@ function planificar() {
     for (const n of e.notas) {
       const vel = esMia(n, e.compas) ? 110 : Math.round(110 * mezcla);
       if (vel <= 0) continue;
-      const stop = instrumento.start({ note: n.midi, velocity: vel, time: t, duration: Math.max(0.05, n.dur / f - 0.03), vocal: n.vocal });
-      sonando.push(stop);
+      sonando.push(...tocarNota({ note: n.midi, velocity: vel, time: t, duration: Math.max(0.05, n.dur / f - 0.03), vocal: n.vocal }));
     }
     indiceEvento++;
   }
