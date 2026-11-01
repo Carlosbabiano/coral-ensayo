@@ -1,5 +1,15 @@
 [
   {
+    "titulo": "1. Nosotros hemos de gloriarnos",
+    "archivo": "1_Nosotros_hemos_de_gloriarnos.xml",
+    "posiciones": "1_Nosotros_hemos_de_gloriarnos.pos.json",
+    "paginas": [
+      "1_Nosotros_hemos_de_gloriarnos-p1.jpg",
+      "1_Nosotros_hemos_de_gloriarnos-p2.jpg",
+      "1_Nosotros_hemos_de_gloriarnos-p3.jpg"
+    ]
+  },
+  {
     "titulo": "Acercate a la mesa-bach-mp53-1 - Partitura completa",
     "archivo": "Acercate_a_la_mesa_bach_mp53_1_Partitura_completa.xml",
     "posiciones": "Acercate_a_la_mesa_bach_mp53_1_Partitura_completa.pos.json",
