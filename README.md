@@ -19,9 +19,12 @@ Publicada en: https://carlosbabiano.github.io/coral-ensayo/
 - `guia/` — guía para corregir notas en MuseScore.
 - `archivo/` — cosas viejas fuera de git (pruebas de voz, salidas antiguas, copias repetidas); se puede vaciar sin miedo.
 
-## Añadir una obra (con previsualización): Gestor.cmd
+## Añadir una obra (con previsualización): el Gestor de obras
 1. Exportar el MusicXML (`.xml`, sin comprimir) desde Escáner Musical.
-2. Abrir `Gestor.cmd`: arranca un servidor local y abre el gestor en el navegador (http://localhost:5180).
+2. Abrir el gestor con el acceso directo «Gestor de obras» (o con `Gestor.vbs`): arranca el servidor local sin ninguna
+   ventana y abre el gestor en el navegador (http://localhost:5180). Se apaga solo unos minutos después de cerrar la
+   pestaña, o al momento con el botón «Cerrar el gestor». `Gestor.cmd` hace lo mismo con una ventana de consola, por si
+   hace falta ver un error o instalar los módulos la primera vez.
 3. Arrastrar el `.xml` **y el `.pdf`** de la obra a la zona de la página (o elegirlos con un clic). O, desde el
    móvil, compartirlos a Google Drive en la carpeta `Entrada/` del proyecto: el gestor los muestra con un botón
    «Cargar» por obra (si el XML no trae PDF, busca uno con el mismo nombre en `originales/pdf/`).

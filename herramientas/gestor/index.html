@@ -42,6 +42,8 @@
   button.peligro { color: var(--bad); border-color: #e6b8b5; }
   button.peligro:hover { background: #fbeeed; }
   button.mini { padding: 3px 9px; font-size: 13px; }
+  #cerrarGestor { margin-left: auto; }
+  .cerrado { max-width: 480px; margin: 64px auto; padding: 24px; text-align: center; font-size: 18px; color: var(--fg); }
   button:disabled { opacity: .5; cursor: default; }
   .vacio { color: var(--muted); padding: 30px 0; text-align: center; }
   .cab { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -71,6 +73,11 @@
   .ventana { background: #fff; border-radius: 14px; width: min(760px, 92vw); max-height: 86vh; display: flex; flex-direction: column; padding: 18px 20px; gap: 12px; }
   .ventana h3 { margin: 0; }
   .ventana pre.log { flex: 1; max-height: none; min-height: 200px; }
+  /* Barra de progreso de la publicación: avanza por pasos, cada uno con lo que tardó la última vez */
+  .barra { height: 10px; border-radius: 999px; background: #e6e8ee; overflow: hidden; }
+  .barra > div { height: 100%; width: 0; border-radius: 999px; background: var(--accent); transition: width .4s ease-out; }
+  @media (prefers-reduced-motion: reduce) { .barra > div { transition: none; } }
+  #veloPaso { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); min-height: 1.2em; }
   .progreso { display: inline-block; width: 16px; height: 16px; border: 3px solid #c9d2e8; border-top-color: var(--accent); border-radius: 50%; animation: girar .8s linear infinite; vertical-align: middle; }
   @keyframes girar { to { transform: rotate(360deg); } }
   .ayuda { font-size: 13px; color: var(--muted); }
@@ -164,6 +171,7 @@
   <div id="comprobacion" style="display:none" class="aviso" role="status"></div>
   <a href="/app/" target="_blank"><button class="mini">Abrir la app del PC</button></a>
   <a href="https://carlosbabiano.github.io/coral-ensayo/" target="_blank"><button class="mini">Ver la app publicada</button></a>
+  <button class="mini" id="cerrarGestor" title="Apaga el gestor en este PC (la app publicada y tus archivos no se tocan)">Cerrar el gestor</button>
 </header>
 <main>
   <aside>
@@ -189,6 +197,8 @@
 <div class="velo" id="velo">
   <div class="ventana">
     <h3 id="veloTitulo">Publicando…</h3>
+    <div class="barra" id="veloBarra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="veloPasoNombre" hidden><div></div></div>
+    <div id="veloPaso" hidden><span id="veloPasoNombre"></span><span id="veloPasoTiempo"></span></div>
     <pre class="log" id="veloLog"></pre>
     <div class="acciones" style="margin:0"><span class="hueco"></span><button id="veloCerrar" disabled>Cerrar</button></div>
   </div>
@@ -854,6 +864,29 @@ async function descartar() {
 function abrirVelo(titulo) {
   $('veloTitulo').innerHTML = `<span class="progreso"></span> ${esc(titulo)}`;
   $('veloLog').textContent = ''; $('veloCerrar').disabled = true; $('velo').classList.add('ver');
+  pintarBarra(null);
+}
+// Barra de progreso: el servidor dice en qué paso va y cuánto suele tardar cada uno (lo que tardó la última vez);
+// dentro del paso en curso la barra avanza con el reloj hasta un 95 % del tramo, por si esta vez tarda más
+let progreso = null, relojBarra = null;
+const segundos = s => s < 60 ? Math.max(1, Math.round(s)) + ' s' : Math.floor(s / 60) + ' min ' + Math.round(s % 60) + ' s';
+function pintarBarra(p) {
+  clearInterval(relojBarra); relojBarra = null; progreso = p;
+  $('veloBarra').hidden = $('veloPaso').hidden = !p;
+  if (!p) return;
+  const pintar = () => {
+    const total = p.pasos.reduce((s, x) => s + x.estimado, 0);
+    const hechos = p.pasos.slice(0, p.paso).reduce((s, x) => s + x.estimado, 0);
+    const actual = p.pasos[p.paso], lleva = (Date.now() - p.desde) / 1000;
+    const dentro = p.fin ? 1 : Math.min(0.95, lleva / actual.estimado);
+    const pct = p.fin ? 100 : Math.round(100 * (hechos + actual.estimado * dentro) / total);
+    $('veloBarra').firstElementChild.style.width = pct + '%'; $('veloBarra').setAttribute('aria-valuenow', pct);
+    $('veloPasoNombre').textContent = p.fin ? 'Terminado' : `Paso ${p.paso + 1} de ${p.pasos.length}: ${actual.nombre}`;
+    const quedan = total - hechos - Math.min(lleva, actual.estimado);
+    $('veloPasoTiempo').textContent = p.fin ? '' : lleva > actual.estimado * 1.5 ? 'Está tardando más que la última vez…' : 'Quedan unos ' + segundos(quedan);
+  };
+  pintar();
+  if (!p.fin) relojBarra = setInterval(pintar, 500);
 }
 function seguirPublicacion(id) {
   const f = new EventSource('/api/publicacion/eventos?id=' + id);
@@ -861,7 +894,12 @@ function seguirPublicacion(id) {
     const m = JSON.parse(ev.data);
     if (m.id !== id) return; // avisos de otra publicación
     if (m.linea) { $('veloLog').textContent += m.linea + '\n'; $('veloLog').scrollTop = $('veloLog').scrollHeight; }
-    if (m.tipo === 'fin') { f.close(); $('veloTitulo').textContent = m.ok ? 'Hecho' : 'Ha fallado la publicación'; $('veloCerrar').disabled = false; refrescar(); }
+    if (m.tipo === 'paso') pintarBarra({ pasos: m.pasos, paso: m.paso, desde: Date.now() - (m.transcurrido || 0) * 1000 });
+    if (m.tipo === 'fin') {
+      f.close(); $('veloTitulo').textContent = m.ok ? 'Hecho' : 'Ha fallado la publicación'; $('veloCerrar').disabled = false;
+      if (progreso) pintarBarra(m.ok ? { ...progreso, fin: true } : null);
+      refrescar();
+    }
   };
 }
 function veloFallo(titulo, mensaje) { $('veloTitulo').textContent = titulo; $('veloLog').textContent = mensaje; $('veloCerrar').disabled = false; }
@@ -901,6 +939,16 @@ refrescar().then(() => { if (estado.publicando) { abrirVelo('Publicación en mar
 // Refresco de las listas (carpeta Entrada, borradores) al volver a la pestaña y cada 15 s mientras se ve
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refrescar().catch(() => {}); });
 setInterval(() => { if (document.visibilityState === 'visible' && !$('velo').classList.contains('ver')) refrescar().catch(() => {}); }, 15000);
+// Latido: mientras esta página esté abierta el servidor no se apaga (abierto desde Gestor.vbs no hay ventana que cerrar)
+const latir = () => fetch('/api/latido', { method: 'POST' }).catch(() => {});
+latir(); setInterval(latir, 20000);
+$('cerrarGestor').onclick = async () => {
+  if (!confirm('¿Cerrar el gestor en este PC? La app publicada y tus archivos no se tocan. Para volver a abrirlo, usa el acceso directo «Gestor de obras».')) return;
+  try {
+    await api('/api/salir', { method: 'POST' });
+    document.body.innerHTML = '<p class="cerrado">El gestor está cerrado. Ya puedes cerrar esta pestaña.</p>';
+  } catch (e) { alert(e.message); }
+};
 </script>
 </body>
 </html>
