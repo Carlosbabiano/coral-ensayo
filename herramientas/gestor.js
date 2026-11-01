@@ -233,6 +233,9 @@ function guardarPosiciones(id, { filas }) {
   return b;
 }
 
+// ---------- Partir, unir, insertar y quitar compases (con deshacer): gestor-compases.js ----------
+const compasesEstructura = require('./gestor-compases.js')({ leerBorrador, guardarBorrador, dirDe, rutaPosiciones, leerPosiciones, resumen: b => resumen(b) });
+
 // ---------- Voces cantadas (canto sintético) ----------
 // Carpeta borradores/<id>/canto/: proyectos para el sintetizador (uno por voz) y el audio que exporta el usuario
 const dirCanto = id => path.join(dirDe(id), 'canto');
@@ -678,6 +681,12 @@ const servidor = http.createServer(async (req, res) => {
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/revisar-todos\/quitar$/)) && req.method === 'POST') {
       try { revisionIA.olvidarLote(m[1]); return json(res, { ok: true }); } catch (e) { return errorIA(res, e); }
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/(\d+)\/(partir|fundir|insertar|quitar)$/)) && req.method === 'POST') {
+      try { return json(res, compasesEstructura.cambiar(m[1], m[2], m[3], JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'))); } catch (e) { return json(res, { error: e.message }, 400); }
+    }
+    if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/deshacer$/)) && req.method === 'POST') {
+      try { return json(res, compasesEstructura.deshacer(m[1])); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/compas\/(\d+)\/tiempo$/)) && req.method === 'POST') {
       try { return json(res, resumen(cambiarCompas(m[1], m[2], JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}')))); } catch (e) { return json(res, { error: e.message }, 400); }

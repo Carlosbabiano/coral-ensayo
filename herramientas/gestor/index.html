@@ -84,6 +84,10 @@
   .revision { display: grid; grid-template-columns: minmax(320px, 1.4fr) minmax(300px, 1fr); gap: 16px 24px; align-items: start; }
   .revision > * { min-width: 0; }
   .revision h5 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--fg); }
+  .estructura { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .estructura #ecEstado:empty { display: none; }
+  .estructura #ecEstado { outline: none; margin-top: 8px; }
+  .estructura .aviso.progreso { background: #e8edf8; border-color: #c9d2e8; }
   .partituraCompas { position: relative; min-height: 120px; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; margin-bottom: 4px; }
   .partituraCompas .esqueleto { min-height: 160px; display: flex; align-items: center; justify-content: center; color: var(--muted); background: linear-gradient(90deg, var(--soft) 25%, #fff 50%, var(--soft) 75%); background-size: 200% 100%; animation: brillo 1.4s ease-in-out infinite; border-radius: 8px; }
   @keyframes brillo { from { background-position: 200% 0; } to { background-position: -200% 0; } }
@@ -206,6 +210,7 @@
 
 <script src="/gestor/posiciones.js"></script>
 <script src="/gestor/revision-ia.js"></script>
+<script src="/gestor/compases-editor.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const VOCES = ['Soprano', 'Mezzosoprano', 'Contralto', 'Tenor', 'Barítono', 'Bajo', 'Solista femenina', 'Solista masculino', 'Voz', 'Piano'];
@@ -624,8 +629,10 @@ async function revisarCompas(n, silencioso) {
     <div class="acciones" style="margin:8px 0 0">Este compás va en <input type="number" id="cBeats" min="1" max="32" value="${v0.beats}" style="width:60px"> / <select id="cBt">${[1, 2, 4, 8, 16].map(x => `<option ${x === v0.bt ? 'selected' : ''}>${x}</option>`).join('')}</select>
       <label class="ayuda"><input type="checkbox" id="cRestaurar" checked> el siguiente vuelve al compás de antes</label>
       <button id="cAplicar">Cambiar el compás</button></div>
+    <div id="estructuraCompas"></div>
   </div></div></div>`;
   $('revision').innerHTML = html;
+  pintarEstructuraCompas(d);
   $('cAplicar').onclick = async () => {
     try {
       await api(`/api/borradores/${b.id}/compas/${n}/tiempo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ beats: +$('cBeats').value, bt: +$('cBt').value, restaurar: $('cRestaurar').checked }) });
