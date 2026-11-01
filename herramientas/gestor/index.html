@@ -42,6 +42,8 @@
   button.peligro { color: var(--bad); border-color: #e6b8b5; }
   button.peligro:hover { background: #fbeeed; }
   button.mini { padding: 3px 9px; font-size: 13px; }
+  #cerrarGestor { margin-left: auto; }
+  .cerrado { max-width: 480px; margin: 64px auto; padding: 24px; text-align: center; font-size: 18px; color: var(--fg); }
   button:disabled { opacity: .5; cursor: default; }
   .vacio { color: var(--muted); padding: 30px 0; text-align: center; }
   .cab { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -111,6 +113,7 @@
   <div id="comprobacion" style="display:none" class="aviso" role="status"></div>
   <a href="/app/" target="_blank"><button class="mini">Abrir la app del PC</button></a>
   <a href="https://carlosbabiano.github.io/coral-ensayo/" target="_blank"><button class="mini">Ver la app publicada</button></a>
+  <button class="mini" id="cerrarGestor" title="Apaga el gestor en este PC (la app publicada y tus archivos no se tocan)">Cerrar el gestor</button>
 </header>
 <main>
   <aside>
@@ -840,6 +843,16 @@ refrescar().then(() => { if (estado.publicando) { abrirVelo('Publicación en mar
 // Refresco de las listas (carpeta Entrada, borradores) al volver a la pestaña y cada 15 s mientras se ve
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refrescar().catch(() => {}); });
 setInterval(() => { if (document.visibilityState === 'visible' && !$('velo').classList.contains('ver')) refrescar().catch(() => {}); }, 15000);
+// Latido: mientras esta página esté abierta el servidor no se apaga (abierto desde Gestor.vbs no hay ventana que cerrar)
+const latir = () => fetch('/api/latido', { method: 'POST' }).catch(() => {});
+latir(); setInterval(latir, 20000);
+$('cerrarGestor').onclick = async () => {
+  if (!confirm('¿Cerrar el gestor en este PC? La app publicada y tus archivos no se tocan. Para volver a abrirlo, usa el acceso directo «Gestor de obras».')) return;
+  try {
+    await api('/api/salir', { method: 'POST' });
+    document.body.innerHTML = '<p class="cerrado">El gestor está cerrado. Ya puedes cerrar esta pestaña.</p>';
+  } catch (e) { alert(e.message); }
+};
 </script>
 </body>
 </html>

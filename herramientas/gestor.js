@@ -542,6 +542,14 @@ const servidor = http.createServer(async (req, res) => {
       return;
     }
 
+    // Latido de la página (ver «Apagado» más abajo) y cierre desde el botón «Cerrar el gestor»
+    if (ruta === '/api/latido' && req.method === 'POST') { ultimoLatido = Date.now(); return json(res, { ok: true, ocupado: ocupado() }); }
+    if (ruta === '/api/salir' && req.method === 'POST') {
+      if (ocupado()) return json(res, { error: 'Hay un trabajo en marcha (una publicación, una obra preparándose, la comprobación en internet o el cantante). Espera a que termine.' }, 409);
+      console.log('Cerrado desde la página.');
+      json(res, { ok: true }); setTimeout(() => process.exit(0), 300); return;
+    }
+
     res.writeHead(404); res.end('No encontrado');
   } catch (e) {
     console.error(e);
@@ -549,8 +557,20 @@ const servidor = http.createServer(async (req, res) => {
   }
 });
 
+// ---------- Apagado ----------
+// Abierto desde Gestor.vbs no hay ventana de consola que cerrar: la página manda un latido mientras está abierta y el
+// servidor se apaga solo unos minutos después de cerrarse la última pestaña (o si nunca llegó a abrirse ninguna),
+// nunca con un trabajo en marcha. GESTOR_SIN_APAGADO=1 lo desactiva (pruebas automáticas).
+const arranque = Date.now();
+let ultimoLatido = 0;
+const ocupado = () => publicando || trabajando.size > 0 || instalandoVoz || !!cantando || !!(comprobacion && comprobacion.estado === 'comprobando');
+const SIN_LATIDO_MS = 3 * 60 * 1000;
+if (!process.env.GESTOR_SIN_APAGADO) setInterval(() => {
+  if (Date.now() - Math.max(ultimoLatido, arranque) > SIN_LATIDO_MS && !ocupado()) { console.log('Sin ninguna pestaña del gestor abierta: se cierra.'); process.exit(0); }
+}, 30 * 1000).unref();
+
 servidor.listen(PUERTO, '127.0.0.1', () => {
   const direccion = `http://localhost:${PUERTO}/`;
-  console.log('Gestor de obras en ' + direccion + '   (cierra esta ventana para pararlo)');
+  console.log('Gestor de obras en ' + direccion + '   (se apaga solo al cerrar la pestaña; también puedes cerrar esta ventana)');
   if (!process.env.GESTOR_SIN_NAVEGADOR) spawn('cmd', ['/c', 'start', '', direccion], { detached: true, stdio: 'ignore' }).unref();
 });
