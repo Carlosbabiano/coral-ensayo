@@ -205,6 +205,7 @@
 </div>
 
 <script src="/gestor/posiciones.js"></script>
+<script src="/gestor/revision-ia.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const VOCES = ['Soprano', 'Mezzosoprano', 'Contralto', 'Tenor', 'Barítono', 'Bajo', 'Solista femenina', 'Solista masculino', 'Voz', 'Piano'];
@@ -349,6 +350,7 @@ function pintarPanel() {
     for (const a of b.avisos) html += `<div class="aviso">${esc(a)}</div>`;
     if (b.sospechosos.length) html += `<div class="aviso" id="chipsSospechosos">Compases que no cuadran (las figuras no suman lo que marca el compás). Toca uno para revisarlo: <span class="compases">${b.sospechosos.map(c => `<a data-compas="${esc(c)}">${esc(c)}</a>`).join('')}</span></div>`;
     else html += `<div class="aviso bien" id="chipsSospechosos">Todos los compases cuadran.</div>`;
+    html += `<div id="iaLote"></div>`; // «Revisar todos con IA» (revision-ia.js)
     if (b.entrada.paginas) html += avisoPosicionesHtml(b);
     else if (b.pdf) html += `<div class="aviso">El PDF no se ha podido incorporar como página original (mira el registro de abajo): el coro verá la partitura dibujada.</div>`;
     else html += `<div class="aviso">Sin PDF: la obra irá sin vista de página original.</div>`;
@@ -397,6 +399,7 @@ function pintarPanel() {
 
   $('aplicar') && ($('aplicar').onclick = aplicar);
   pintarAvisoPosiciones(false);
+  if (window.RevisionIA) RevisionIA.pintarLote(b);
   $('publicar') && ($('publicar').onclick = publicar);
   $('descartar') && ($('descartar').onclick = descartar);
   $('reintentar') && ($('reintentar').onclick = async () => { await api(`/api/borradores/${b.id}/preparar`, { method: 'POST' }).catch(e => alert(e.message)); seleccionar(b.id); });
@@ -606,7 +609,7 @@ async function revisarCompas(n, silencioso) {
     const soloFigura = bien && Math.abs((v.sumaFiguras || 0) - v.esperado) > 0.01;
     html += `<tr${bien ? '' : ' style="background:#fdecec"'}><td><strong>${esc(v.nombre)}</strong><br>${bien ? '<span class="ayuda">cuadra</span>' : `<span style="color:var(--bad);font-weight:600">no cuadra: suma ${v.suma} de ${v.esperado}</span>`}${soloFigura ? `<br><span class="ayuda">Suena bien, pero las figuras suman ${v.sumaFiguras}: alguna nota se ve con otra figura (van señaladas al lado). Si entras en «Editar», corrige esas figuras antes de guardar.</span>` : ''}${soloDuracion ? `<br><span class="ayuda">Las figuras sí suman ${v.esperado}: el escáner dio a alguna nota otra duración (van señaladas al lado). Pulsa «Editar» y «Guardar compás» para que dure lo que se ve.</span>` : ''}<br>${botonEditar}</td><td>${v.notas.map(esc).join('<br>') || '<i>vacío</i>'}</td></tr>`;
   }
-  html += `</table><div id="editorCompas"></div>
+  html += `</table><div id="editorCompas"></div><div id="iaCompas"></div>
     <div class="ayuda" style="margin-top:10px">Si el compás de la partitura es otro (el escáner suele perderse los cambios de compás), cámbialo aquí. Si son las notas las que están mal, pulsa «Editar» en la voz.</div>
     <div class="acciones" style="margin:8px 0 0">Este compás va en <input type="number" id="cBeats" min="1" max="32" value="${v0.beats}" style="width:60px"> / <select id="cBt">${[1, 2, 4, 8, 16].map(x => `<option ${x === v0.bt ? 'selected' : ''}>${x}</option>`).join('')}</select>
       <label class="ayuda"><input type="checkbox" id="cRestaurar" checked> el siguiente vuelve al compás de antes</label>
@@ -620,6 +623,7 @@ async function revisarCompas(n, silencioso) {
     } catch (e) { alert(e.message); }
   };
   for (const bt of $('tarjetaRevision').querySelectorAll('button[data-editar]')) bt.onclick = () => abrirEditor(d, bt.dataset.editar);
+  if (window.RevisionIA) RevisionIA.pintarCompas(b, d); // «Revisar con IA» (revision-ia.js)
   if (d.pagina && d.posicion) dibujarRecorte(`/borrador/${b.id}/partituras/${d.pagina}`, d.posicion);
   dibujarCompasXml(b, n);
   irACompas(n);
