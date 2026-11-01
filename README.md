@@ -15,23 +15,29 @@ Publicada en: https://carlosbabiano.github.io/coral-ensayo/
 - `herramientas/` — scripts (Node): `gestor.js` (+ `gestor/index.html`), `obra.js`, `anadir-obra.js`, `letra.js`, `posiciones.js`, `paginas.js`, `publicar.js`.
 - `borradores/` — obras en preparación en el gestor (no se publican).
 - `Entrada/` — buzón: lo que se deje aquí (p. ej. desde el móvil vía Google Drive) aparece en el gestor para cargarlo.
-  En `Entrada/pendientes/` esperan los PDF de obras todavía sin XML del escáner.
+  Un PDF solo también vale (las notas las lee Audiveris). En `Entrada/pendientes/` se pueden aparcar PDF para más
+  adelante: el gestor los enseña con su botón «Preparar con Audiveris».
 - `guia/` — guía para corregir notas en MuseScore.
 - `archivo/` — cosas viejas fuera de git (pruebas de voz, salidas antiguas, copias repetidas); se puede vaciar sin miedo.
 
 ## Añadir una obra (con previsualización): el Gestor de obras
-1. Exportar el MusicXML (`.xml`, sin comprimir) desde Escáner Musical.
+1. Hace falta el `.pdf` de la obra. El MusicXML del Escáner Musical (`.xml`, sin comprimir) es opcional: si se
+   aporta, las notas salen de ahí (suele leer mejor); si no, las lee Audiveris del PDF en el propio PC (tarda un par de
+   minutos la primera vez; la lectura se guarda en `herramientas/cache/audiveris/` y las siguientes son inmediatas).
 2. Abrir el gestor con el acceso directo «Gestor de obras» (o con `Gestor.vbs`): arranca el servidor local sin ninguna
    ventana y abre el gestor en el navegador (http://localhost:5180). Se apaga solo unos minutos después de cerrar la
    pestaña, o al momento con el botón «Cerrar el gestor». `Gestor.cmd` hace lo mismo con una ventana de consola, por si
    hace falta ver un error o instalar los módulos la primera vez.
-3. Arrastrar el `.xml` **y el `.pdf`** de la obra a la zona de la página (o elegirlos con un clic). O, desde el
-   móvil, compartirlos a Google Drive en la carpeta `Entrada/` del proyecto: el gestor los muestra con un botón
-   «Cargar» por obra (si el XML no trae PDF, busca uno con el mismo nombre en `originales/pdf/`).
+3. Arrastrar el `.pdf` (y el `.xml`, si se tiene, con el mismo nombre) a la zona de la página, o elegirlos con un clic.
+   O, desde el móvil, compartirlos a Google Drive en la carpeta `Entrada/` del proyecto: el gestor los muestra con un
+   botón «Cargar» por obra, o «Preparar con Audiveris» si solo hay PDF (si el XML no trae PDF, busca uno con el mismo
+   nombre en `originales/pdf/`).
 4. El gestor prepara la obra (nombra las voces, separa en dos voces las partes de dos pentagramas sin acordes —tenor y bajo
    escritos juntos, por ejemplo— y quita las que llevan acordes —el piano—, revisa los compases, convierte las páginas
-   del PDF en imágenes y localiza en ellas cada compás) y la muestra en el mismo reproductor que usa el coro. La letra
-   no se saca del PDF: el coro la lee en la página. Audiveris solo se usa como último recurso para situar los compases. Ahí se pueden cambiar el
+   del PDF en imágenes y localiza en ellas cada compás) y la muestra en el mismo reproductor que usa el coro. Con el XML
+   del escáner la letra no se saca del PDF (el coro la lee en la página); con Audiveris sí viene la letra que haya
+   leído, y el informe del borrador dice que las notas las leyó Audiveris y cuánto tardó: conviene revisar con más
+   cuidado los compases que no cuadran. Ahí se pueden cambiar el
    título, el nombre de cada voz, el tempo y quitar voces (por ejemplo el piano), y saltar a los compases dudosos.
 5. «Publicar para el coro» la mete en la app, sube la versión de la caché, la guarda en git y la publica.
    «Retirar» quita una obra publicada. «En ensayo» marca una obra que se está ensayando: en la app sale la primera,
@@ -39,7 +45,9 @@ Publicada en: https://carlosbabiano.github.io/coral-ensayo/
    (queda guardado en git) y el gestor avisa de que hay cambios sin publicar: se suben todos de una vez con «Publicar
    ahora». El borrador también lleva la casilla «En ensayo» para dejarla marcada al publicar. Los borradores viven en `borradores/` hasta que se publican o descartan.
 
-Si alguna vez hace falta Audiveris, su lectura se guarda en `herramientas/cache/` para no repetirla.
+La lectura de Audiveris (tanto la de las notas como la que a veces se usa para situar los compases) se guarda en
+`herramientas/cache/audiveris/` para no repetirla con el mismo PDF. Si Audiveris no está instalado, el gestor lo dice y
+pide el XML del escáner.
 
 ## Modo corregir (para el director)
 Abrir la app con `?corregir=1` al final de la dirección (https://carlosbabiano.github.io/coral-ensayo/?corregir=1).
@@ -52,6 +60,7 @@ la alteración o la ligadura, se borra o se añade otra detrás. Los cambios se 
 ## Añadir una obra sin previsualizar (el método antiguo)
 Arrastrar el `.xml` y el `.pdf` sobre `Añadir y publicar.cmd` (o `Añadir obra.cmd` y después `Publicar.cmd`).
 
-Requisitos en el PC: Node, MuseScore 4 (opcional, para corregir), Audiveris 5 con los idiomas de
+Requisitos en el PC: Node, MuseScore 4 (opcional, para corregir), Audiveris 5 (en `C:\Program Files\Audiveris`,
+necesario para preparar una obra con solo el PDF) con los idiomas de
 Tesseract (eng, spa, ita, fra, lat) en `%APPDATA%\AudiverisLtd\audiveris\config\tessdata`.
 Para obras en otro idioma: `set LETRA_IDIOMA=ita+eng` antes de ejecutar (por defecto `spa+eng`).

@@ -177,11 +177,11 @@
   <aside>
     <h2>Nueva obra</h2>
     <label class="zona" id="zona">
-      <strong>Arrastra aquí el .xml del Escáner Musical y el .pdf de la obra</strong>
-      o haz clic para elegirlos
+      <strong>Arrastra aquí el .pdf de la obra</strong>
+      o haz clic para elegirlo. Si tienes el .xml del Escáner Musical, arrástralo con el PDF.
       <input type="file" id="elegir" multiple accept=".xml,.musicxml,.pdf">
     </label>
-    <p class="ayuda">Sin el PDF la obra irá sin la vista de página original (la que ve el coro). Si el PDF está en la carpeta <code>originales/pdf/</code> con el mismo nombre, se usa solo.</p>
+    <p class="ayuda">Con el PDF solo, las notas las lee Audiveris en este PC (tarda unos minutos la primera vez). Con el XML del escáner, las notas salen de ahí y el PDF es la página que ve el coro; si está en <code>originales/pdf/</code> con el mismo nombre, se usa solo.</p>
     <div class="ayuda" id="entrada" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px"></div>
     <h2>Borradores</h2>
     <ul class="lista" id="borradores"></ul>
@@ -231,23 +231,27 @@ async function refrescar() {
   if (c) cEl.textContent = c.estado === 'comprobando' ? 'Comprobando que la publicación haya llegado a internet (tarda un par de minutos)…'
     : c.estado === 'bien' ? `Publicación comprobada: los ${c.archivos} archivos de las obras están en internet.`
     : `Atención: estos archivos no se encuentran en internet (revisa mayúsculas y minúsculas del nombre): ${c.faltan.join(', ')}`;
-  const en = estado.entrada || { obras: [], pdfsSueltos: [] };
-  let te = `<strong>Carpeta Entrada</strong> (desde el móvil: compartir el XML y el PDF a Google Drive, carpeta <code>Entrada</code> del proyecto).`;
-  if (!en.obras.length && !en.pdfsSueltos.length) te += `<br><span>Vacía.</span>`;
-  for (const o of en.obras) te += `<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(o.xml)}">${esc(o.xml)}<br><span>${o.pdf ? 'con ' + esc(o.pdf) : 'sin PDF (se buscará en originales/pdf/)'}</span></span><button class="mini" data-xml="${esc(o.xml)}">Cargar</button></div>`;
-  for (const p of en.pdfsSueltos) te += `<div style="margin-top:6px">${esc(p)}: PDF sin XML del mismo nombre; falta el XML del escáner.</div>`;
+  const en = estado.entrada || { obras: [], pdfsSueltos: [], pendientes: [] };
+  let te = `<strong>Carpeta Entrada</strong> (desde el móvil: compartir el PDF, y el XML si lo hay, a Google Drive, carpeta <code>Entrada</code> del proyecto).`;
+  if (!en.obras.length && !en.pdfsSueltos.length && !(en.pendientes || []).length) te += `<br><span>Vacía.</span>`;
+  const fila = (nombre, detalle, boton) => `<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(nombre)}">${esc(nombre)}<br><span>${detalle}</span></span>${boton}</div>`;
+  const botonPdf = p => en.audiveris ? `<button class="mini" data-pdf="${esc(p)}" title="Audiveris lee las notas del PDF (tarda unos minutos la primera vez)">Preparar con Audiveris</button>` : '';
+  const sinAudiveris = en.audiveris ? '' : ' Audiveris no está instalado: añade el XML del escáner con el mismo nombre.';
+  for (const o of en.obras) te += fila(o.xml, o.pdf ? 'con ' + esc(o.pdf) : 'sin PDF (se buscará en originales/pdf/)', `<button class="mini" data-xml="${esc(o.xml)}">Cargar</button>`);
+  for (const p of en.pdfsSueltos) te += fila(p, 'PDF solo, sin XML del escáner.' + sinAudiveris, botonPdf(p));
+  for (const p of en.pendientes || []) te += fila(p, 'en <code>pendientes/</code>: PDF a la espera.' + sinAudiveris, botonPdf(p));
   $('entrada').innerHTML = te;
-  for (const b of $('entrada').querySelectorAll('button[data-xml]')) b.onclick = async () => {
+  for (const b of $('entrada').querySelectorAll('button[data-xml], button[data-pdf]')) b.onclick = async () => {
     b.disabled = true;
-    try { const r = await api('/api/entrada/cargar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ xml: b.dataset.xml }) }); await refrescar(); seleccionar(r.id); }
+    try { const r = await api('/api/entrada/cargar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b.dataset.xml ? { xml: b.dataset.xml } : { pdf: b.dataset.pdf }) }); await refrescar(); seleccionar(r.id); }
     catch (e) { alert(e.message); b.disabled = false; }
   };
   const ul = $('borradores'); ul.innerHTML = '';
   for (const b of estado.borradores) {
     const li = document.createElement('li');
     li.className = b.id === seleccionado ? 'activa' : '';
-    const nombre = b.entrada?.titulo || b.archivos?.find(a => /\.xml$/i.test(a))?.replace(/\.[^.]+$/, '') || 'Borrador';
-    const textoEstado = ({ nuevo: 'sin preparar', preparando: 'preparando…', listo: 'lista para revisar', error: 'con errores' }[b.estado] || b.estado) + (b.cantando ? ' · cantando…' : (b.entrada && b.entrada.canto && b.entrada.canto.length) ? ' · con voces cantadas' : '') + ' · ' + new Date(b.creado).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const nombre = nombreBorrador(b);
+    const textoEstado = ({ nuevo: 'sin preparar', preparando: b.audiveris === null && !b.archivos?.some(a => /\.(xml|musicxml)$/i.test(a)) ? 'leyendo el PDF con Audiveris…' : 'preparando…', listo: 'lista para revisar', error: 'con errores' }[b.estado] || b.estado) + (b.cantando ? ' · cantando…' : (b.entrada && b.entrada.canto && b.entrada.canto.length) ? ' · con voces cantadas' : '') + ' · ' + new Date(b.creado).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     li.innerHTML = `<span class="punto ${b.estado}"></span><span class="t">${esc(nombre)}<br><span class="e">${textoEstado}</span></span>`;
     li.onclick = () => seleccionar(b.id);
     ul.appendChild(li);
@@ -280,28 +284,31 @@ $('elegir').addEventListener('change', e => { subir([...e.target.files]); e.targ
 
 async function subir(archivos) {
   const validos = archivos.filter(f => /\.(xml|musicxml|pdf)$/i.test(f.name));
-  if (!validos.length) return alert('Solo se admiten archivos .xml / .musicxml del Escáner Musical y .pdf');
-  if (!validos.some(f => /\.(xml|musicxml)$/i.test(f.name))) return alert('Hace falta el archivo .xml del Escáner Musical: las notas salen de ahí. El PDF es la página que ve el coro.');
-  // Un borrador por cada XML; el PDF con el mismo nombre va con él
+  if (!validos.length) return alert('Solo se admiten el .pdf de la obra y, si lo tienes, el .xml / .musicxml del Escáner Musical');
+  // Un borrador por cada XML (el PDF con el mismo nombre va con él) y uno por cada PDF que venga solo (las notas las lee Audiveris)
   const clave = n => n.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const xmls = validos.filter(f => /\.(xml|musicxml)$/i.test(f.name));
   const pdfs = validos.filter(f => /\.pdf$/i.test(f.name));
-  for (const p of pdfs) if (!xmls.some(x => clave(x.name) === clave(p.name))) alert(`El PDF "${p.name}" no tiene un .xml con el mismo nombre, así que no sé con qué obra va. Ponle el mismo nombre que al XML.`);
+  const grupos = xmls.map(x => [x, pdfs.find(p => clave(p.name) === clave(x.name))].filter(Boolean));
+  const sueltos = pdfs.filter(p => !xmls.some(x => clave(x.name) === clave(p.name)));
+  if (sueltos.length && xmls.length && !confirm(`${sueltos.length === 1 ? 'El PDF ' + sueltos[0].name + ' no tiene' : 'Hay ' + sueltos.length + ' PDF sin'} un .xml con el mismo nombre. ¿Preparar${sueltos.length === 1 ? 'lo' : 'los'} aparte, leyendo las notas con Audiveris?`)) sueltos.length = 0;
+  grupos.push(...sueltos.map(p => [p]));
   let primero = null;
-  for (const x of xmls) {
+  for (const grupo of grupos) {
     const b = await api('/api/borradores', { method: 'POST' });
-    const pdf = pdfs.find(p => clave(p.name) === clave(x.name));
-    for (const f of [x, pdf].filter(Boolean)) {
-      await api(`/api/borradores/${b.id}/archivos?nombre=${encodeURIComponent(f.name)}`, { method: 'POST', body: f });
-    }
-    await api(`/api/borradores/${b.id}/preparar`, { method: 'POST' });
+    for (const f of grupo) await api(`/api/borradores/${b.id}/archivos?nombre=${encodeURIComponent(f.name)}`, { method: 'POST', body: f });
+    try { await api(`/api/borradores/${b.id}/preparar`, { method: 'POST' }); }
+    catch (e) { alert(e.message); await api(`/api/borradores/${b.id}`, { method: 'DELETE' }).catch(() => {}); continue; }
     primero = primero || b.id;
   }
   await refrescar();
   if (primero) seleccionar(primero);
 }
+// Nombre de un borrador en la lista: el título si ya está preparado; si no, el del XML o el del PDF subido
+const nombreBorrador = b => b.entrada?.titulo || (b.archivos?.find(a => /\.(xml|musicxml)$/i.test(a)) || b.archivos?.find(a => /\.pdf$/i.test(a)) || '').replace(/\.[^.]+$/, '').replace(/_+/g, ' ') || 'Borrador';
 
 // ---------- Panel del borrador ----------
+const tiempoLegible = s => s < 60 ? `${Math.round(s)} s` : `${Math.floor(s / 60)} min ${Math.round(s % 60)} s`;
 async function seleccionar(id) {
   if (id !== seleccionado) compasEnRevision = null;
   seleccionado = id;
@@ -322,14 +329,17 @@ async function seleccionar(id) {
 function pintarPanel() {
   const b = borradorActual, panel = $('panel');
   if (!b) { panel.innerHTML = '<div class="vacio">Arrastra una partitura para empezar, o elige un borrador de la lista.</div>'; return; }
-  const nombre = b.entrada?.titulo || b.archivos?.find(a => /\.xml$/i.test(a))?.replace(/\.[^.]+$/, '') || 'Borrador';
+  const nombre = nombreBorrador(b);
+  const soloPdf = !b.archivos?.some(a => /\.(xml|musicxml)$/i.test(a)) && b.archivos?.some(a => /\.pdf$/i.test(a));
   let html = `<div class="cab"><h3>${esc(nombre)}</h3>`;
-  if (b.estado === 'preparando') html += `<span class="progreso"></span> <span class="ayuda">Preparando la obra… si hay PDF, Audiveris tarda un par de minutos la primera vez.</span>`;
+  if (b.estado === 'preparando') html += `<span class="progreso"></span> <span class="ayuda">${soloPdf ? 'Audiveris está leyendo las notas del PDF: tarda unos minutos la primera vez (las siguientes, segundos). Después se prepara la obra.' : 'Preparando la obra…'}</span>`;
   html += `</div>`;
 
   if (b.estado === 'error') {
     html += `<div class="aviso mal"><strong>No se ha podido preparar:</strong> ${esc(b.error)}</div>`;
   }
+  // Las notas no vienen del Escáner Musical, sino de Audiveris: se dice, con lo que tardó, porque la lectura es menos fiable
+  if (b.estado === 'listo' && b.audiveris) html += `<div class="aviso">Las notas las ha leído <strong>Audiveris</strong> del PDF (no hay XML del Escáner Musical)${b.audiveris.cache ? ', recuperadas de una lectura anterior' : ' en ' + tiempoLegible(b.audiveris.segundos)}. Revisa con más cuidado los compases que no cuadran y la letra.</div>`;
 
   if (b.estado === 'listo') {
     // Ajustes

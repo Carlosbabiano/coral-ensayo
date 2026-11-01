@@ -56,8 +56,10 @@ function procesar(id) {
   const dirEntrada = path.join(dirDe(id), 'entrada');
   const archivos = fs.existsSync(dirEntrada) ? fs.readdirSync(dirEntrada) : [];
   const xml = archivos.find(f => /\.(xml|musicxml)$/i.test(f));
-  if (!xml) throw new Error('Hace falta el archivo .xml del Escáner Musical (el PDF solo no vale: las notas salen del escáner).');
   const pdfSubido = archivos.find(f => /\.pdf$/i.test(f));
+  if (!xml && !pdfSubido) throw new Error('Hace falta el PDF de la obra (las notas las lee Audiveris), o el .xml del Escáner Musical.');
+  // Sin XML, las notas las saca Audiveris del PDF (si no está instalado, prepararObra lo dice con claridad)
+  if (!xml) obra.comprobarAudiveris();
   const pdf = pdfSubido ? path.join(dirEntrada, pdfSubido) : obra.pdfPara(path.join(dirEntrada, xml));
   const dirSalida = path.join(dirDe(id), 'partituras');
   // Si los compases de la página se corrigieron a mano, se conservan (el detector no se vuelve a pasar si siguen cuadrando)
@@ -66,18 +68,18 @@ function procesar(id) {
   fs.rmSync(dirSalida, { recursive: true, force: true });
 
   const cabecera = b.origen === 'entrada' ? ['Recogido de la carpeta Entrada: ' + archivos.join(' + ')] : [];
-  Object.assign(b, { estado: 'preparando', log: cabecera, error: null, entrada: null, avisos: [], partes: [], sospechosos: [], tempo: null, pdf: pdf ? path.basename(pdf) : null });
+  Object.assign(b, { estado: 'preparando', log: cabecera, error: null, entrada: null, avisos: [], partes: [], sospechosos: [], tempo: null, pdf: pdf ? path.basename(pdf) : null, audiveris: null });
   guardarBorrador(b);
   trabajando.add(id);
   const registrar = linea => { b.log.push(linea); guardarBorrador(b); emitir(id, { tipo: 'log', linea }); };
-  registrar('== ' + xml + (pdf ? ' + ' + path.basename(pdf) : ' (sin PDF)') + ' ==');
-  const w = new Worker(path.join(__dirname, 'gestor-trabajo.js'), { workerData: { xml: path.join(dirEntrada, xml), pdf, dirSalida, posicionesManuales } });
+  registrar('== ' + (xml ? xml + (pdf ? ' + ' + path.basename(pdf) : ' (sin PDF)') : path.basename(pdf) + ' (solo el PDF: las notas las lee Audiveris)') + ' ==');
+  const w = new Worker(path.join(__dirname, 'gestor-trabajo.js'), { workerData: { xml: xml ? path.join(dirEntrada, xml) : null, pdf, dirSalida, posicionesManuales } });
   const terminar = () => { trabajando.delete(id); guardarBorrador(b); emitir(id, { tipo: 'estado', borrador: b }); };
   w.on('message', m => {
     if (m.tipo === 'log') registrar(m.linea);
     else if (m.tipo === 'fin') {
       const r = m.resultado;
-      Object.assign(b, { estado: 'listo', entrada: r.entrada, avisos: r.avisos, partes: r.partes, sospechosos: r.sospechosos, tempo: r.tempo });
+      Object.assign(b, { estado: 'listo', entrada: r.entrada, avisos: r.avisos, partes: r.partes, sospechosos: r.sospechosos, tempo: r.tempo, audiveris: r.audiveris || null });
       registrar('Lista para revisar.');
       terminar();
     } else if (m.tipo === 'error') { b.estado = 'error'; b.error = m.mensaje; registrar('X ' + m.mensaje); terminar(); }
@@ -470,28 +472,41 @@ async function comprobarEnInternet() {
 // ---------- Carpeta de entrada (Google Drive) ----------
 // Lo que se deje en Entrada/ (por ejemplo compartido desde el móvil a Google Drive) se muestra en el gestor
 // y se carga a mano con el botón "Cargar": el XML crea el borrador y, si hay un PDF con el mismo nombre, va con él.
+// Un PDF solo (en Entrada/ o en Entrada/pendientes/) también se puede cargar: las notas las lee Audiveris.
 const DIR_ENTRADA = path.join(obra.RAIZ, 'Entrada');
+const DIR_PENDIENTES = path.join(DIR_ENTRADA, 'pendientes');
 fs.mkdirSync(DIR_ENTRADA, { recursive: true });
+const listarArchivos = dir => { try { return fs.readdirSync(dir).filter(n => /.(xml|musicxml|pdf)$/i.test(n) && !n.startsWith('~') && !n.startsWith('.')); } catch { return []; } };
 function listarEntrada() {
-  let nombres = [];
-  try { nombres = fs.readdirSync(DIR_ENTRADA).filter(n => /.(xml|musicxml|pdf)$/i.test(n) && !n.startsWith('~') && !n.startsWith('.')); } catch {}
+  const nombres = listarArchivos(DIR_ENTRADA);
   const pdfs = nombres.filter(n => /.pdf$/i.test(n));
   const xmls = nombres.filter(n => /.(xml|musicxml)$/i.test(n)).map(xml => ({ xml, pdf: pdfs.find(p => obra.clave(p) === obra.clave(xml)) || null }));
   const sueltos = pdfs.filter(p => !xmls.some(x => x.pdf === p));
-  return { ruta: DIR_ENTRADA, obras: xmls, pdfsSueltos: sueltos };
+  const pendientes = listarArchivos(DIR_PENDIENTES).filter(n => /.pdf$/i.test(n));
+  return { ruta: DIR_ENTRADA, obras: xmls, pdfsSueltos: sueltos, pendientes, audiveris: obra.hayAudiveris() };
 }
-function cargarDeEntrada(xml) {
-  xml = path.basename(xml);
-  const entrada = listarEntrada().obras.find(o => o.xml === xml);
-  if (!entrada) throw new Error('No está en la carpeta Entrada: ' + xml);
+// Carga una obra de la carpeta Entrada: por su XML (con el PDF del mismo nombre, si lo hay) o por un PDF solo
+// (de Entrada/ o de Entrada/pendientes/), que se prepara con Audiveris
+function cargarDeEntrada({ xml, pdf }) {
+  const en = listarEntrada();
+  let archivos, dirOrigen = DIR_ENTRADA;
+  if (xml) {
+    const entrada = en.obras.find(o => o.xml === path.basename(xml));
+    if (!entrada) throw new Error('No está en la carpeta Entrada: ' + xml);
+    archivos = [entrada.xml, entrada.pdf].filter(Boolean);
+  } else {
+    pdf = path.basename(pdf || '');
+    if (en.pdfsSueltos.includes(pdf)) archivos = [pdf];
+    else if (en.pendientes.includes(pdf)) { archivos = [pdf]; dirOrigen = DIR_PENDIENTES; }
+    else throw new Error('No está en la carpeta Entrada: ' + pdf);
+    obra.comprobarAudiveris();
+  }
   const id = nuevoId();
   const dirEntrada = path.join(dirDe(id), 'entrada');
   fs.mkdirSync(dirEntrada, { recursive: true });
-  const archivos = [];
-  for (const f of [entrada.xml, entrada.pdf].filter(Boolean)) {
-    const origen = path.join(DIR_ENTRADA, f), destino = path.join(dirEntrada, f);
+  for (const f of archivos) {
+    const origen = path.join(dirOrigen, f), destino = path.join(dirEntrada, f);
     try { fs.renameSync(origen, destino); } catch { fs.copyFileSync(origen, destino); fs.unlinkSync(origen); }
-    archivos.push(f);
   }
   const b = { id, creado: new Date().toISOString(), estado: 'nuevo', archivos, log: [], origen: 'entrada' };
   guardarBorrador(b);
@@ -634,7 +649,7 @@ const servidor = http.createServer(async (req, res) => {
       try { return json(res, { ok: true, id: retirarObra(m[1]) }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if (ruta === '/api/entrada/cargar' && req.method === 'POST') {
-      try { const { xml } = JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}'); return json(res, { id: cargarDeEntrada(xml) }); } catch (e) { return json(res, { error: e.message }, 400); }
+      try { return json(res, { id: cargarDeEntrada(JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}')) }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if (ruta === '/api/publicacion/eventos' && req.method === 'GET') {
       // Solo se reenvía el registro de la publicación que pide la ventana (?id=); el de una anterior ya no le sirve
