@@ -70,6 +70,10 @@
     "ensayo": true
   },
   {
+    "titulo": "canticorum",
+    "archivo": "canticorum.xml"
+  },
+  {
     "titulo": "Carol of the Bells",
     "archivo": "Carol_of_the_Bells_1.xml",
     "posiciones": "Carol_of_the_Bells_1.pos.json",
