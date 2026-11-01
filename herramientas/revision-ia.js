@@ -227,7 +227,7 @@ async function pedirAlModelo({ clave, png, texto }) {
     system: [{ type: 'text', text: SISTEMA, cache_control: { type: 'ephemeral' } }],
     output_config: { effort: 'high', format: { type: 'json_schema', schema: ESQUEMA } },
     fallbacks: 'default',
-    messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/png', data: png.toString('base64') } }, { type: 'text', text }] }],
+    messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/png', data: png.toString('base64') } }, { type: 'text', text: texto }] }],
   };
   let r;
   try {
