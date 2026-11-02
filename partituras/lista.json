@@ -167,6 +167,22 @@
     ]
   },
   {
+    "titulo": "Salvator mundi",
+    "archivo": "Salvator_mundi.xml",
+    "posiciones": "Salvator_mundi.pos.json",
+    "paginas": [
+      "Salvator_mundi-p1.png",
+      "Salvator_mundi-p2.png",
+      "Salvator_mundi-p3.png",
+      "Salvator_mundi-p4.png",
+      "Salvator_mundi-p5.png",
+      "Salvator_mundi-p6.png",
+      "Salvator_mundi-p7.png",
+      "Salvator_mundi-p8.png",
+      "Salvator_mundi-p9.png"
+    ]
+  },
+  {
     "titulo": "Si la nieve resbala (Domínguez)",
     "archivo": "Si_la_nieve_resbala_Dominguez.xml",
     "posiciones": "Si_la_nieve_resbala_Dominguez.pos.json",
