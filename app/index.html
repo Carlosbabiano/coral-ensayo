@@ -1033,14 +1033,16 @@ $('resumenAjustes').onclick = () => mostrarAjustes($('panelAjustes').hidden);
 // La barra de abajo se puede esconder (en el gestor, con la ventana pequeña, tapa media partitura). Se recuerda aparte
 // en el editor y en la app; al volver a mostrarla el foco vuelve al botón de esconder, y al revés
 const claveControles = modoEditor ? 'controlesOcultosEditor' : 'controlesOcultos';
-function ocultarControles(si, conFoco) {
+function ocultarControles(si, conFoco, sinGuardar) {
   document.body.classList.toggle('controlesOcultos', si);
   ajustarHueco();
-  try { localStorage.setItem(claveControles, si ? '1' : '0'); } catch {}
+  if (!sinGuardar) try { localStorage.setItem(claveControles, si ? '1' : '0'); } catch {}
   if (conFoco) $(si ? 'mostrarControles' : 'ocultarControles').focus();
 }
 $('ocultarControles').onclick = () => ocultarControles(true, true);
 $('mostrarControles').onclick = () => ocultarControles(false, true);
+// Para el Gestor de obras (modo «Reparar»): esconde la barra sin cambiar lo que el usuario tenga guardado
+window.ocultarControles = (si, sinGuardar) => ocultarControles(si, false, sinGuardar);
 try { if (localStorage.getItem(claveControles) === '1') ocultarControles(true); } catch {}
 try { if (localStorage.getItem('ajustesAbiertos') === '1') mostrarAjustes(true); } catch {}
 for (const id of ['bucle', 'desde', 'hasta']) $(id).addEventListener('change', resumirAjustes);
@@ -1184,6 +1186,7 @@ function pintarPlay(pausa) {
   if (use.getAttribute('href') === icono) return;
   use.setAttribute('href', icono);
   b.setAttribute('aria-label', pausa ? 'Pausa' : 'Reproducir'); b.title = pausa ? 'Pausa' : 'Reproducir';
+  try { if (parent !== window && parent.estadoReproduccion) parent.estadoReproduccion(pausa); } catch {} // el gestor lleva su propio botón
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) b.querySelector('.ico').animate([{ transform: 'scale(.75)' }, { transform: 'scale(1)' }], { duration: 180, easing: 'ease-out' });
 }
 // Mientras se descarga el sonido, el botón principal lo enseña (anillo girando) y lo anuncia a los lectores de pantalla
@@ -1196,6 +1199,8 @@ function conCarga(promesa) {
 $('play').onclick = reproducir;
 $('stop').onclick = () => { parar(); irACompas(eventos[compasInicio]?.compas ?? 0); };
 $('inicio').onclick = () => irACompas(0);
+// Para el Gestor de obras (modo «Reparar»): reproducir, parar e ir al principio desde su línea de arriba
+window.reproducir = reproducir; window.parar = () => $('stop').onclick(); window.alPrincipio = () => irACompas(0);
 $('tempo').oninput = () => { mostrarTempo(); try { localStorage.setItem('tempo:' + (obraActual.archivo || ''), $('tempo').value); } catch {} if (reproduciendo) { pausar(); reproducir(); } };
 $('mezcla').oninput = () => { $('mezclaVal').textContent = $('mezcla').value + '%'; ajustarVocesCanto(); resumirAjustes(); };
 $('timbre').onchange = () => { try { localStorage.setItem('timbre', $('timbre').value); } catch {} resumirAjustes(); if (modoCanto() && !canto.listo) { cargarCanto().catch(() => {}); } if (reproduciendo) { pausar(); reproducir(); } };

@@ -125,6 +125,11 @@
   .rep-cab h3 { margin: 0; font-size: 15px; }
   .rep-cab .compases a { margin: 0 4px 0 0; }
   .rep-cab .nav { display: flex; align-items: center; gap: 4px; }
+  /* Reproducir, parar y al principio en la línea de arriba (la barra de abajo de la partitura se esconde en este modo) */
+  .rep-cab .transporte { display: flex; align-items: center; gap: 4px; }
+  .rep-cab .transporte button { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 30px; padding: 0; }
+  .rep-cab .transporte button.principal { width: 44px; }
+  .rep-cab .ico { width: 16px; height: 16px; display: block; }
   body.reparando .rep-cuerpo { flex: 1; min-height: 0; display: flex; position: relative; }
   body.reparando .rep-previa { flex: 1; min-width: 0; display: flex; flex-direction: column; order: 0; border: 0; border-radius: 0; background: transparent; padding: 0 8px 8px; }
   body.reparando #barraNota { position: static; padding-top: 6px; background: transparent; }
@@ -198,6 +203,12 @@
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><!-- iconos (Lucide), los mismos que usa la app -->
+  <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/></symbol>
+  <symbol id="i-skip-back" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" x2="5" y1="19" y2="5"/></symbol>
+</svg>
 <header>
   <img src="/app/icono-192.png" alt="">
   <h1>Gestor de obras · Coral Villa de Mengíbar</h1>
@@ -437,6 +448,11 @@ function pintarPanel() {
     html += `<div class="reparar" id="reparar"><div class="rep-cab">
       <h3>${esc(nombre)}</h3>
       <span class="nav"><button class="mini" id="repAnt" title="Compás anterior">◀</button> <label>Compás <input type="number" id="repNum" min="1" value="${compasEnRevision || 1}" style="width:70px"></label> <button class="mini" id="repSig" title="Compás siguiente">▶</button></span>
+      <span class="transporte">
+        <button id="repInicio" title="Al principio" aria-label="Al principio"><svg class="ico" aria-hidden="true"><use href="#i-skip-back"/></svg></button>
+        <button class="principal" id="repPlay" title="Reproducir" aria-label="Reproducir"><svg class="ico" aria-hidden="true"><use href="#i-play"/></svg></button>
+        <button id="repStop" title="Parar" aria-label="Parar"><svg class="ico" aria-hidden="true"><use href="#i-stop"/></svg></button>
+      </span>
       <span id="repChips"></span>
       <span class="hueco"></span>
       <button class="mini rep-ver" id="repVer" aria-expanded="false" aria-controls="revision">Ver el compás</button>
@@ -513,11 +529,34 @@ function pintarPanel() {
   $('repNum') && ($('repNum').onkeydown = e => { if (e.key === 'Enter') { const n = +$('repNum').value; if (n) revisarCompas(n); } });
   $('repAnt') && ($('repAnt').onclick = () => revisarCompas(Math.max(1, (+$('repNum').value || 1) - 1)));
   $('repSig') && ($('repSig').onclick = () => revisarCompas((+$('repNum').value || 0) + 1));
+  const enPrevia = f => { try { const w = $('previa').contentWindow; if (w[f]) w[f](); } catch {} };
+  $('repInicio') && ($('repInicio').onclick = () => enPrevia('alPrincipio'));
+  $('repPlay') && ($('repPlay').onclick = () => enPrevia('reproducir'));
+  $('repStop') && ($('repStop').onclick = () => enPrevia('parar'));
   pintarRepChips();
   if (reparando && !compasEnRevision && b.sospechosos.length) compasEnRevision = +b.sospechosos[0];
   if (compasEnRevision && b.estado === 'listo') revisarCompas(compasEnRevision, true);
   notaSel = null; pintarBarraNota();
-  if ($('previa')) $('previa').onload = () => { try { $('previa').contentDocument.addEventListener('keydown', teclaEditor); } catch {} };
+  if ($('previa')) $('previa').onload = () => {
+    try { $('previa').contentDocument.addEventListener('keydown', teclaEditor); } catch {}
+    estadoReproduccion(false);
+    if (document.body.classList.contains('reparando')) ocultarBarraPrevia(true);
+  };
+}
+// Reproduciendo o parada: el botón de arriba del modo «Reparar» sigue al de la app (la app avisa desde pintarPlay)
+function estadoReproduccion(sonando) {
+  const b = $('repPlay'); if (!b) return;
+  b.querySelector('use').setAttribute('href', sonando ? '#i-pause' : '#i-play');
+  b.title = sonando ? 'Pausa' : 'Reproducir'; b.setAttribute('aria-label', b.title);
+}
+window.estadoReproduccion = estadoReproduccion;
+// En el modo «Reparar» la barra de abajo de la partitura (reproducir, ajustes) se esconde: sus botones están arriba.
+// Al salir vuelve a lo que el usuario tuviera guardado en la app
+function ocultarBarraPrevia(si) {
+  try {
+    const w = $('previa').contentWindow; if (!w.ocultarControles) return;
+    w.ocultarControles(si ? true : w.localStorage.getItem('controlesOcultosEditor') === '1', true);
+  } catch {}
 }
 
 // ---------- Edición visual: nota seleccionada en la previsualización + teclas ----------
@@ -667,6 +706,7 @@ function pintarRepChips() {
 function reparar(si, compas) {
   const b = borradorActual; if (si && (!b || b.estado !== 'listo' || !$('reparar'))) return;
   document.body.classList.toggle('reparando', !!si);
+  ocultarBarraPrevia(!!si);
   try { if (si) localStorage.setItem('reparando', b.id); else localStorage.removeItem('reparando'); } catch {}
   if (si) {
     const n = compas || compasEnRevision || (b.sospechosos.length ? +b.sospechosos[0] : 0);
