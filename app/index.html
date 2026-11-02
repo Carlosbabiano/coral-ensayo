@@ -480,8 +480,12 @@ async function cargarLista() {
   if (enEnsayo.length) { grupo('En ensayo', enEnsayo); if (resto.length) grupo('Repertorio', resto); }
   else lista.forEach(o => $('obra').appendChild(opcion(o)));
   if (!lista.length) { mostrarTarjeta('Todavía no hay obras', 'Cuando se publique la primera obra aparecerá aquí.'); return; }
-  $('obra').onchange = () => cargarObra($('obra').value).catch(mostrarErrorCarga);
-  await cargarObra((enEnsayo[0] || lista[0]).archivo);
+  $('obra').onchange = () => { try { localStorage.setItem('obraElegida', $('obra').value); } catch {} cargarObra($('obra').value).catch(mostrarErrorCarga); };
+  // Se abre la última obra que se eligió, si sigue publicada; si no, la primera en ensayo
+  let elegida = null; try { elegida = localStorage.getItem('obraElegida'); } catch {}
+  const inicial = lista.find(o => o.archivo === elegida) || enEnsayo[0] || lista[0];
+  $('obra').value = inicial.archivo; // que el desplegable enseñe la obra que se abre
+  await cargarObra(inicial.archivo);
 }
 
 // Carga la obra en OSMD desde una dirección o desde el texto del MusicXML, y arregla las casillas de repetición
