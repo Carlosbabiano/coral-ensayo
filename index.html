@@ -480,8 +480,12 @@ async function cargarLista() {
   if (enEnsayo.length) { grupo('En ensayo', enEnsayo); if (resto.length) grupo('Repertorio', resto); }
   else lista.forEach(o => $('obra').appendChild(opcion(o)));
   if (!lista.length) { mostrarTarjeta('Todavía no hay obras', 'Cuando se publique la primera obra aparecerá aquí.'); return; }
-  $('obra').onchange = () => cargarObra($('obra').value).catch(mostrarErrorCarga);
-  await cargarObra((enEnsayo[0] || lista[0]).archivo);
+  $('obra').onchange = () => { try { localStorage.setItem('obraElegida', $('obra').value); } catch {} cargarObra($('obra').value).catch(mostrarErrorCarga); };
+  // Se abre la última obra que se eligió, si sigue publicada; si no, la primera en ensayo
+  let elegida = null; try { elegida = localStorage.getItem('obraElegida'); } catch {}
+  const inicial = lista.find(o => o.archivo === elegida) || enEnsayo[0] || lista[0];
+  $('obra').value = inicial.archivo; // que el desplegable enseñe la obra que se abre
+  await cargarObra(inicial.archivo);
 }
 
 // Carga la obra en OSMD desde una dirección o desde el texto del MusicXML, y arregla las casillas de repetición
@@ -767,6 +771,7 @@ function crearBotonesVoces() {
   const cont = $('voces'); cont.innerHTML = '';
   const instrumentos = osmd.Sheet.Instruments;
   if (vozActiva >= instrumentos.length) vozActiva = 0;
+  const botones = [];
   instrumentos.forEach((ins, i) => {
     const nombre = ins.Name || ('Voz ' + (i + 1));
     const subs = seDesdobla(i) ? [1, 2] : [0];
@@ -774,10 +779,18 @@ function crearBotonesVoces() {
       const b = document.createElement('button');
       b.textContent = sub ? nombre + ' ' + sub : nombre;
       b.dataset.parte = i; b.dataset.sub = sub;
-      b.onclick = () => { vozActiva = i; subActiva = sub; marcarVoz(); ajustarVocesCanto(); };
-      cont.appendChild(b);
+      b.onclick = () => { vozActiva = i; subActiva = sub; marcarVoz(); ajustarVocesCanto(); try { localStorage.setItem('vozElegida', b.textContent); } catch {} };
+      cont.appendChild(b); botones.push(b);
     }
   });
+  // La última voz elegida se recuerda por su nombre (Tenor, Contralto 2…): al abrir la app o cambiar de obra sale esa,
+  // no siempre la primera. Si la obra no la tiene con ese nombre exacto, vale la misma cuerda («Tenor» ↔ «Tenor 1»)
+  let guardada = null; try { guardada = localStorage.getItem('vozElegida'); } catch {}
+  if (guardada) {
+    const norm = s => s.trim().toLowerCase(), cuerda = s => norm(s).replace(/\s+\d+$/, '');
+    const b = botones.find(x => norm(x.textContent) === norm(guardada)) || botones.find(x => cuerda(x.textContent) === cuerda(guardada));
+    if (b) { vozActiva = +b.dataset.parte; subActiva = +b.dataset.sub; }
+  }
   // que la selección siga siendo válida al cambiar de obra (o tras corregir notas)
   if (seDesdobla(vozActiva)) { if (!subActiva) subActiva = 1; } else subActiva = 0;
   marcarVoz();
