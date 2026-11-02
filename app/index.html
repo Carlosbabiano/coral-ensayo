@@ -152,7 +152,13 @@
   /* Mientras se descarga el sonido: un anillo que gira alrededor del botón principal (quieto si se pide menos movimiento) */
   .transporte button.principal.cargando::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--color-primary) 25%, transparent); border-top-color: var(--color-primary); animation: gira .9s linear infinite; }
   @keyframes gira { to { transform: rotate(360deg); } }
-  .transporte #vistaApuntes { justify-self: end; }
+  .transporte .lado { display: flex; justify-content: flex-end; align-items: center; gap: var(--space-2); justify-self: end; }
+  /* La barra se puede esconder (en una ventana pequeña, como la del gestor, tapa media partitura): queda solo una
+     pestaña abajo a la derecha para volver a sacarla. Mientras está escondida, el cuerpo no deja hueco */
+  body.controlesOcultos .controles { display: none; }
+  #mostrarControles { display: none; position: fixed; right: var(--space-3); bottom: calc(var(--space-3) + env(safe-area-inset-bottom)); z-index: 5; align-items: center; gap: var(--space-2); min-height: var(--tap); padding: var(--space-2) var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--color-border-control); background: var(--color-surface); color: var(--color-fg); font: inherit; font-size: var(--font-s); box-shadow: var(--shadow-card); }
+  #mostrarControles .ico { transform: rotate(180deg); }
+  body.controlesOcultos #mostrarControles { display: inline-flex; }
   .chip { font-size: var(--font-s); padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-surface-2); border: 1px solid var(--color-border); display: inline-flex; align-items: center; gap: var(--space-2); min-height: 36px; }
   label.chip { min-height: var(--tap); color: var(--color-fg); }
   .chip input[type=checkbox] { width: 20px; height: 20px; margin: 0; }
@@ -230,6 +236,7 @@
   <symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></symbol>
   <symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
   <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
 </svg>
@@ -277,7 +284,10 @@
       <button id="play" class="principal" title="Reproducir" aria-label="Reproducir"><svg class="ico" aria-hidden="true"><use href="#i-play"/></svg></button>
       <button id="stop" title="Parar" aria-label="Parar"><svg class="ico" aria-hidden="true"><use href="#i-stop"/></svg></button>
     </div>
-    <button id="vistaApuntes" style="display:none" title="Escribir apuntes sobre la página" aria-label="Escribir apuntes sobre la página" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-pencil"/></svg></button>
+    <div class="lado">
+      <button id="vistaApuntes" style="display:none" title="Escribir apuntes sobre la página" aria-label="Escribir apuntes sobre la página" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-pencil"/></svg></button>
+      <button id="ocultarControles" title="Esconder los controles para ver más partitura" aria-label="Esconder los controles"><svg class="ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>
+    </div>
   </div>
   <!-- Ajustes plegados: la fila resume los valores en uso y, al tocarla, despliega los controles -->
   <button id="resumenAjustes" type="button" aria-expanded="false" aria-controls="panelAjustes">
@@ -308,6 +318,7 @@
   </div>
   </div>
 </section>
+<button id="mostrarControles" type="button" title="Volver a mostrar los controles"><svg class="ico" aria-hidden="true"><use href="#i-chevron-down"/></svg> Controles</button>
 
 <div id="cargando" role="status" aria-live="polite"><div class="tarjeta">Cargando partitura…<div class="esqueleto" aria-hidden="true"><i></i><i></i><i></i></div></div></div>
 
@@ -693,6 +704,7 @@ function dibujarPagina(p, enCurso) {
   ctx.globalAlpha = 1;
 }
 function activarApuntes(on) {
+  if (on && document.body.classList.contains('controlesOcultos')) ocultarControles(false);
   apuntando = on;
   document.body.classList.toggle('apuntando', on);
   $('vistaApuntes').classList.toggle('activa', on);
@@ -1018,6 +1030,18 @@ function mostrarAjustes(abrir) {
   try { localStorage.setItem('ajustesAbiertos', abrir ? '1' : '0'); } catch {}
 }
 $('resumenAjustes').onclick = () => mostrarAjustes($('panelAjustes').hidden);
+// La barra de abajo se puede esconder (en el gestor, con la ventana pequeña, tapa media partitura). Se recuerda aparte
+// en el editor y en la app; al volver a mostrarla el foco vuelve al botón de esconder, y al revés
+const claveControles = modoEditor ? 'controlesOcultosEditor' : 'controlesOcultos';
+function ocultarControles(si, conFoco) {
+  document.body.classList.toggle('controlesOcultos', si);
+  ajustarHueco();
+  try { localStorage.setItem(claveControles, si ? '1' : '0'); } catch {}
+  if (conFoco) $(si ? 'mostrarControles' : 'ocultarControles').focus();
+}
+$('ocultarControles').onclick = () => ocultarControles(true, true);
+$('mostrarControles').onclick = () => ocultarControles(false, true);
+try { if (localStorage.getItem(claveControles) === '1') ocultarControles(true); } catch {}
 try { if (localStorage.getItem('ajustesAbiertos') === '1') mostrarAjustes(true); } catch {}
 for (const id of ['bucle', 'desde', 'hasta']) $(id).addEventListener('change', resumirAjustes);
 function prepararTempo(archivo) {
