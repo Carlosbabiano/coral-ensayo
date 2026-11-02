@@ -84,7 +84,7 @@ function analizar({ pdf, dirTrabajo, nPartes = null, log = () => {} }) {
   const archivo = path.join(dirTrabajo, 'analisis.json');
   let previo = null; try { previo = JSON.parse(fs.readFileSync(archivo, 'utf8')); } catch {}
   const vigente = previo && previo.huella === huella && Array.isArray(previo.paginas) && previo.paginas.every(f => fs.existsSync(path.join(dirTrabajo, f)));
-  if (vigente && (nPartes == null || previo.nPartes === nPartes)) return previo;
+  if (vigente && (previo.nPartes || null) === (nPartes || null)) return previo;
   let paginas, alta;
   if (vigente) { paginas = previo.paginas; alta = previo.alta; }
   else {
@@ -228,9 +228,9 @@ $src.Dispose()`;
 // ---------- Esquemas JSON ----------
 const CLAVE = { type: 'object', additionalProperties: false, required: ['sign', 'line', 'octava'], properties: { sign: { type: 'string', enum: ['G', 'F', 'C'] }, line: { type: 'integer', enum: [1, 2, 3, 4, 5] }, octava: { type: 'integer', enum: [-1, 0, 1] } } };
 const ESQUEMA_VISTA = {
-  type: 'object', additionalProperties: false, required: ['titulo', 'compositor', 'pentagramasPorSistema', 'pentagramas', 'indicacion', 'tempo', 'anacrusa', 'avisos'],
+  type: 'object', additionalProperties: false, required: ['titulo', 'compositor', 'pentagramasPorSistema', 'pentagramasVarian', 'pentagramas', 'indicacion', 'tempo', 'anacrusa', 'avisos'],
   properties: {
-    titulo: { type: 'string' }, compositor: { type: 'string' }, pentagramasPorSistema: { type: 'integer' },
+    titulo: { type: 'string' }, compositor: { type: 'string' }, pentagramasPorSistema: { type: 'integer' }, pentagramasVarian: { type: 'boolean' },
     pentagramas: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['nombre', 'tipo', 'clave', 'armadura'], properties: {
       nombre: { type: 'string' }, tipo: { type: 'string', enum: ['coro', 'solista', 'instrumento'] }, clave: CLAVE, armadura: { type: 'integer' } } } },
     indicacion: { type: 'string' }, tempo: { type: 'integer' }, anacrusa: { type: 'boolean' }, avisos: { type: 'string' },
@@ -261,7 +261,8 @@ const ESQUEMA_TRAMO = {
 const SISTEMA_VISTA = `Eres un copista experto en notación musical coral. Te dan la imagen de la primera página de una partitura (impresa o escaneada, a veces con anotaciones a mano) y tienes que describir su estructura en el JSON pedido, para que después se transcriba sistema a sistema.
 
 - titulo: el título de la obra tal como está escrito (sin el compositor). compositor: el autor, o "" si no consta.
-- pentagramasPorSistema: cuántos pentagramas tiene cada sistema (cada fila de música) de esta página. Un coro a cuatro voces son 4; con piano de acompañamiento, 6 (los dos del piano cuentan).
+- pentagramasPorSistema: cuántos pentagramas tiene cada sistema (cada fila de música) de esta página. Un coro a cuatro voces son 4; con piano de acompañamiento, 6 (los dos del piano cuentan). Si no todos los sistemas tienen los mismos, el del sistema más completo (el que más pentagramas tiene).
+- pentagramasVarian: true si en esta página NO todos los sistemas tienen el mismo número de pentagramas (por ejemplo, un primer sistema con una sola voz y luego el coro entero, o un pentagrama de más cuando una voz se divide); false si todos tienen los mismos.
 - pentagramas: los pentagramas del PRIMER sistema, de arriba abajo, uno por entrada. nombre: la voz, en castellano y con uno de estos nombres cuando encaje: Soprano, Mezzosoprano, Contralto, Tenor, Barítono, Bajo, Solista, Piano (las abreviaturas S., A., T., B., Cantus, Altus, Bassus… se traducen); si no hay nombre escrito, dedúcelo por la clave y la posición (sol, sol, sol con 8, fa = Soprano, Contralto, Tenor, Bajo). Dos voces en un mismo pentagrama (soprano y contralto juntas) son UN pentagrama con el nombre de la de arriba. tipo: coro para una voz del coro, solista para un solista, instrumento para piano, órgano u otro acompañamiento (cada pentagrama del piano es una entrada con tipo instrumento).
 - clave de cada pentagrama: sign G (sol), F (fa) o C (do); line la línea de la clave (sol 2, fa 4, do 3 o 4); octava -1 si es clave de sol con un 8 debajo (tenor, suena una octava más grave), 0 normalmente.
 - armadura: las alteraciones de la armadura en quintas: 1 sostenido = 1, 2 sostenidos = 2, 1 bemol = -1, 2 bemoles = -2… sin alteraciones = 0.
@@ -280,7 +281,7 @@ Cómo mirar las imágenes:
 - Las anotaciones a mano (números, flechas, círculos, textos) no son notas: ignóralas.
 
 Convenciones del JSON (las mismas en todas las voces):
-- voz: el nombre de la voz de ese pentagrama, en castellano y con uno de estos nombres cuando encaje: Soprano, Mezzosoprano, Contralto, Tenor, Barítono, Bajo, Solista (S./A./T./B., Cantus/Altus/Tenor/Bassus, Sopr./Contr./Ten./Bajo… se traducen); si no hay etiqueta, el que deduzcas por clave y tesitura. Para un instrumento, su nombre (Órgano, Piano…).
+- voz: el nombre de la voz de ese pentagrama, en castellano y con uno de estos nombres cuando encaje: Soprano, Mezzosoprano, Contralto, Tenor, Barítono, Bajo, Solista (S./A./T./B., Cantus/Altus/Tenor/Bassus, Sopr./Contr./Ten./Bajo… se traducen); si no hay etiqueta, el que deduzcas por clave y tesitura. Si la obra es para dos coros (C. I / C. II, Coro I / Coro II) o la voz lleva número (S. I y S. II, Soprano 1 y 2), añade el número al nombre: «Soprano 1», «Soprano 2», «Tenor 2»… Para un instrumento, su nombre (Órgano, Piano…).
 - tipo: coro para una voz del coro, solista para un solista, instrumento para órgano, piano, reducción o cualquier acompañamiento (pentagramas con llave, acordes y sin letra). Un pentagrama de instrumento se devuelve con compases [] (no se transcribe).
 - voz2Nombre: si en el pentagrama cantan DOS voces distintas con plicas separadas (por ejemplo etiquetado «T/B» o «S/A», o tenor y bajo en el mismo pentagrama de fa), el nombre de la de abajo (la de las plicas hacia abajo), que va en voz2 de cada compás; "" en los demás casos (un divisi ocasional de la misma voz no es otra voz: va como acorde o en voz2 sin nombre).
 - clave: la clave del pentagrama en estas imágenes (si no se ve ninguna, la que se te indica en el texto). sign G (sol), F (fa) o C (do); line la línea de la clave (sol 2, fa 4); octava -1 cuando es clave de sol con un 8 debajo (tenor), 0 normalmente.
@@ -419,7 +420,7 @@ const NOMBRES_SIMULADOS = ['Soprano', 'Contralto', 'Tenor', 'Bajo', 'Voz 5', 'Vo
 function simularVista(a) {
   const n = Math.max(1, Math.min(6, Math.round(a.filas.reduce((s, f) => s + f.pents.length, 0) / a.filas.length)));
   const pentagramas = NOMBRES_SIMULADOS.slice(0, n).map((nombre, i) => ({ nombre, tipo: 'coro', clave: i === n - 1 && n > 1 ? { sign: 'F', line: 4, octava: 0 } : { sign: 'G', line: 2, octava: nombre === 'Tenor' ? -1 : 0 }, armadura: 0 }));
-  return { json: { titulo: 'Obra simulada', compositor: '', pentagramasPorSistema: n, pentagramas, indicacion: '4/4', tempo: 80, anacrusa: false, avisos: 'Respuesta simulada (GESTOR_IA_SIMULADA=1): no se ha consultado la API.' }, uso: {}, modelo: 'simulado' };
+  return { json: { titulo: 'Obra simulada', compositor: '', pentagramasPorSistema: n, pentagramasVarian: false, pentagramas, indicacion: '4/4', tempo: 80, anacrusa: false, avisos: 'Respuesta simulada (GESTOR_IA_SIMULADA=1): no se ha consultado la API.' }, uso: {}, modelo: 'simulado' };
 }
 function simularTramo({ c, sugeridas, indicacion }) {
   const negras = negrasDeIndicacion(indicacion || '4/4');
@@ -486,16 +487,21 @@ const nombreNormal = s => String(s || '').toLowerCase().normalize('NFD').replace
 // Nombre de voz en castellano a partir de lo que diga el modelo (S., Alto, Bassus, Org.…); null si es un instrumento
 const RANGO_VOZ = { Solista: 0, Soprano: 1, Mezzosoprano: 2, Contralto: 3, Tenor: 4, Barítono: 5, Bajo: 6 };
 function nombreVoz(nombre) {
-  const n = String(nombre || '').split('/')[0].trim().replace(/[.:]+$/, '').toLowerCase(); // «T/B»: la primera; la segunda va en voz2Nombre
+  let n = String(nombre || '').split('/')[0].trim().replace(/[.:]+$/, '').toLowerCase(); // «T/B»: la primera; la segunda va en voz2Nombre
   if (!n) return 'Voz';
+  // número de la voz o del coro al final («soprano ii», «s. 2», «sopr. i»): se conserva como « 2», « 1»…
+  const num = (n.match(/\s(i{1,3}|iv|[1-4])[º°.]?$/) || [])[1];
+  const sufijo = num ? ' ' + ({ i: 1, ii: 2, iii: 3, iv: 4 }[num] || +num) : '';
+  if (num) n = n.slice(0, n.length - num.length).trim().replace(/[\s.:º°]+$/, '');
+  const con = x => x === null ? null : x + sufijo;
   if (/piano|órgano|organo|organ\b|org\b|teclado|reducci|acomp|clave\b|cembalo|arpa|guitar|instrum/.test(n)) return null;
-  if (/mezzo/.test(n)) return 'Mezzosoprano';
-  if (/^(s|sop|sopr|soprano|sopranos|cantus|canto|superius|discantus|c)$/.test(n) || /soprano|cantus|superius/.test(n)) return 'Soprano';
-  if (/^(a|alt|alto|altos|altus|contralto|contraltos|contr)$/.test(n) || /contralto|altus|^alto\b/.test(n)) return 'Contralto';
-  if (/^(t|ten|tenor|tenore|tenores)$/.test(n) || /tenor/.test(n)) return 'Tenor';
-  if (/bar[ií]ton/.test(n)) return 'Barítono';
-  if (/^(b|bajo|bajos|bass|basso|bassus|baixo)$/.test(n) || /\bbajo\b|\bbass|basso/.test(n)) return 'Bajo';
-  if (/^solo\b|solista|^sol$/.test(n)) return 'Solista';
+  if (/mezzo/.test(n)) return con('Mezzosoprano');
+  if (/^(s|sop|sopr|soprano|sopranos|cantus|canto|superius|discantus|c)$/.test(n) || /soprano|cantus|superius/.test(n)) return con('Soprano');
+  if (/^(a|alt|alto|altos|altus|contralto|contraltos|contr)$/.test(n) || /contralto|altus|^alto\b/.test(n)) return con('Contralto');
+  if (/^(t|ten|tenor|tenore|tenores)$/.test(n) || /tenor/.test(n)) return con('Tenor');
+  if (/bar[ií]ton/.test(n)) return con('Barítono');
+  if (/^(b|bajo|bajos|bass|basso|bassus|baixo)$/.test(n) || /\bbajo\b|\bbass|basso/.test(n)) return con('Bajo');
+  if (/^solo\b|solista|^sol$/.test(n)) return con('Solista');
   return String(nombre).trim().charAt(0).toUpperCase() + String(nombre).trim().slice(1);
 }
 // Los pentagramas que devuelve el modelo para un tramo → [{ nombre, datos }], solo las voces del coro: un pentagrama con dos
@@ -570,7 +576,8 @@ function construirXml({ vista, plan, respuestas, a }) {
     if (r.tempo > 0 && !vista.tempo) vista.tempo = r.tempo;
   }
   const rango = p => { const r = RANGO_VOZ[p.nombre.replace(/ \d+$/, '')]; return r === undefined ? 7 + p.orden : r; };
-  const partes = [...porNombre.values()].sort((x, y) => rango(x) - rango(y) || x.orden - y.orden).map((p, i) => ({ ...p, id: 'P' + (i + 1), viejoId: p.id }));
+  const numero = p => +((p.nombre.match(/ (\d+)$/) || [])[1] || 0);
+  const partes = [...porNombre.values()].sort((x, y) => rango(x) - rango(y) || numero(x) - numero(y) || x.orden - y.orden).map((p, i) => ({ ...p, id: 'P' + (i + 1), viejoId: p.id }));
   if (!partes.length) throw new ErrorLectura('sin-voces', 'La IA no ha encontrado ninguna voz del coro en la partitura (solo instrumentos).');
   for (const m of medidas) { const voces = {}; for (const p of partes) if (m.voces[p.viejoId]) voces[p.id] = m.voces[p.viejoId]; m.voces = voces; }
   // 2) Decisiones por compás (mayoría entre voces): indicación, barra, anacrusa
@@ -701,12 +708,16 @@ async function leer({ pdf, dirTrabajo, modelo = MODELO_PREDETERMINADO, log = () 
   const voces = vista.pentagramas.filter(p => p.tipo !== 'instrumento');
   log(`  «${vista.titulo || '?'}»${vista.compositor ? ' (' + vista.compositor + ')' : ''}: ${vista.pentagramasPorSistema} pentagramas por sistema; voces: ${voces.map(v => v.nombre + ' (' + textoClave(v.clave) + ')').join(', ')}; compás ${vista.indicacion || '?'}, armadura ${textoArmadura(vista.pentagramas[0].armadura)}${vista.tempo ? ', ♩ = ' + vista.tempo : ''}.`);
   if (vista.avisos) log('  * ' + vista.avisos);
-  // Si la primera página tiene otro número de pentagramas por sistema del que supuso el análisis, se vuelve a detectar
-  const nPartes = Math.max(1, +vista.pentagramasPorSistema || vista.pentagramas.length);
-  if (!SIMULADA && a.nPartes !== nPartes) {
+  // Si la primera página tiene otro número de pentagramas por sistema del que supuso el análisis, se vuelve a detectar.
+  // Pero si el número cambia de un sistema a otro (un solo y luego el coro entero), no se fija ninguno: el detector
+  // agrupa los pentagramas por lo que los une en la página. Con un número fijo pequeño (el del primer sistema) partía
+  // cada sistema en trozos y la obra salía con el doble o el triple de compases
+  const nPartes = vista.pentagramasVarian ? null : Math.max(1, +vista.pentagramasPorSistema || vista.pentagramas.length);
+  if (vista.pentagramasVarian) log('  El número de pentagramas cambia de un sistema a otro: los sistemas se toman tal como los ve el detector, sin fijar un número.');
+  if (!SIMULADA && (a.nPartes || null) !== nPartes) {
     const antes = a.compases;
     a = analizar({ pdf, dirTrabajo, nPartes, log });
-    if (a.compases !== antes) log(`  Con ${nPartes} pentagramas por sistema el detector cuenta ${a.compases} compases (antes ${antes}).`);
+    if (a.compases !== antes) log(`  ${nPartes ? 'Con ' + nPartes + ' pentagramas por sistema' : 'Sin fijar pentagramas por sistema'} el detector cuenta ${a.compases} compases (antes ${antes}).`);
   }
   const plan = planificar(a);
   const total = plan.length + 1;

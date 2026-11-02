@@ -15,7 +15,7 @@ const { posiciones } = require('./posiciones.js');
 const { posicionesImagen } = require('./posiciones-imagen.js');
 const { generarPaginas } = require('./paginas.js');
 const AUDIVERIS = process.env.AUDIVERIS || 'C:\\Program Files\\Audiveris\\Audiveris.exe'; // AUDIVERIS=ruta si está instalado en otro sitio
-const IDIOMA_OCR = process.env.LETRA_IDIOMA || 'spa+eng'; // idiomas para leer la letra (spa, ita, fra, lat, eng)
+const IDIOMA_OCR = process.env.LETRA_IDIOMA || 'spa+lat'; // idiomas para leer la letra (spa, lat, ita, fra, eng); solo los que Audiveris tenga instalados
 
 const NOMBRES_VOCES = ['Soprano', 'Mezzosoprano', 'Contralto', 'Tenor', 'Barítono', 'Bajo', 'Solista femenina', 'Solista masculino', 'Voz', 'Piano'];
 const NOMBRES_CONOCIDOS = /solista|soprano|alto|contralto|tenor|bajo|bass|mezzo|bar[ií]tono|voz\s*\d|piano|órgano|organo/i;
@@ -510,7 +510,13 @@ function motivoAudiveris(dir) {
     const buscarLog = d => { for (const f of fs.readdirSync(d)) { const p = path.join(d, f); if (fs.statSync(p).isDirectory()) { const r = buscarLog(p); if (r) return r; } else if (/\.log$/i.test(f)) return p; } return null; };
     const log = buscarLog(dir); if (!log) return '';
     const lineas = fs.readFileSync(log, 'utf8').split(/\r?\n/);
-    const aviso = lineas.find(l => /\b(ERROR)\b/.test(l) && /\| /.test(l)) || lineas.find(l => /\b(WARN)\b/.test(l) && /\| /.test(l));
+    const inofensivo = /Language '[^']*' is not supported|Missing support for .* language|No target duration|StackRhythm error|please check time signatures/;
+    const interno = lineas.find(l => /\bWARN\b/.test(l) && /Error processing stub/.test(l));
+    if (interno) {
+      const pagina = (interno.match(/\[[^\]#]*#(\d+)\]/) || [])[1];
+      return ` (fallo interno de Audiveris${pagina ? ' en la página ' + pagina : ''}: no consigue entender los compases de esa página, suele pasar con escaneos torcidos o muy apretados)`;
+    }
+    const aviso = lineas.find(l => /\b(ERROR)\b/.test(l) && /\| /.test(l) && !inofensivo.test(l)) || lineas.find(l => /\b(WARN)\b/.test(l) && /\| /.test(l) && !inofensivo.test(l));
     if (!aviso) return '';
     let motivo = aviso.replace(/^.*\| /, '').trim();
     // Los fallos más corrientes, en castellano; los demás, tal como los cuenta Audiveris
@@ -523,14 +529,19 @@ function motivoAudiveris(dir) {
 
 // Nombre de voz en castellano a partir de lo que trae la partitura (Cantus, Altus, Basso, S., A., T., B...), o null si no se reconoce
 function nombreCanonico(nombre) {
-  const n = (nombre || '').trim().replace(/\.$/, '').toLowerCase();
+  let n = (nombre || '').trim().replace(/\.$/, '').toLowerCase();
   if (!n) return null;
-  if (/^(s|sop|sopr|soprano|cantus|canto|superius|discantus|c)$/.test(n) || /soprano|cantus|superius/.test(n) && !/mezzo/.test(n)) return 'Soprano';
-  if (/mezzo/.test(n)) return 'Mezzosoprano';
-  if (/^(a|alt|alto|altus|contralto)$/.test(n) || /contralto|altus|^alto\b/.test(n)) return 'Contralto';
-  if (/^(t|ten|tenor|tenore)$/.test(n) || /tenor/.test(n)) return 'Tenor';
-  if (/bar[ií]ton/.test(n)) return 'Barítono';
-  if (/^(b|bajo|bass|basso|bassus|baixo)$/.test(n) || /\bbajo\b|\bbass/.test(n)) return 'Bajo';
+  // El número de la voz o del coro al final («Soprano 2», «S. II», «Tenor I») se conserva: en una obra a dos coros, o
+  // con sopranos 1 y 2, sin él las dos partes se llamarían igual
+  const num = (n.match(/\s(i{1,3}|iv|[1-4])[º°.]?$/) || [])[1];
+  const sufijo = num ? ' ' + ({ i: 1, ii: 2, iii: 3, iv: 4 }[num] || +num) : '';
+  if (num) n = n.slice(0, n.length - num.length).trim().replace(/[\s.:º°]+$/, '');
+  if (/^(s|sop|sopr|soprano|cantus|canto|superius|discantus|c)$/.test(n) || /soprano|cantus|superius/.test(n) && !/mezzo/.test(n)) return 'Soprano' + sufijo;
+  if (/mezzo/.test(n)) return 'Mezzosoprano' + sufijo;
+  if (/^(a|alt|alto|altus|contralto)$/.test(n) || /contralto|altus|^alto\b/.test(n)) return 'Contralto' + sufijo;
+  if (/^(t|ten|tenor|tenore)$/.test(n) || /tenor/.test(n)) return 'Tenor' + sufijo;
+  if (/bar[ií]ton/.test(n)) return 'Barítono' + sufijo;
+  if (/^(b|bajo|bass|basso|bassus|baixo)$/.test(n) || /\bbajo\b|\bbass/.test(n)) return 'Bajo' + sufijo;
   if (/piano|órgano|organo|organ\b/.test(n)) return 'Piano';
   return null;
 }
@@ -628,7 +639,7 @@ function bajarTenorOctavado(xml, avisos) {
   const conNombres = info.some(p => nombreCanonico(p.nombre));
   const esTenor = (p, i) => {
     if (!p.clave || p.clave.sign !== 'G' || p.doble) return false;
-    if (conNombres) return nombreCanonico(p.nombre) === 'Tenor';
+    if (conNombres) return /^Tenor/.test(nombreCanonico(p.nombre) || ''); // también «Tenor 1», «Tenor 2»
     return i >= 2 && info.slice(0, i).every(q => q.clave && q.clave.sign === 'G') && info.slice(i + 1).some(q => q.clave && q.clave.sign === 'F');
   };
   info.forEach((p, i) => {
