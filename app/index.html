@@ -767,6 +767,7 @@ function crearBotonesVoces() {
   const cont = $('voces'); cont.innerHTML = '';
   const instrumentos = osmd.Sheet.Instruments;
   if (vozActiva >= instrumentos.length) vozActiva = 0;
+  const botones = [];
   instrumentos.forEach((ins, i) => {
     const nombre = ins.Name || ('Voz ' + (i + 1));
     const subs = seDesdobla(i) ? [1, 2] : [0];
@@ -774,10 +775,18 @@ function crearBotonesVoces() {
       const b = document.createElement('button');
       b.textContent = sub ? nombre + ' ' + sub : nombre;
       b.dataset.parte = i; b.dataset.sub = sub;
-      b.onclick = () => { vozActiva = i; subActiva = sub; marcarVoz(); ajustarVocesCanto(); };
-      cont.appendChild(b);
+      b.onclick = () => { vozActiva = i; subActiva = sub; marcarVoz(); ajustarVocesCanto(); try { localStorage.setItem('vozElegida', b.textContent); } catch {} };
+      cont.appendChild(b); botones.push(b);
     }
   });
+  // La última voz elegida se recuerda por su nombre (Tenor, Contralto 2…): al abrir la app o cambiar de obra sale esa,
+  // no siempre la primera. Si la obra no la tiene con ese nombre exacto, vale la misma cuerda («Tenor» ↔ «Tenor 1»)
+  let guardada = null; try { guardada = localStorage.getItem('vozElegida'); } catch {}
+  if (guardada) {
+    const norm = s => s.trim().toLowerCase(), cuerda = s => norm(s).replace(/\s+\d+$/, '');
+    const b = botones.find(x => norm(x.textContent) === norm(guardada)) || botones.find(x => cuerda(x.textContent) === cuerda(guardada));
+    if (b) { vozActiva = +b.dataset.parte; subActiva = +b.dataset.sub; }
+  }
   // que la selección siga siendo válida al cambiar de obra (o tras corregir notas)
   if (seDesdobla(vozActiva)) { if (!subActiva) subActiva = 1; } else subActiva = 0;
   marcarVoz();
