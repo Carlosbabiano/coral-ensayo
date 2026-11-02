@@ -110,6 +110,37 @@
   .revision canvas { max-width: 100%; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
   .revision table.voces td { vertical-align: top; padding-bottom: 8px; }
   @media (max-width: 1100px) { .revision { grid-template-columns: 1fr; } }
+  /* Modo «Reparar»: a pantalla completa solo quedan la partitura, la barra de la nota y la tarjeta del compás. El
+     bloque .reparar existe siempre (en la vista normal es la tarjeta del compás seguida de la previsualización) */
+  .reparar { margin-bottom: 14px; }
+  .rep-cab, .rep-ver { display: none; }
+  .rep-previa { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 8px; }
+  body.reparando header, body.reparando aside { display: none; }
+  body.reparando { grid-template-rows: 1fr; } /* sin cabecera, la fila «auto» se la quedaba main y la 1fr quedaba vacía */
+  body.reparando main { grid-template-columns: 1fr; }
+  body.reparando section.panel { padding: 0; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+  body.reparando section.panel > :not(.reparar) { display: none; }
+  body.reparando .reparar { flex: 1; min-height: 0; display: flex; flex-direction: column; margin: 0; }
+  body.reparando .rep-cab { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--line); background: #fff; font-size: 14px; }
+  .rep-cab h3 { margin: 0; font-size: 15px; }
+  .rep-cab .compases a { margin: 0 4px 0 0; }
+  .rep-cab .nav { display: flex; align-items: center; gap: 4px; }
+  body.reparando .rep-cuerpo { flex: 1; min-height: 0; display: flex; position: relative; }
+  body.reparando .rep-previa { flex: 1; min-width: 0; display: flex; flex-direction: column; order: 0; border: 0; border-radius: 0; background: transparent; padding: 0 8px 8px; }
+  body.reparando #barraNota { position: static; padding-top: 6px; background: transparent; }
+  body.reparando .barraNota { margin-bottom: 6px; }
+  body.reparando iframe.previa { flex: 1; height: auto; min-height: 0; }
+  body.reparando #revision { order: 1; width: min(460px, 42vw); flex: none; overflow: auto; border-left: 1px solid var(--line); background: var(--bg); padding: 8px 10px; }
+  body.reparando #revision:empty { display: none; }
+  body.reparando #revision .tarjeta { margin: 0; padding: 12px; }
+  body.reparando .revision { grid-template-columns: 1fr; gap: 12px; }
+  /* Ventana estrecha: la tarjeta del compás es un cajón que se abre por encima de la partitura (no le quita altura) */
+  @media (max-width: 1000px) {
+    body.reparando .rep-ver { display: inline-block; }
+    body.reparando #revision { display: none; position: absolute; left: 0; right: 0; bottom: 0; width: auto; max-height: 62%; border-left: 0; border-top: 1px solid var(--line); box-shadow: 0 -6px 20px rgba(0,0,0,.15); z-index: 5; }
+    body.reparando.verCompas #revision:not(:empty) { display: block; }
+    body.reparando .rep-cab { font-size: 13px; padding: 4px 8px; gap: 4px 8px; }
+  }
   /* Editor de los compases en la página original (posiciones.js): tokens propios sobre los del gestor */
   :root { --pos-relleno: rgba(36,64,122,.07); --pos-linea: var(--accent); --pos-foco: #e39b2c; --pos-sobra: rgba(179,38,30,.14); --pos-omitida: rgba(107,107,102,.22); --pos-fondo: #fff; --pos-sombra: 0 6px 20px rgba(0,0,0,.15); --pos-radio: 10px; }
   dialog.editorPos { border: 0; padding: 0; margin: 0; width: 100vw; height: 100vh; max-width: none; max-height: none; background: var(--bg); color: var(--fg); flex-direction: column; }
@@ -351,7 +382,7 @@ async function seleccionar(id) {
 
 function pintarPanel() {
   const b = borradorActual, panel = $('panel');
-  if (!b) { panel.innerHTML = '<div class="vacio">Arrastra una partitura para empezar, o elige un borrador de la lista.</div>'; return; }
+  if (!b) { document.body.classList.remove('reparando'); panel.innerHTML = '<div class="vacio">Arrastra una partitura para empezar, o elige un borrador de la lista.</div>'; return; }
   const nombre = nombreBorrador(b);
   const soloPdf = !b.archivos?.some(a => /\.(xml|musicxml)$/i.test(a)) && b.archivos?.some(a => /\.pdf$/i.test(a));
   let html = `<div class="cab"><h3>${esc(nombre)}</h3>`;
@@ -385,7 +416,9 @@ function pintarPanel() {
 
     // Avisos
     html += `<div class="tarjeta"><h4>Comprobaciones</h4>`;
-    for (const a of b.avisos) html += `<div class="aviso">${esc(a)}</div>`;
+    // Más de tres avisos (por ejemplo los que arrastra una lectura con IA) van plegados: ocupaban metros de pantalla
+    const avisosHtml = b.avisos.map(a => `<div class="aviso">${esc(a)}</div>`).join('');
+    html += b.avisos.length > 3 ? `<details><summary class="ayuda">${b.avisos.length} avisos de la lectura (plegados)</summary>${avisosHtml}</details>` : avisosHtml;
     if (b.sospechosos.length) html += `<div class="aviso" id="chipsSospechosos">Compases que no cuadran (las figuras no suman lo que marca el compás). Toca uno para revisarlo: <span class="compases">${b.sospechosos.map(c => `<a data-compas="${esc(c)}">${esc(c)}</a>`).join('')}</span></div>`;
     else html += `<div class="aviso bien" id="chipsSospechosos">Todos los compases cuadran.</div>`;
     html += `<div id="iaLote"></div>`; // «Revisar todos con IA» (revision-ia.js)
@@ -393,13 +426,25 @@ function pintarPanel() {
     else if (b.pdf) html += `<div class="aviso">El PDF no se ha podido incorporar como página original (mira el registro de abajo): el coro verá la partitura dibujada.</div>`;
     else html += `<div class="aviso">Sin PDF: la obra irá sin vista de página original.</div>`;
     html += `</div>`;
-    html += `<div class="tarjeta"><h4>Revisar o editar un compás</h4><div class="acciones" style="margin:0">
+    html += `<div class="tarjeta"><h4>Reparar la partitura</h4><div class="acciones" style="margin:0">
+      <button class="principal" id="repararBtn">Reparar a pantalla completa</button>
       <button class="mini" id="revisarAnt" title="Compás anterior">◀</button>
       <label>Compás <input type="number" id="revisarNum" min="1" value="${compasEnRevision || 1}" style="width:80px"></label>
       <button class="mini" id="revisarSig" title="Compás siguiente">▶</button>
-      <button class="principal" id="revisarBtn">Ver</button>
-      <span class="ayuda">También puedes tocar un compás en la previsualización de abajo: se abre su tarjeta con el compás tal como lo leyó el escáner, las figuras de cada voz y su botón «Editar»; la página original queda debajo para comparar.</span></div></div>`;
-    html += `<div id="revision"></div>`;
+      <button id="revisarBtn">Ver aquí</button>
+      <span class="ayuda">A pantalla completa solo quedan la partitura, la barra de la nota y la tarjeta del compás (lo que leyó el escáner, la página original y el botón «Editar» de cada voz). También puedes tocar un compás en la previsualización.</span></div></div>`;
+    // Bloque «reparar»: tarjeta del compás + previsualización; a pantalla completa en el modo «Reparar» (CSS body.reparando)
+    html += `<div class="reparar" id="reparar"><div class="rep-cab">
+      <h3>${esc(nombre)}</h3>
+      <span class="nav"><button class="mini" id="repAnt" title="Compás anterior">◀</button> <label>Compás <input type="number" id="repNum" min="1" value="${compasEnRevision || 1}" style="width:70px"></label> <button class="mini" id="repSig" title="Compás siguiente">▶</button></span>
+      <span id="repChips"></span>
+      <span class="hueco"></span>
+      <button class="mini rep-ver" id="repVer" aria-expanded="false" aria-controls="revision">Ver el compás</button>
+      <button class="mini" id="repSalir" title="Vuelve al gestor completo (Esc, sin ninguna nota seleccionada)">Salir de reparar</button>
+    </div><div class="rep-cuerpo">
+      <div id="revision" role="region" aria-label="Compás en revisión"></div>
+      <div class="rep-previa"><div id="barraNota"></div><iframe class="previa" id="previa" src="/borrador/${b.id}/?editor=1${(b.entrada.canto || []).length ? '&sonido=canto' : ''}&t=${Date.now()}"></iframe></div>
+    </div></div>`;
 
     // Voces cantadas (canto sintético)
     const c = b.canto || { actual: [], preparado: null };
@@ -427,7 +472,6 @@ function pintarPanel() {
     </div>`;
 
     html += `<div class="acciones"><button class="principal" id="publicar">Publicar para el coro</button><span class="ayuda">Se guarda en la app, se sube a internet y los móviles la reciben solos.</span><span class="hueco"></span><button class="peligro" id="descartar">Descartar borrador</button></div>`;
-    html += `<div class="tarjeta" style="padding:8px"><div id="barraNota"></div><iframe class="previa" id="previa" src="/borrador/${b.id}/?editor=1${(b.entrada.canto || []).length ? '&sonido=canto' : ''}&t=${Date.now()}"></iframe></div>`;
   }
 
   html += `<details ${b.estado === 'listo' ? '' : 'open'}><summary>Registro del proceso</summary><pre class="log" id="log">${esc((b.log || []).join('\n'))}\n</pre></details>`;
@@ -443,7 +487,7 @@ function pintarPanel() {
   $('publicar') && ($('publicar').onclick = publicar);
   $('descartar') && ($('descartar').onclick = descartar);
   $('reintentar') && ($('reintentar').onclick = async () => { await api(`/api/borradores/${b.id}/preparar`, { method: 'POST' }).catch(e => alert(e.message)); seleccionar(b.id); });
-  for (const a of panel.querySelectorAll('.compases a')) a.onclick = () => revisarCompas(+a.dataset.compas);
+  for (const a of panel.querySelectorAll('.compases a')) a.onclick = () => reparar(true, +a.dataset.compas);
   $('revisarBtn') && ($('revisarBtn').onclick = () => { const n = +$('revisarNum').value; if (n) revisarCompas(n); });
   $('cantoPreparar') && ($('cantoPreparar').onclick = prepararCanto);
   $('cantoCantar') && ($('cantoCantar').onclick = cantarObra);
@@ -459,6 +503,18 @@ function pintarPanel() {
   $('revisarNum') && ($('revisarNum').onkeydown = e => { if (e.key === 'Enter') $('revisarBtn').click(); });
   $('revisarAnt') && ($('revisarAnt').onclick = () => { const n = Math.max(1, (+$('revisarNum').value || 1) - 1); $('revisarNum').value = n; revisarCompas(n); });
   $('revisarSig') && ($('revisarSig').onclick = () => { const n = (+$('revisarNum').value || 0) + 1; $('revisarNum').value = n; revisarCompas(n); });
+  // Modo «Reparar»: sigue activo si ya lo estaba (el panel se vuelve a pintar al aplicar cambios) o si se cerró el gestor reparando
+  let recordado = null; try { recordado = localStorage.getItem('reparando'); } catch {}
+  const reparando = b.estado === 'listo' && (document.body.classList.contains('reparando') || recordado === b.id);
+  document.body.classList.toggle('reparando', reparando);
+  $('repararBtn') && ($('repararBtn').onclick = () => reparar(true, +$('revisarNum').value || 0));
+  $('repSalir') && ($('repSalir').onclick = () => reparar(false));
+  $('repVer') && ($('repVer').onclick = () => verCompas(!document.body.classList.contains('verCompas')));
+  $('repNum') && ($('repNum').onkeydown = e => { if (e.key === 'Enter') { const n = +$('repNum').value; if (n) revisarCompas(n); } });
+  $('repAnt') && ($('repAnt').onclick = () => revisarCompas(Math.max(1, (+$('repNum').value || 1) - 1)));
+  $('repSig') && ($('repSig').onclick = () => revisarCompas((+$('repNum').value || 0) + 1));
+  pintarRepChips();
+  if (reparando && !compasEnRevision && b.sospechosos.length) compasEnRevision = +b.sospechosos[0];
   if (compasEnRevision && b.estado === 'listo') revisarCompas(compasEnRevision, true);
   notaSel = null; pintarBarraNota();
   if ($('previa')) $('previa').onload = () => { try { $('previa').contentDocument.addEventListener('keydown', teclaEditor); } catch {} };
@@ -594,11 +650,47 @@ function pintarAvisoPosiciones(repintar = true) {
   const bt = $('revisarPaginas'); if (bt) bt.onclick = () => abrirEditorPosiciones(borradorActual, bt);
 }
 function pintarChips() {
+  pintarRepChips();
   const c = $('chipsSospechosos'); if (!c) return;
   c.innerHTML = borradorActual.sospechosos.length ? `Compases que no cuadran. Toca uno para revisarlo: <span class="compases">${borradorActual.sospechosos.map(x => `<a data-compas="${esc(x)}">${esc(x)}</a>`).join('')}</span>` : 'Todos los compases cuadran.';
   c.className = 'aviso' + (borradorActual.sospechosos.length ? '' : ' bien');
+  for (const a of c.querySelectorAll('a')) a.onclick = () => reparar(true, +a.dataset.compas);
+}
+// Los mismos compases por cuadrar en la línea de arriba del modo «Reparar»
+function pintarRepChips() {
+  const c = $('repChips'); if (!c || !borradorActual) return;
+  const s = borradorActual.sospechosos;
+  c.innerHTML = s.length ? `<span class="ayuda">Por cuadrar:</span> <span class="compases">${s.map(x => `<a data-compas="${esc(x)}" title="Revisar el compás ${esc(x)}">${esc(x)}</a>`).join('')}</span>` : `<span class="ayuda" style="color:var(--ok)">Todos los compases cuadran ✓</span>`;
   for (const a of c.querySelectorAll('a')) a.onclick = () => revisarCompas(+a.dataset.compas);
 }
+// ---------- Modo «Reparar»: pantalla completa con la partitura, la barra de la nota y la tarjeta del compás ----------
+function reparar(si, compas) {
+  const b = borradorActual; if (si && (!b || b.estado !== 'listo' || !$('reparar'))) return;
+  document.body.classList.toggle('reparando', !!si);
+  try { if (si) localStorage.setItem('reparando', b.id); else localStorage.removeItem('reparando'); } catch {}
+  if (si) {
+    const n = compas || compasEnRevision || (b.sospechosos.length ? +b.sospechosos[0] : 0);
+    if (n) revisarCompas(n, !compas); else verCompas(false);
+    $('repSalir').focus();
+  } else {
+    verCompas(false);
+    if ($('repararBtn')) $('repararBtn').focus();
+    if ($('tarjetaRevision')) $('tarjetaRevision').scrollIntoView({ behavior: 'auto', block: 'start' });
+  }
+}
+// En ventana estrecha la tarjeta del compás va plegada bajo la partitura
+function verCompas(si) {
+  document.body.classList.toggle('verCompas', !!si);
+  const bt = $('repVer'); if (!bt) return;
+  bt.textContent = si ? 'Ocultar el compás' : 'Ver el compás'; bt.setAttribute('aria-expanded', si ? 'true' : 'false');
+}
+// Esc sin ninguna nota seleccionada sale del modo «Reparar»
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || notaSel || !document.body.classList.contains('reparando')) return;
+  const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
+  if (document.querySelector('dialog[open]')) return;
+  e.preventDefault(); reparar(false);
+});
 function teclaEditor(e) {
   if (!notaSel) return;
   const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
@@ -627,7 +719,7 @@ let compasEnRevision = null;
 window.compasElegido = n => { if (borradorActual && borradorActual.estado === 'listo') { if ($('revisarNum')) $('revisarNum').value = n; revisarCompas(n, true); } };
 async function revisarCompas(n, silencioso) {
   const b = borradorActual; compasEnRevision = n;
-  if ($('revisarNum')) $('revisarNum').value = n;
+  for (const id of ['revisarNum', 'repNum']) if ($(id)) $(id).value = n;
   let d;
   try { d = await api(`/api/borradores/${b.id}/compas/${n}`); } catch (e) { return alert(e.message); }
   const v0 = d.voces[0];
@@ -669,7 +761,8 @@ async function revisarCompas(n, silencioso) {
   if (d.pagina && d.posicion) dibujarRecorte(`/borrador/${b.id}/partituras/${d.pagina}`, d.posicion);
   dibujarCompasXml(b, n);
   irACompas(n);
-  if (!silencioso) $('tarjetaRevision').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (document.body.classList.contains('reparando')) { $('revision').scrollTop = 0; if (!silencioso) verCompas(true); }
+  else if (!silencioso) $('tarjetaRevision').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
 }
 
 // ---------- Editor de notas de una voz en un compás ----------
@@ -983,7 +1076,13 @@ async function retirar(o) {
 }
 
 cargarOsmd().catch(() => {}); // que esté listo al abrir el primer compás; si no hay internet, se avisa en la tarjeta
-refrescar().then(() => { if (estado.publicando) { abrirVelo('Publicación en marcha…'); seguirPublicacion(estado.publicacion); } }).catch(e => { $('panel').innerHTML = '<div class="vacio">No se puede hablar con el gestor: ' + esc(e.message) + '</div>'; });
+refrescar().then(() => {
+  if (estado.publicando) { abrirVelo('Publicación en marcha…'); seguirPublicacion(estado.publicacion); }
+  // Si se cerró la pestaña reparando una obra, se vuelve a ella en el modo «Reparar»
+  let rec = null; try { rec = localStorage.getItem('reparando'); } catch {}
+  if (rec && estado.borradores.some(b => b.id === rec && b.estado === 'listo')) seleccionar(rec);
+  else if (rec) { try { localStorage.removeItem('reparando'); } catch {} }
+}).catch(e => { $('panel').innerHTML = '<div class="vacio">No se puede hablar con el gestor: ' + esc(e.message) + '</div>'; });
 // Refresco de las listas (carpeta Entrada, borradores) al volver a la pestaña y cada 15 s mientras se ve
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { refrescar().catch(() => {}); latir(); } });
 setInterval(() => { if (document.visibilityState === 'visible' && !$('velo').classList.contains('ver')) refrescar().catch(() => {}); }, 15000);
