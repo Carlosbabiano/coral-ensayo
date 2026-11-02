@@ -208,6 +208,17 @@
   </div>
 </div>
 
+<!-- El servidor del gestor ha dejado de responder (se apaga solo tras unos minutos sin ninguna pestaña abierta, por
+     ejemplo si el PC se duerme). Se avisa en vez de dejar que la vista previa falle sin explicación -->
+<div class="velo" id="veloCerrado" role="alertdialog" aria-labelledby="veloCerradoTitulo" aria-describedby="veloCerradoTexto">
+  <div class="ventana" style="width:min(540px, 92vw)">
+    <h3 id="veloCerradoTitulo">El gestor se ha cerrado</h3>
+    <p id="veloCerradoTexto" style="margin:0">Se apaga solo cuando pasa un rato sin ninguna pestaña suya abierta (por ejemplo, si el PC se duerme). Tus borradores y la app publicada están como los dejaste.</p>
+    <p style="margin:0"><strong>Para seguir:</strong> abre el acceso directo «Gestor de obras» de la carpeta del proyecto. Esta página se recarga sola en cuanto el gestor vuelve a responder.</p>
+    <div class="acciones" style="margin:0"><span class="ayuda" id="veloCerradoEstado" aria-live="polite">Esperando al gestor…</span><span class="hueco"></span><button id="veloCerradoComprobar">Volver a comprobar</button></div>
+  </div>
+</div>
+
 <script src="/gestor/posiciones.js"></script>
 <script src="/gestor/revision-ia.js"></script>
 <script src="/gestor/lectura-ia.js"></script>
@@ -974,17 +985,35 @@ async function retirar(o) {
 cargarOsmd().catch(() => {}); // que esté listo al abrir el primer compás; si no hay internet, se avisa en la tarjeta
 refrescar().then(() => { if (estado.publicando) { abrirVelo('Publicación en marcha…'); seguirPublicacion(estado.publicacion); } }).catch(e => { $('panel').innerHTML = '<div class="vacio">No se puede hablar con el gestor: ' + esc(e.message) + '</div>'; });
 // Refresco de las listas (carpeta Entrada, borradores) al volver a la pestaña y cada 15 s mientras se ve
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refrescar().catch(() => {}); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { refrescar().catch(() => {}); latir(); } });
 setInterval(() => { if (document.visibilityState === 'visible' && !$('velo').classList.contains('ver')) refrescar().catch(() => {}); }, 15000);
 // Latido: mientras esta página esté abierta el servidor no se apaga (abierto desde Gestor.vbs no hay ventana que cerrar)
-const latir = () => fetch('/api/latido', { method: 'POST' }).catch(() => {});
+const latir = () => fetch('/api/latido', { method: 'POST' }).catch(avisarCerrado);
 latir(); setInterval(latir, 20000);
+// Si el servidor deja de responder (se apagó solo tras unos minutos sin pestaña, o el PC se durmió y la pestaña con él),
+// se avisa en vez de dejar que la vista previa falle sin explicación; en cuanto vuelve a responder, la página se recarga.
+// Se comprueba dos veces con 2 s entre medias para no avisar por un fallo pasajero
+let gestorCerrado = false, cerradoAPosta = false;
+const gestorResponde = () => fetch('/api/estado', { cache: 'no-store' }).then(r => r.ok).catch(() => false);
+async function avisarCerrado() {
+  if (gestorCerrado || cerradoAPosta || !$('veloCerrado')) return;
+  await new Promise(r => setTimeout(r, 2000));
+  if (gestorCerrado || cerradoAPosta || await gestorResponde()) return;
+  gestorCerrado = true; $('veloCerrado').classList.add('ver'); $('veloCerradoComprobar').focus();
+  const vuelta = setInterval(async () => { if (await gestorResponde()) { clearInterval(vuelta); $('veloCerradoEstado').textContent = 'Ya responde: recargando…'; location.reload(); } }, 3000);
+}
+$('veloCerradoComprobar').onclick = async () => {
+  $('veloCerradoEstado').textContent = 'Comprobando…';
+  if (await gestorResponde()) { $('veloCerradoEstado').textContent = 'Ya responde: recargando…'; location.reload(); }
+  else $('veloCerradoEstado').textContent = 'Sigue sin responder. Ábrelo con el acceso directo «Gestor de obras».';
+};
 $('cerrarGestor').onclick = async () => {
   if (!confirm('¿Cerrar el gestor en este PC? La app publicada y tus archivos no se tocan. Para volver a abrirlo, usa el acceso directo «Gestor de obras».')) return;
   try {
+    cerradoAPosta = true;
     await api('/api/salir', { method: 'POST' });
     document.body.innerHTML = '<p class="cerrado">El gestor está cerrado. Ya puedes cerrar esta pestaña.</p>';
-  } catch (e) { alert(e.message); }
+  } catch (e) { cerradoAPosta = false; alert(e.message); }
 };
 </script>
 </body>
