@@ -195,6 +195,12 @@
   #version { margin-left: auto; align-self: center; font-size: var(--font-xs); color: var(--color-fg-muted); }
   /* Aviso de que no hay conexión (la app sigue funcionando con lo guardado) */
   #sinConexion { background: var(--color-note-bg); color: var(--color-note-fg); border-bottom: 1px solid var(--color-note-border); padding: var(--space-1) var(--space-3); font-size: var(--font-s); text-align: center; }
+  /* Versión nueva instalada mientras reproducían o corregían: fila en la cabecera fija, se aplica cuando ellos quieran */
+  #versionNueva { flex-basis: 100%; display: flex; align-items: center; justify-content: center; gap: var(--space-3); flex-wrap: wrap; background: var(--color-note-bg); color: var(--color-note-fg); border: 1px solid var(--color-note-border); border-radius: var(--radius-s); padding: var(--space-1) var(--space-3); font-size: var(--font-s); text-align: center; }
+  #versionNueva[hidden] { display: none; }
+  #versionNueva button { min-height: 32px; padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--color-note-border); background: var(--color-surface); color: var(--color-note-fg); font: inherit; font-weight: 600; cursor: pointer; }
+  #versionNueva button:hover { background: var(--color-note-bg); filter: brightness(.96); }
+  #versionNueva button:focus-visible { outline: 2px solid var(--color-note-border); outline-offset: 2px; }
   /* Carga, estado vacío y error: una tarjeta centrada sobre la página */
   .tarjeta { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-m); box-shadow: var(--shadow-card); padding: var(--space-4) var(--space-6); width: min(92vw, 380px); text-align: center; }
   .tarjeta h2 { font-size: var(--font-l); margin: 0 0 var(--space-2); }
@@ -249,6 +255,7 @@
   <label for="obra" class="sr-only">Obra</label>
   <select id="obra"></select>
   <div id="barraCorregir" style="display:none"></div>
+  <div id="versionNueva" role="status" hidden><span>Hay una versión nueva de la app lista.</span><button type="button" id="aplicarVersion">Actualizar ahora</button></div>
 </header>
 
 <main>
@@ -461,6 +468,7 @@ let osmd, eventos = [], vozActiva = 0, instrumento = null, ctx = null;
 // los compases en los que hay una segunda subvoz (acorde o voz 2 del MusicXML)
 let subActiva = 0, divisi = [];
 let reproduciendo = false, indiceEvento = 0, tInicio = 0, tOffset = 0, timerPlan = null, raf = null;
+let versionPendiente = false, alParar = null; // versión nueva de la app que espera a que paren de reproducir
 let sonando = []; // notas en curso para poder cortarlas al parar
 let compasInicio = 0;
 // Vista "PDF original": la página del PDF con una marca que recorre los compases
@@ -1191,6 +1199,7 @@ function pausar() {
   if (cursorEn >= 0) indiceEvento = cursorEn;
   cursorEn = -1;
   pintarPlay(false);
+  if (alParar) alParar();
 }
 function parar() { pausar(); }
 // Botón principal: icono y nombre según esté sonando o no; el icono da un pequeño rebote al cambiar (no con menos movimiento)
@@ -1437,11 +1446,28 @@ mostrarVersion();
 if ("serviceWorker" in navigator) {
   // updateViaCache none: sw.js se comprueba siempre en el servidor (GitHub Pages lo sirve con 10 minutos de caché), así
   // la versión nueva llega al abrir la app y no al cabo de un rato
-  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => { try { reg.update(); } catch {} }).catch(e => console.warn("Sin modo offline:", e));
+  let registro = null;
+  // Buscar versión nueva al abrir, cada vez que la app vuelve al primer plano (el navegador no lo hace solo mientras la
+  // pestaña sigue viva) y cada 15 minutos mientras esté abierta: así no hace falta cerrarla y abrirla tras publicar
+  const buscarVersion = () => { if (registro && navigator.onLine !== false) registro.update().catch(() => {}); };
+  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => { registro = reg; buscarVersion(); }).catch(e => console.warn("Sin modo offline:", e));
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") buscarVersion(); });
+  setInterval(buscarVersion, 15 * 60 * 1000);
   navigator.serviceWorker.addEventListener("controllerchange", () => setTimeout(mostrarVersion, 1500));
-  // Cuando se instala una versión nueva de la app, recargar una vez para usarla
-  let recargado = false; const habiaControlador = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.addEventListener("controllerchange", () => { if (recargado || !habiaControlador) return; recargado = true; if (!reproduciendo) location.reload(); });
+  // Cuando se instala una versión nueva: recargar una vez para usarla. Si están reproduciendo o corrigiendo, no cortar:
+  // enseñar el aviso con el botón «Actualizar ahora» y, si estaban reproduciendo, aplicarla sola al parar
+  // habiaControlador: en la primera visita la página arranca sin service worker y el primer controllerchange es la
+  // instalación inicial (no hay nada que recargar); a partir de ahí, cada cambio de controlador es una versión nueva
+  let recargado = false, habiaControlador = !!navigator.serviceWorker.controller;
+  const aplicarVersion = () => { if (recargado) return; recargado = true; location.reload(); };
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (recargado) return;
+    if (!habiaControlador) { habiaControlador = true; return; }
+    if (!reproduciendo && !cambiosCorr) return aplicarVersion();
+    versionPendiente = true; $('versionNueva').hidden = false;
+  });
+  $('aplicarVersion').onclick = aplicarVersion;
+  alParar = () => { if (versionPendiente && !cambiosCorr) setTimeout(aplicarVersion, 300); };
 }
 // ---------- Modo Corregir: el director corrige notas en el móvil y envía el XML corregido ----------
 let xmlActual = null, corr = null, cambiosCorr = 0, redibujoPendiente = null;
