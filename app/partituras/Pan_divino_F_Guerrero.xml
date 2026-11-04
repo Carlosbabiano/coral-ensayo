@@ -5599,90 +5599,63 @@
 			<attributes>
 			</attributes>
 			<note>
-				<rest />
+				<rest/>
 				<duration>2</duration>
 				<voice>1</voice>
 				<type>quarter</type>
 				<staff>1</staff>
-			</note>
-			<note>
-				<pitch>
-					<step>E</step>
-					<alter>0</alter>
-					<octave>3</octave>
-				</pitch>
+			</note><note>
+				<pitch><step>E</step><alter>0</alter><octave>3</octave></pitch>
 				<duration>2</duration>
 				<voice>1</voice>
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
-			<note>
-				<pitch>
-					<step>E</step>
-					<alter>0</alter>
-					<octave>4</octave>
-				</pitch>
+			</note><note>
+				<pitch><step>E</step><alter>0</alter><octave>4</octave></pitch>
 				<duration>3</duration>
 				<voice>1</voice>
-				<type>quarter</type>
-				<dot />
-				<stem>down</stem>
+				<type>quarter</type><dot/><stem>down</stem>
 				<staff>1</staff>
-			</note>
-			<note>
-				<pitch>
-					<step>D</step>
-					<alter>0</alter>
-					<octave>4</octave>
-				</pitch>
+			</note><note>
+				<pitch><step>D</step><alter>1</alter><octave>4</octave></pitch>
 				<duration>1</duration>
 				<voice>1</voice>
-				<type>eighth</type>
+				<type>eighth</type><accidental>sharp</accidental>
 				<stem>down</stem>
 				<staff>1</staff>
 			</note>
+			
+			
+			
 		</measure>
 		<measure number="31">
 			<attributes>
 				<divisions>1</divisions>
 			</attributes>
 			<note>
-				<pitch>
-					<step>C</step>
-					<alter>0</alter>
-					<octave>4</octave>
-				</pitch>
+				<pitch><step>C</step><alter>1</alter><octave>4</octave></pitch>
+				<duration>1</duration>
+				<voice>1</voice>
+				<type>quarter</type><accidental>sharp</accidental><stem>down</stem>
+				<staff>1</staff>
+			</note><note>
+				<pitch><step>B</step><alter>0</alter><octave>3</octave></pitch>
 				<duration>1</duration>
 				<voice>1</voice>
 				<type>quarter</type>
 				<stem>down</stem>
 				<staff>1</staff>
-			</note>
-			<note>
-				<pitch>
-					<step>B</step>
-					<alter>0</alter>
-					<octave>3</octave>
-				</pitch>
-				<duration>1</duration>
-				<voice>1</voice>
-				<type>quarter</type>
-				<stem>down</stem>
-				<staff>1</staff>
-			</note>
-			<note>
-				<pitch>
-					<step>A</step>
-					<alter>0</alter>
-					<octave>3</octave>
-				</pitch>
+			</note><note>
+				<pitch><step>A</step><alter>0</alter><octave>3</octave></pitch>
 				<duration>2</duration>
 				<voice>1</voice>
 				<type>half</type>
 				<stem>down</stem>
 				<staff>1</staff>
 			</note>
+			
+			
 		</measure>
 		<measure number="32">
 			<attributes>
