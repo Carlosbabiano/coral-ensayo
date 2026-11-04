@@ -183,6 +183,16 @@
     ]
   },
   {
+    "titulo": "Santo Frisina",
+    "archivo": "Santo_Frisina.xml",
+    "posiciones": "Santo_Frisina.pos.json",
+    "paginas": [
+      "Santo_Frisina-p1.jpg",
+      "Santo_Frisina-p2.jpg",
+      "Santo_Frisina-p3.jpg"
+    ]
+  },
+  {
     "titulo": "Si la nieve resbala (Domínguez)",
     "archivo": "Si_la_nieve_resbala_Dominguez.xml",
     "posiciones": "Si_la_nieve_resbala_Dominguez.pos.json",
