@@ -49,6 +49,11 @@
     --tap-primary: 56px;               /* botón principal de la barra de transporte */
     --icon-s: 18px; --icon-m: 22px; --icon-l: 28px;
     --alto-controles: 200px;           /* lo ajusta la app al alto real de la barra fija */
+    /* Hueco bajo la barra de gestos de Android y el borde inferior del iPhone. Chrome (135+) dibuja la página debajo
+       de la barra de gestos y va cambiando safe-area-inset-bottom mientras se hace scroll; usar ese valor como relleno
+       hace que la barra fija baile y se quede a medias detrás de la barra de gestos. Se reserva siempre el máximo y se
+       desplaza la barra con la diferencia, que es lo que recomienda Chrome */
+    --hueco-inferior: env(safe-area-max-inset-bottom, env(safe-area-inset-bottom, 0px));
     color-scheme: light;
   }
   /* Modo oscuro: mismos tokens con otros valores. La partitura sigue siendo papel blanco (notas negras), y la
@@ -127,7 +132,7 @@
   #notaSel { position: absolute; border: 2px solid var(--color-cursor); border-radius: 50%; background: color-mix(in srgb, var(--color-cursor) 28%, transparent); pointer-events: none; z-index: 3; box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-cursor) 25%, transparent); }
   #partitura svg { max-width: 100%; height: auto; }
   #estado { color: var(--color-fg-muted); font-size: var(--font-s); padding: var(--space-1) var(--space-3); }
-  .controles { position: fixed; bottom: 0; left: 0; right: 0; background: var(--color-surface); border-top: 1px solid var(--color-border); padding: var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom)); display: grid; gap: var(--space-2); z-index: 5; box-shadow: var(--shadow-bar); }
+  .controles { position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) - var(--hueco-inferior)); left: 0; right: 0; background: var(--color-surface); border-top: 1px solid var(--color-border); padding: var(--space-2) var(--space-3) calc(var(--space-2) + var(--hueco-inferior)); display: grid; gap: var(--space-2); z-index: 5; box-shadow: var(--shadow-bar); }
   .fila { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
   .fila label { font-size: var(--font-s); color: var(--color-fg-muted); display: flex; align-items: center; gap: var(--space-2); }
   .fila input[type=range] { flex: 1; min-width: 80px; height: var(--tap); margin: 0; }
@@ -156,7 +161,7 @@
   /* La barra se puede esconder (en una ventana pequeña, como la del gestor, tapa media partitura): queda solo una
      pestaña abajo a la derecha para volver a sacarla. Mientras está escondida, el cuerpo no deja hueco */
   body.controlesOcultos .controles { display: none; }
-  #mostrarControles { display: none; position: fixed; right: var(--space-3); bottom: calc(var(--space-3) + env(safe-area-inset-bottom)); z-index: 5; align-items: center; gap: var(--space-2); min-height: var(--tap); padding: var(--space-2) var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--color-border-control); background: var(--color-surface); color: var(--color-fg); font: inherit; font-size: var(--font-s); box-shadow: var(--shadow-card); }
+  #mostrarControles { display: none; position: fixed; right: var(--space-3); bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px)); z-index: 5; align-items: center; gap: var(--space-2); min-height: var(--tap); padding: var(--space-2) var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--color-border-control); background: var(--color-surface); color: var(--color-fg); font: inherit; font-size: var(--font-s); box-shadow: var(--shadow-card); }
   #mostrarControles .ico { transform: rotate(180deg); }
   body.controlesOcultos #mostrarControles { display: inline-flex; }
   .chip { font-size: var(--font-s); padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-surface-2); border: 1px solid var(--color-border); display: inline-flex; align-items: center; gap: var(--space-2); min-height: 36px; }
@@ -1048,6 +1053,7 @@ function resumirAjustes() {
 function mostrarAjustes(abrir) {
   $('panelAjustes').hidden = !abrir;
   $('resumenAjustes').setAttribute('aria-expanded', abrir ? 'true' : 'false');
+  ajustarHueco(); // sin esperar al observador: el final de la partitura no debe quedar bajo el panel
   try { localStorage.setItem('ajustesAbiertos', abrir ? '1' : '0'); } catch {}
 }
 $('resumenAjustes').onclick = () => mostrarAjustes($('panelAjustes').hidden);
