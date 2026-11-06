@@ -197,6 +197,10 @@
   #resumenAjustes[aria-expanded=true] .flecha { transform: rotate(180deg); }
   #panelAjustes { display: grid; gap: var(--space-2); }
   #panelAjustes[hidden] { display: none; }
+  #filaObras { font-size: var(--font-s); color: var(--color-fg-muted); }
+  #filaObras[hidden] { display: none; }
+  #filaObras.incompleta { color: var(--color-note-fg); }
+  #estadoObras { flex: 1; min-width: 12em; }
   #version { margin-left: auto; align-self: center; font-size: var(--font-xs); color: var(--color-fg-muted); }
   /* Aviso de que no hay conexión (la app sigue funcionando con lo guardado) */
   #sinConexion { background: var(--color-note-bg); color: var(--color-note-fg); border-bottom: 1px solid var(--color-note-border); padding: var(--space-1) var(--space-3); font-size: var(--font-s); text-align: center; }
@@ -249,6 +253,9 @@
   <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
   <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
 </svg>
 <header>
@@ -328,6 +335,12 @@
     </label>
     <span id="version" title="Versión de la app instalada en este dispositivo"></span>
   </div>
+  <!-- Obras guardadas en este dispositivo para usarlas sin conexión -->
+  <div class="fila" id="filaObras" hidden>
+    <svg class="ico" id="icoObras" aria-hidden="true"><use href="#i-check"/></svg>
+    <span id="estadoObras" role="status" aria-live="polite"></span>
+    <button type="button" id="descargarObras" hidden>Descargar ahora</button>
+  </div>
   </div>
 </section>
 <button id="mostrarControles" type="button" title="Volver a mostrar los controles"><svg class="ico" aria-hidden="true"><use href="#i-chevron-down"/></svg> Controles</button>
@@ -395,7 +408,15 @@ function mostrarErrorCarga(e) {
   mostrarTarjeta('No se ha podido cargar la obra', navigator.onLine ? 'Comprueba la conexión e inténtalo de nuevo.' : 'No hay conexión y esta obra todavía no estaba guardada en el dispositivo. Vuelve a intentarlo cuando la tengas.', 'Reintentar');
 }
 // Aviso de que no hay conexión: la app sigue funcionando con lo que el service worker tiene guardado
-const indicarConexion = () => { $('sinConexion').hidden = navigator.onLine !== false; };
+// Cuántas obras hay guardadas en el dispositivo (lo dice el service worker); null mientras no se sabe
+let estadoObras = null;
+const indicarConexion = () => {
+  $('sinConexion').hidden = navigator.onLine !== false;
+  const e = estadoObras;
+  $('sinConexion').textContent = !e ? 'Sin conexión. La app funciona con lo que ya está guardado en este dispositivo.'
+    : e.guardadas >= e.obras ? `Sin conexión. Las ${e.obras} obras están guardadas en este dispositivo.`
+    : `Sin conexión. Hay ${e.guardadas} de ${e.obras} obras guardadas en este dispositivo; las demás se descargarán cuando vuelva la conexión.`;
+};
 window.addEventListener('online', indicarConexion); window.addEventListener('offline', indicarConexion); indicarConexion();
 
 // ---------- Coro por vocales ----------
@@ -1473,6 +1494,28 @@ if ("serviceWorker" in navigator) {
     versionPendiente = true; $('versionNueva').hidden = false;
   });
   $('aplicarVersion').onclick = aplicarVersion;
+  // Obras guardadas para ensayar sin conexión: el service worker las descarga y avisa de cómo va. Se le pide al abrir
+  // la app y al volver la conexión, así una descarga que quedó a medias (tablet bloqueada, wifi que se cae) se retoma
+  const pedirObras = tipo => navigator.serviceWorker.ready.then(reg => reg.active && reg.active.postMessage({ tipo })).catch(() => {});
+  navigator.serviceWorker.addEventListener('message', ev => {
+    const e = ev.data || {};
+    if (e.tipo !== 'obras' || e.sinDatos) return;
+    estadoObras = e;
+    const completa = e.guardadas >= e.obras;
+    $('filaObras').hidden = false;
+    $('filaObras').classList.toggle('incompleta', !completa);
+    $('icoObras').firstElementChild.setAttribute('href', completa ? '#i-check' : e.descargando ? '#i-download' : '#i-alert');
+    $('estadoObras').textContent = e.descargando ? `Guardando las obras en este dispositivo para usarlas sin conexión: ${e.guardadas} de ${e.obras}…`
+      : completa ? (e.fallos ? `Las ${e.obras} obras están guardadas, pero alguna no se ha podido poner al día. Se reintentará con conexión.` : `Las ${e.obras} obras están guardadas en este dispositivo: funcionan sin conexión.`)
+      : `Solo hay ${e.guardadas} de ${e.obras} obras guardadas en este dispositivo. Conéctate a una wifi y pulsa «Descargar ahora».`;
+    $('descargarObras').hidden = e.descargando || (completa && !e.fallos);
+    indicarConexion();
+  });
+  $('descargarObras').onclick = () => { $('descargarObras').hidden = true; pedirObras('descargar'); };
+  pedirObras('descargar');
+  window.addEventListener('online', () => pedirObras('descargar'));
+  // Que el navegador no borre lo guardado por su cuenta si el dispositivo va justo de espacio
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   alParar = () => { if (versionPendiente && !cambiosCorr) setTimeout(aplicarVersion, 300); };
 }
 // ---------- Modo Corregir: el director corrige notas en el móvil y envía el XML corregido ----------
