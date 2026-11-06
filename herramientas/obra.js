@@ -916,7 +916,20 @@ function subirVersionCache() {
   let version = '';
   sw = sw.replace(/coral-v(\d+)/, (_, v) => (version = 'coral-v' + (+v + 1)));
   fs.writeFileSync(SW, sw);
+  escribirHuellas();
   return version;
+}
+
+// partituras/huellas.json: qué archivos tiene cada obra y una huella de su contenido. El service worker la usa para
+// bajar a las tablets solo lo que ha cambiado, sin borrar lo que ya tenían (las páginas actualizadas se llaman igual)
+function escribirHuellas() {
+  const huella = f => { try { return crypto.createHash('sha1').update(fs.readFileSync(f)).digest('hex').slice(0, 12); } catch { return null; } };
+  const obras = leerLista().map(o => ({ titulo: o.titulo, archivos: Object.fromEntries(archivosDe(o).map(a => ['partituras/' + a, huella(path.join(DIR_PARTITURAS, a))]).filter(([, h]) => h)) }));
+  const comunes = {};
+  const DIR_VOCES = path.join(DIR_APP, 'voces');
+  const recorrer = d => { for (const e of fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []) { const f = path.join(d, e.name); if (e.isDirectory()) recorrer(f); else comunes[path.relative(DIR_APP, f).split(path.sep).join('/')] = huella(f); } };
+  recorrer(DIR_VOCES);
+  fs.writeFileSync(path.join(DIR_PARTITURAS, 'huellas.json'), JSON.stringify({ obras, comunes }) + '\n');
 }
 function versionCache() { return (fs.readFileSync(SW, 'utf8').match(/coral-v\d+/) || ['?'])[0]; }
 
@@ -944,5 +957,5 @@ module.exports = {
   clave, pdfPara, prepararObra, editarObra, huecosASilencios, leerPartes, tituloDe, tempoDe, limpiarNombreArchivo, vocesExtraDe,
   hayAudiveris, comprobarAudiveris, leerConAudiveris, limpiarXmlAudiveris, nombreCanonico,
   sospechososDe, detalleCompas, fijarCompas, notasCompas, escribirCompas, FIGURA_NEGRAS, repararCompases, recomponerPartesCorridas, compasesDe, posicionesCompletas,
-  leerLista, archivosDe, incorporarEnApp, retirarDeApp, marcarEnsayo, subirVersionCache, versionCache, guardarEnGit, guardarPdf,
+  leerLista, archivosDe, incorporarEnApp, retirarDeApp, marcarEnsayo, subirVersionCache, escribirHuellas, versionCache, guardarEnGit, guardarPdf,
 };
