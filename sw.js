@@ -7,7 +7,7 @@
 //    está entera. Antes todo iba en VERSION y cada publicación lo borraba: si en ese momento no había buena conexión,
 //    la tablet se quedaba sin partituras.
 //  - EXTERNOS: librerías y sonidos de internet (OpenSheetMusicDisplay, smplr, soundfonts). Tampoco se borra.
-const VERSION = 'coral-v144';
+const VERSION = 'coral-v145';
 const OBRAS = 'coral-obras';
 const EXTERNOS = 'coral-externos';
 const BASE = ['./', './index.html', './compases.js', './manifest.json', './icono-192.png', './icono-512.png', './icono-512-maskable.png', './apple-touch-icon.png', './pantalla.mp4', './partituras/lista.json'];
@@ -56,7 +56,7 @@ self.addEventListener('activate', e => {
 
 // ---------- Obras guardadas en el dispositivo ----------
 let huellasConocidas = null;   // { url absoluta: huella } de la última huellas.json leída
-let estado = { obras: 0, guardadas: 0, descargando: false, fallos: 0, sinDatos: true };
+let estado = { obras: 0, guardadas: 0, sinGuardar: [], descargando: false, fallos: 0, sinDatos: true };
 let sincronizando = null;
 
 async function avisar() {
@@ -105,18 +105,36 @@ async function hacerSincronizacion() {
   // Obras retiradas: fuera (solo si la lista es la del servidor, no una copia vieja)
   if (h.deRed) for (const req of await obras.keys()) if (!(absoluta(req.url) in todos)) await obras.delete(req);
 
-  // Qué falta o ha cambiado
-  const vale = async (url, hu) => { const r = await obras.match(url); return !!r && (!hu || r.headers.get('x-huella') === hu); };
+  // Qué falta y qué ha cambiado. Lo que falta va primero: una obra que no está no se puede abrir sin conexión, una
+  // copia vieja sí. Las copias sin huella (de versiones anteriores de la app) se comprueban aquí mismo calculando su
+  // huella, sin volver a bajarlas (antes se bajaban las 24 obras enteras y lo que faltaba quedaba para el final)
   const presente = async url => !!(await obras.match(url));
-  const pendientes = [];
-  for (const [url, hu] of Object.entries(todos)) if (!(await vale(url, hu))) pendientes.push([url, hu]);
+  const faltan = [], cambiadas = [];
+  for (const [url, hu] of Object.entries(todos)) {
+    const r = await obras.match(url);
+    if (!r) { faltan.push([url, hu]); continue; }
+    if (!hu || r.headers.get('x-huella') === hu) continue;
+    if (!r.headers.get('x-huella')) {
+      try { const datos = await r.blob(); if ((await huellaDe(datos)) === hu) { await obras.put(url, conCabecera(datos, r, hu)); continue; } } catch {}
+    }
+    cambiadas.push([url, hu]);
+  }
+  // Primero los archivos de las obras con menos cosas por bajar: así se completan obras enteras cuanto antes
+  const pesoObra = {};
+  for (const o of h.obras) { const urls = Object.keys(o.archivos).map(r => absoluta('./' + r)); const n = urls.filter(u => faltan.some(([f]) => f === u)).length; for (const u of urls) pesoObra[u] = n; }
+  faltan.sort((a, b) => (pesoObra[a[0]] ?? 1e9) - (pesoObra[b[0]] ?? 1e9));
+  const pendientes = [...faltan, ...cambiadas];
 
-  const contar = async () => {
-    let g = 0;
-    for (const o of h.obras) { let ok = true; for (const r of Object.keys(o.archivos)) if (!(await presente(absoluta('./' + r)))) { ok = false; break; } if (ok) g++; }
-    return g;
+  // Qué obras están enteras en el dispositivo; de las que no, se avisa a la app con su partitura (para marcarlas)
+  const repasar = async () => {
+    let g = 0; const sinGuardar = [];
+    for (const o of h.obras) {
+      let ok = true; for (const r of Object.keys(o.archivos)) if (!(await presente(absoluta('./' + r)))) { ok = false; break; }
+      if (ok) g++; else { const xml = Object.keys(o.archivos).find(r => r.endsWith('.xml')); sinGuardar.push(xml ? xml.replace(/^partituras\//, '') : o.titulo); }
+    }
+    return { guardadas: g, sinGuardar };
   };
-  estado = { obras: h.obras.length, guardadas: await contar(), descargando: pendientes.length > 0, fallos: 0, sinDatos: false };
+  estado = { obras: h.obras.length, ...(await repasar()), descargando: pendientes.length > 0, fallos: 0, sinDatos: false };
   await avisar();
   if (!pendientes.length) return;
 
@@ -130,18 +148,26 @@ async function hacerSincronizacion() {
         if (!r.ok) throw new Error(r.status);
         await obras.put(url, await conHuella(r, hu));
       } catch { fallos++; }
-      if (++hechos % 5 === 0) { estado.guardadas = await contar(); estado.fallos = fallos; await avisar(); }
+      if (++hechos % 4 === 0) { Object.assign(estado, await repasar(), { fallos }); await avisar(); }
     }
   };
   await Promise.all([trabajador(), trabajador(), trabajador(), trabajador()]);
-  estado = { ...estado, guardadas: await contar(), descargando: false, fallos };
+  estado = { ...estado, ...(await repasar()), descargando: false, fallos };
   await avisar();
 }
 
-async function conHuella(r, hu) {
-  if (!hu) return r;
+// Huella de un archivo: las 12 primeras cifras de su SHA-1, igual que la calcula el programa de publicar (obra.js)
+async function huellaDe(blob) {
+  const d = new Uint8Array(await crypto.subtle.digest('SHA-1', await blob.arrayBuffer()));
+  return [...d].map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 12);
+}
+function conCabecera(datos, r, hu) {
   const cab = new Headers(r.headers); cab.set('x-huella', hu);
-  return new Response(await r.blob(), { status: r.status, statusText: r.statusText, headers: cab });
+  return new Response(datos, { status: r.status, statusText: r.statusText, headers: cab });
+}
+
+async function conHuella(r, hu) {
+  return hu ? conCabecera(await r.blob(), r, hu) : r;
 }
 
 // La app pide el estado al abrirse (y entonces se retoma la descarga si quedó a medias) y al pulsar «Descargar ahora»

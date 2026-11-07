@@ -127,6 +127,7 @@
   #barraCorregir button.principal { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); font-size: var(--font-s); }
   #barraCorregir button.peligro { color: var(--color-danger); border-color: var(--color-danger-border); }
   #barraCorregir select { font-size: var(--font-m); }
+  #obra { max-width: 100%; min-width: 0; text-overflow: ellipsis; } /* con «· sin guardar» los nombres largos no deben salirse en móvil */
   #barraCorregir .cuadra-mal { color: var(--color-danger); font-weight: 600; }
   #corrLetra { width: 100px; }
   #notaSel { position: absolute; border: 2px solid var(--color-cursor); border-radius: 50%; background: color-mix(in srgb, var(--color-cursor) 28%, transparent); pointer-events: none; z-index: 3; box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-cursor) 25%, transparent); }
@@ -207,6 +208,15 @@
   /* Versión nueva instalada mientras reproducían o corregían: fila en la cabecera fija, se aplica cuando ellos quieran */
   #versionNueva { flex-basis: 100%; display: flex; align-items: center; justify-content: center; gap: var(--space-3); flex-wrap: wrap; background: var(--color-note-bg); color: var(--color-note-fg); border: 1px solid var(--color-note-border); border-radius: var(--radius-s); padding: var(--space-1) var(--space-3); font-size: var(--font-s); text-align: center; }
   #versionNueva[hidden] { display: none; }
+  /* Obras que faltan por guardar en el dispositivo: aviso en la pantalla principal (antes solo se veía en Ajustes) */
+  #faltanObras { display: grid; grid-template-columns: auto minmax(0, 60ch); align-items: center; justify-content: center; gap: var(--space-1) var(--space-2); background: var(--color-note-bg); color: var(--color-note-fg); border-bottom: 1px solid var(--color-note-border); padding: var(--space-1) var(--space-3); font-size: var(--font-s); text-align: center; }
+  #faltanObras[hidden] { display: none; }
+  #faltanObras .ico { flex: none; }
+  #faltanTexto { text-align: start; }
+  #faltanObras button { grid-column: 2; justify-self: start; }
+  #faltanObras button { min-height: 32px; padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--color-note-border); background: var(--color-surface); color: var(--color-note-fg); font: inherit; font-weight: 600; cursor: pointer; }
+  #faltanObras button:hover { filter: brightness(.96); }
+  #faltanObras button:focus-visible { outline: 2px solid var(--color-note-border); outline-offset: 2px; }
   #versionNueva button { min-height: 32px; padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--color-note-border); background: var(--color-surface); color: var(--color-note-fg); font: inherit; font-weight: 600; cursor: pointer; }
   #versionNueva button:hover { background: var(--color-note-bg); filter: brightness(.96); }
   #versionNueva button:focus-visible { outline: 2px solid var(--color-note-border); outline-offset: 2px; }
@@ -272,6 +282,7 @@
 
 <main>
 <div id="sinConexion" role="status" hidden>Sin conexión. La app funciona con lo que ya está guardado en este dispositivo.</div>
+<div id="faltanObras" role="status" hidden><svg class="ico" aria-hidden="true"><use href="#i-download"/></svg><span id="faltanTexto"></span><button type="button" id="faltanDescargar" hidden>Descargar ahora</button></div>
 <div class="voces-wrap">
   <div class="voces" id="voces" role="group" aria-label="Voz que se ensaya"></div>
 </div>
@@ -405,6 +416,8 @@ function mostrarTarjeta(titulo, texto, boton) {
 }
 function mostrarErrorCarga(e) {
   console.error(e);
+  const archivo = $('obra').value, sinGuardar = !!(estadoObras && estadoObras.sinGuardar && estadoObras.sinGuardar.includes(archivo));
+  if (sinGuardar) return mostrarTarjeta('Esta obra no está guardada en este dispositivo', 'Hace falta conexión para abrirla. Las obras marcadas «sin guardar» en la lista se guardan solas cuando hay wifi y la app está abierta.', 'Reintentar');
   mostrarTarjeta('No se ha podido cargar la obra', navigator.onLine ? 'Comprueba la conexión e inténtalo de nuevo.' : 'No hay conexión y esta obra todavía no estaba guardada en el dispositivo. Vuelve a intentarlo cuando la tengas.', 'Reintentar');
 }
 // Aviso de que no hay conexión: la app sigue funcionando con lo que el service worker tiene guardado
@@ -415,8 +428,28 @@ const indicarConexion = () => {
   const e = estadoObras;
   $('sinConexion').textContent = !e ? 'Sin conexión. La app funciona con lo que ya está guardado en este dispositivo.'
     : e.guardadas >= e.obras ? `Sin conexión. Las ${e.obras} obras están guardadas en este dispositivo.`
-    : `Sin conexión. Hay ${e.guardadas} de ${e.obras} obras guardadas en este dispositivo; las demás se descargarán cuando vuelva la conexión.`;
+    : `Sin conexión. Hay ${e.guardadas} de ${e.obras} obras guardadas en este dispositivo. Las marcadas «sin guardar» no se pueden abrir hasta que vuelva la conexión.`;
+  indicarFaltan();
 };
+// Aviso en la pantalla principal mientras falten obras por guardar (con conexión; sin ella ya lo dice el aviso de arriba)
+function indicarFaltan() {
+  const e = estadoObras, n = e ? e.obras - e.guardadas : 0;
+  $('faltanObras').hidden = !e || n <= 0 || navigator.onLine === false;
+  if ($('faltanObras').hidden) return;
+  const obrasTxt = n === 1 ? 'Falta 1 obra' : `Faltan ${n} obras`;
+  $('faltanTexto').textContent = e.descargando ? `Guardando obras en este dispositivo: ${e.guardadas} de ${e.obras}. Déjalo con la app abierta y con wifi hasta que termine.`
+    : `${obrasTxt} por guardar en este dispositivo. Sin conexión no se podrán abrir.`;
+  $('faltanObras').querySelector('use').setAttribute('href', e.descargando ? '#i-download' : '#i-alert');
+  $('faltanDescargar').hidden = e.descargando;
+}
+// En el desplegable, las obras que no están guardadas en el dispositivo llevan «sin guardar»
+function marcarSinGuardar() {
+  const faltan = new Set((estadoObras && estadoObras.sinGuardar) || []);
+  for (const op of $('obra').options) {
+    if (!op.dataset.titulo) op.dataset.titulo = op.textContent;
+    op.textContent = op.dataset.titulo + (faltan.has(op.value) ? ' · sin guardar' : '');
+  }
+}
 window.addEventListener('online', indicarConexion); window.addEventListener('offline', indicarConexion); indicarConexion();
 
 // ---------- Coro por vocales ----------
@@ -494,7 +527,7 @@ let osmd, eventos = [], vozActiva = 0, instrumento = null, ctx = null;
 // los compases en los que hay una segunda subvoz (acorde o voz 2 del MusicXML)
 let subActiva = 0, divisi = [];
 let reproduciendo = false, indiceEvento = 0, tInicio = 0, tOffset = 0, timerPlan = null, raf = null;
-let versionPendiente = false, alParar = null; // versión nueva de la app que espera a que paren de reproducir
+let versionPendiente = false; // versión nueva de la app instalada que espera a que la apliquen
 let sonando = []; // notas en curso para poder cortarlas al parar
 let compasInicio = 0;
 // Vista "PDF original": la página del PDF con una marca que recorre los compases
@@ -513,6 +546,7 @@ async function cargarLista() {
   const grupo = (nombre, obras) => { const g = document.createElement('optgroup'); g.label = nombre; obras.forEach(o => g.appendChild(opcion(o))); $('obra').appendChild(g); };
   if (enEnsayo.length) { grupo('En ensayo', enEnsayo); if (resto.length) grupo('Repertorio', resto); }
   else lista.forEach(o => $('obra').appendChild(opcion(o)));
+  marcarSinGuardar();
   if (!lista.length) { mostrarTarjeta('Todavía no hay obras', 'Cuando se publique la primera obra aparecerá aquí.'); return; }
   $('obra').onchange = () => { try { localStorage.setItem('obraElegida', $('obra').value); } catch {} cargarObra($('obra').value).catch(mostrarErrorCarga); };
   // Se abre la última obra que se eligió, si sigue publicada; si no, la primera en ensayo
@@ -1226,7 +1260,6 @@ function pausar() {
   if (cursorEn >= 0) indiceEvento = cursorEn;
   cursorEn = -1;
   pintarPlay(false);
-  if (alParar) alParar();
 }
 function parar() { pausar(); }
 // Botón principal: icono y nombre según esté sonando o no; el icono da un pequeño rebote al cambiar (no con menos movimiento)
@@ -1481,8 +1514,9 @@ if ("serviceWorker" in navigator) {
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") buscarVersion(); });
   setInterval(buscarVersion, 15 * 60 * 1000);
   navigator.serviceWorker.addEventListener("controllerchange", () => setTimeout(mostrarVersion, 1500));
-  // Cuando se instala una versión nueva: recargar una vez para usarla. Si están reproduciendo o corrigiendo, no cortar:
-  // enseñar el aviso con el botón «Actualizar ahora» y, si estaban reproduciendo, aplicarla sola al parar
+  // Cuando se instala una versión nueva: recargar solo si la app se acaba de abrir y nadie la ha tocado aún. Si ya se
+  // está usando (en un ensayo o en plena actuación) NUNCA se recarga sola: sale el aviso con «Actualizar ahora» y se
+  // aplica cuando la pulsen o la próxima vez que se vuelva a la app tras un buen rato fuera (más de 30 min)
   // habiaControlador: en la primera visita la página arranca sin service worker y el primer controllerchange es la
   // instalación inicial (no hay nada que recargar); a partir de ahí, cada cambio de controlador es una versión nueva
   let recargado = false, habiaControlador = !!navigator.serviceWorker.controller;
@@ -1490,8 +1524,14 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (recargado) return;
     if (!habiaControlador) { habiaControlador = true; return; }
-    if (!reproduciendo && !cambiosCorr) return aplicarVersion();
+    if (!usada && !reproduciendo && !cambiosCorr && performance.now() < 20000) return aplicarVersion();
     versionPendiente = true; $('versionNueva').hidden = false;
+  });
+  let usada = false, ocultaDesde = 0;
+  for (const ev of ['pointerdown', 'keydown']) document.addEventListener(ev, () => { usada = true; }, { once: true, capture: true });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') { ocultaDesde = Date.now(); return; }
+    if (versionPendiente && !reproduciendo && !cambiosCorr && ocultaDesde && Date.now() - ocultaDesde > 30 * 60 * 1000) aplicarVersion();
   });
   $('aplicarVersion').onclick = aplicarVersion;
   // Obras guardadas para ensayar sin conexión: el service worker las descarga y avisa de cómo va. Se le pide al abrir
@@ -1509,14 +1549,14 @@ if ("serviceWorker" in navigator) {
       : completa ? (e.fallos ? `Las ${e.obras} obras están guardadas, pero alguna no se ha podido poner al día. Se reintentará con conexión.` : `Las ${e.obras} obras están guardadas en este dispositivo: funcionan sin conexión.`)
       : `Solo hay ${e.guardadas} de ${e.obras} obras guardadas en este dispositivo. Conéctate a una wifi y pulsa «Descargar ahora».`;
     $('descargarObras').hidden = e.descargando || (completa && !e.fallos);
-    indicarConexion();
+    indicarConexion(); marcarSinGuardar();
   });
   $('descargarObras').onclick = () => { $('descargarObras').hidden = true; pedirObras('descargar'); };
+  $('faltanDescargar').onclick = () => { $('faltanDescargar').hidden = true; $('faltanTexto').textContent = 'Comprobando qué falta…'; pedirObras('descargar'); };
   pedirObras('descargar');
   window.addEventListener('online', () => pedirObras('descargar'));
   // Que el navegador no borre lo guardado por su cuenta si el dispositivo va justo de espacio
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
-  alParar = () => { if (versionPendiente && !cambiosCorr) setTimeout(aplicarVersion, 300); };
 }
 // ---------- Modo Corregir: el director corrige notas en el móvil y envía el XML corregido ----------
 let xmlActual = null, corr = null, cambiosCorr = 0, redibujoPendiente = null;
