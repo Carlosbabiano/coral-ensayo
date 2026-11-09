@@ -36,7 +36,20 @@
   },
   {
     "titulo": "Aveverumcorpus-Mozart",
-    "archivo": "Aveverumcorpus_Mozart.xml"
+    "archivo": "Aveverumcorpus_Mozart.xml",
+    "posiciones": "Aveverumcorpus_Mozart.pos.json",
+    "paginas": [
+      "Aveverumcorpus_Mozart-p1.png",
+      "Aveverumcorpus_Mozart-p2.png",
+      "Aveverumcorpus_Mozart-p3.png",
+      "Aveverumcorpus_Mozart-p4.png",
+      "Aveverumcorpus_Mozart-p5.png",
+      "Aveverumcorpus_Mozart-p6.png",
+      "Aveverumcorpus_Mozart-p7.png",
+      "Aveverumcorpus_Mozart-p8.png",
+      "Aveverumcorpus_Mozart-p9.png",
+      "Aveverumcorpus_Mozart-p10.png"
+    ]
   },
   {
     "titulo": "Brindis",
@@ -61,7 +74,11 @@
   },
   {
     "titulo": "canticorum",
-    "archivo": "canticorum.xml"
+    "archivo": "canticorum.xml",
+    "posiciones": "canticorum.pos.json",
+    "paginas": [
+      "canticorum-p1.jpg"
+    ]
   },
   {
     "titulo": "Carol of the Bells",
