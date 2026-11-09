@@ -21,7 +21,12 @@ for (const xml of xmls) {
   console.log('\n== ' + path.basename(xml) + ' ==');
   const dirSalida = fs.mkdtempSync(path.join(os.tmpdir(), 'obra-'));
   try {
-    const r = obra.prepararObra({ xml, pdf: obra.pdfPara(xml, pdfs), dirSalida });
+    // Sin PDF la obra saldría sin la página original (el coro vería la partitura dibujada, sin letra): no se añade.
+    // Además de los arrastrados, junto al XML y en originales/pdf, se busca en Entrada/ y Entrada/pendientes/
+    const entrada = path.join(obra.RAIZ, 'Entrada');
+    const pdf = obra.pdfPara(xml, pdfs) || obra.pdfPara(path.join(entrada, path.basename(xml))) || obra.pdfPara(path.join(entrada, 'pendientes', path.basename(xml)));
+    if (!pdf) throw new Error(`No encuentro el PDF de "${path.basename(xml)}". Arrastra el XML y su PDF a la vez sobre "Añadir obra.cmd" (o ponles el mismo nombre): sin PDF el coro no vería la página original con la letra.`);
+    const r = obra.prepararObra({ xml, pdf, dirSalida });
     const existia = obra.incorporarEnApp(r.entrada, dirSalida);
     obra.guardarPdf(r.pdf, r.entrada.archivo.replace(/\.xml$/, ''));
     console.log(`  ${existia ? 'Actualizada' : 'Añadida'} "${r.entrada.titulo}" -> app/partituras/${r.entrada.archivo}`);
