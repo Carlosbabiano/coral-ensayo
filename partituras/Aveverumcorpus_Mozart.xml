@@ -29,19 +29,15 @@
  </part-group>
  <score-part id="P3">
 			<part-name>Soprano</part-name>
-  <part-name print-object="no">Part 3</part-name>
  </score-part>
  <score-part id="P4">
 			<part-name>Contralto</part-name>
-  <part-name print-object="no">Part 4</part-name>
  </score-part>
  <score-part id="P5">
 			<part-name>Tenor</part-name>
-  <part-name print-object="no">Part 5</part-name>
  </score-part>
  <score-part id="P6">
 			<part-name>Bajo</part-name>
-  <part-name print-object="no">Part 6</part-name>
  </score-part>
  <part-group type="stop" number="2"/>
  </part-list>
