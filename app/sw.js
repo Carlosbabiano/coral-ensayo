@@ -7,11 +7,11 @@
 //    está entera. Antes todo iba en VERSION y cada publicación lo borraba: si en ese momento no había buena conexión,
 //    la tablet se quedaba sin partituras.
 //  - EXTERNOS: librerías y sonidos de internet (OpenSheetMusicDisplay, smplr, soundfonts). Tampoco se borra.
-const VERSION = 'coral-v145';
+const VERSION = 'coral-v146';
 const OBRAS = 'coral-obras';
 const EXTERNOS = 'coral-externos';
 const BASE = ['./', './index.html', './compases.js', './manifest.json', './icono-192.png', './icono-512.png', './icono-512-maskable.png', './apple-touch-icon.png', './pantalla.mp4', './partituras/lista.json'];
-const LIBRERIAS = ['https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1/build/opensheetmusicdisplay.min.js', 'https://cdn.jsdelivr.net/npm/smplr/+esm'];
+const LIBRERIAS = ['https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1/build/opensheetmusicdisplay.min.js', 'https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.7/build/opensheetmusicdisplay.min.js', 'https://cdn.jsdelivr.net/npm/smplr/+esm'];
 const PLAZO_RED = 4000; // ms: con una wifi que no lleva a internet, no dejar la app colgada esperando
 
 const absoluta = r => { const u = new URL(r, self.registration.scope); u.search = ''; u.hash = ''; return u.href; };

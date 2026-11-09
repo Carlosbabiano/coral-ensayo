@@ -33,6 +33,7 @@
     --color-note-border: #b5731c;
     --color-note-fg: #8a5a00;
     --color-cursor: #c97f14;           /* marca del compás que suena (3:1 sobre blanco) */
+    --color-cursor-fondo: rgba(201, 127, 20, .35); /* el mismo, translúcido: para navegadores sin color-mix */
     --color-scrim: rgba(250, 250, 247, .9);
     /* Espaciado: escala de 4/8 px */
     --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px;
@@ -130,7 +131,7 @@
   #obra { max-width: 100%; min-width: 0; text-overflow: ellipsis; } /* con «· sin guardar» los nombres largos no deben salirse en móvil */
   #barraCorregir .cuadra-mal { color: var(--color-danger); font-weight: 600; }
   #corrLetra { width: 100px; }
-  #notaSel { position: absolute; border: 2px solid var(--color-cursor); border-radius: 50%; background: color-mix(in srgb, var(--color-cursor) 28%, transparent); pointer-events: none; z-index: 3; box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-cursor) 25%, transparent); }
+  #notaSel { position: absolute; border: 2px solid var(--color-cursor); border-radius: 50%; background: var(--color-cursor-fondo); background: color-mix(in srgb, var(--color-cursor) 28%, transparent); pointer-events: none; z-index: 3; box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-cursor) 25%, transparent); }
   #partitura svg { max-width: 100%; height: auto; }
   #estado { color: var(--color-fg-muted); font-size: var(--font-s); padding: var(--space-1) var(--space-3); }
   .controles { position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) - var(--hueco-inferior)); left: 0; right: 0; background: var(--color-surface); border-top: 1px solid var(--color-border); padding: var(--space-2) var(--space-3) calc(var(--space-2) + var(--hueco-inferior)); display: grid; gap: var(--space-2); z-index: 5; box-shadow: var(--shadow-bar); }
@@ -156,7 +157,7 @@
   .transporte button:not(:disabled):active { filter: none; transform: scale(.94); }
   .transporte button.principal:disabled { opacity: 1; background: var(--color-primary-soft); color: var(--color-primary); border-color: transparent; box-shadow: none; }
   /* Mientras se descarga el sonido: un anillo que gira alrededor del botón principal (quieto si se pide menos movimiento) */
-  .transporte button.principal.cargando::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--color-primary) 25%, transparent); border-top-color: var(--color-primary); animation: gira .9s linear infinite; }
+  .transporte button.principal.cargando::after { content: ''; position: absolute; top: -6px; right: -6px; bottom: -6px; left: -6px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--color-primary) 25%, transparent); border-top-color: var(--color-primary); animation: gira .9s linear infinite; }
   @keyframes gira { to { transform: rotate(360deg); } }
   .transporte .lado { display: flex; justify-content: flex-end; align-items: center; gap: var(--space-2); justify-self: end; }
   /* La barra se puede esconder (en una ventana pequeña, como la del gestor, tapa media partitura): queda solo una
@@ -168,17 +169,17 @@
   .chip { font-size: var(--font-s); padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-surface-2); border: 1px solid var(--color-border); display: inline-flex; align-items: center; gap: var(--space-2); min-height: 36px; }
   label.chip { min-height: var(--tap); color: var(--color-fg); }
   .chip input[type=checkbox] { width: 20px; height: 20px; margin: 0; }
-  #cargando { position: fixed; inset: 0; background: var(--color-scrim); display: grid; place-items: center; z-index: 10; font-size: var(--font-m); }
+  #cargando { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: var(--color-scrim); display: grid; place-items: center; z-index: 10; font-size: var(--font-m); }
   .vista { display: flex; gap: var(--space-2); margin: var(--space-2) var(--space-3) 0; }
   .vista button { flex: 1; min-height: var(--tap); padding: var(--space-2) 0; border: 1px solid var(--color-border-control); background: var(--color-surface); border-radius: var(--radius-s); font: inherit; font-size: var(--font-s); color: var(--color-fg); }
   .vista button.activa { background: var(--color-primary-soft); border-color: var(--color-primary); color: var(--color-primary); font-weight: 600; }
   #pdfVista { display: none; padding: var(--space-2) var(--space-1) calc(var(--alto-controles) + 20px); }
   .pagina { position: relative; margin: 0 auto var(--space-3); box-shadow: var(--shadow-card); background: var(--color-paper); border: 1px solid var(--color-border); }
   .pagina img { display: block; width: 100%; height: auto; aspect-ratio: auto 1 / 1.414; } /* hueco A4 mientras carga */
-  .pagina .capa { position: absolute; inset: 0; }
-  .pdfCursor { position: absolute; background: color-mix(in srgb, var(--color-cursor) 35%, transparent); border-left: 2px solid var(--color-cursor); pointer-events: none; }
+  .pagina .capa { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+  .pdfCursor { position: absolute; background: var(--color-cursor-fondo); background: color-mix(in srgb, var(--color-cursor) 35%, transparent); border-left: 2px solid var(--color-cursor); pointer-events: none; }
   /* Apuntes: lienzo sobre cada página; solo recibe el dedo/lápiz cuando está activado el modo Apuntes */
-  .pagina canvas.apuntes { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .pagina canvas.apuntes { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
   body.apuntando .pagina canvas.apuntes { pointer-events: auto; touch-action: pinch-zoom; cursor: crosshair; }
   /* Con lápiz detectado, la mano apoyada no debe ni escribir ni mover la página */
   body.apuntando.conLapiz .pagina canvas.apuntes { touch-action: none; }
@@ -224,6 +225,7 @@
   .tarjeta { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-m); box-shadow: var(--shadow-card); padding: var(--space-4) var(--space-6); width: min(92vw, 380px); text-align: center; }
   .tarjeta h2 { font-size: var(--font-l); margin: 0 0 var(--space-2); }
   .tarjeta p { margin: 0 0 var(--space-3); color: var(--color-fg-muted); }
+  .tarjeta p.detalle { font-size: var(--font-s); overflow-wrap: anywhere; }
   .tarjeta button.principal { min-height: var(--tap); padding: var(--space-2) var(--space-4); border-radius: var(--radius-s); border: 1px solid var(--color-primary); background: var(--color-primary); color: var(--color-on-primary); font: inherit; }
   /* Esqueleto de pentagrama mientras se dibuja la partitura */
   .esqueleto { display: grid; gap: var(--space-2); margin: var(--space-3) auto 0; width: 70%; }
@@ -371,7 +373,20 @@
   </form>
 </dialog>
 
+<script>
+// Tablets con un Chrome antiguo: funciones que usa la librería de partituras y ese Chrome aún no tiene
+(function () {
+  var A = Array.prototype, def = function (o, k, f) { if (!o[k]) Object.defineProperty(o, k, { value: f, writable: true, configurable: true }); };
+  def(A, 'findLastIndex', function (f, t) { for (var i = this.length - 1; i >= 0; i--) if (f.call(t, this[i], i, this)) return i; return -1; });
+  def(A, 'findLast', function (f, t) { var i = this.findLastIndex(f, t); return i < 0 ? undefined : this[i]; });
+  def(A, 'at', function (n) { n = Math.trunc(n) || 0; if (n < 0) n += this.length; return this[n]; });
+  def(Object, 'hasOwn', function (o, k) { return Object.prototype.hasOwnProperty.call(o, k); });
+  def(String.prototype, 'replaceAll', function (a, b) { return typeof a === 'string' ? this.split(a).join(b) : this.replace(a, b); });
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1/build/opensheetmusicdisplay.min.js"></script>
+<!-- La versión actual de la librería no arranca en Chrome anteriores a 2020 (versión 85): entonces se usa la 1.9.7, la última que sí -->
+<script>if (!window.opensheetmusicdisplay) document.write('<script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.7/build/opensheetmusicdisplay.min.js"><\/script>');</script>
 <script src="compases.js"></script>
 <script type="module">
 import { Soundfont } from "https://cdn.jsdelivr.net/npm/smplr/+esm";
@@ -408,9 +423,10 @@ function mostrarCargando() {
   $('cargando').innerHTML = '<div class="tarjeta">Cargando partitura…<div class="esqueleto" aria-hidden="true"><i></i><i></i><i></i></div></div>';
   $('cargando').style.display = 'grid';
 }
-function mostrarTarjeta(titulo, texto, boton) {
-  $('cargando').innerHTML = `<div class="tarjeta"><h2></h2><p></p>${boton ? '<button type="button" class="principal" id="reintentar"></button>' : ''}</div>`;
+function mostrarTarjeta(titulo, texto, boton, detalle) {
+  $('cargando').innerHTML = `<div class="tarjeta"><h2></h2><p></p>${detalle ? '<p class="detalle"></p>' : ''}${boton ? '<button type="button" class="principal" id="reintentar"></button>' : ''}</div>`;
   $('cargando').querySelector('h2').textContent = titulo; $('cargando').querySelector('p').textContent = texto;
+  if (detalle) $('cargando').querySelector('.detalle').textContent = detalle;
   if (boton) { $('reintentar').textContent = boton; $('reintentar').onclick = () => location.reload(); }
   $('cargando').style.display = 'grid';
 }
@@ -418,7 +434,18 @@ function mostrarErrorCarga(e) {
   console.error(e);
   const archivo = $('obra').value, sinGuardar = !!(estadoObras && estadoObras.sinGuardar && estadoObras.sinGuardar.includes(archivo));
   if (sinGuardar) return mostrarTarjeta('Esta obra no está guardada en este dispositivo', 'Hace falta conexión para abrirla. Las obras marcadas «sin guardar» en la lista se guardan solas cuando hay wifi y la app está abierta.', 'Reintentar');
-  mostrarTarjeta('No se ha podido cargar la obra', navigator.onLine ? 'Comprueba la conexión e inténtalo de nuevo.' : 'No hay conexión y esta obra todavía no estaba guardada en el dispositivo. Vuelve a intentarlo cuando la tengas.', 'Reintentar');
+  // Si la obra está guardada, el fallo no es de conexión: no decir que falta (antes lo decía siempre sin conexión)
+  const guardada = !!(estadoObras && !sinGuardar);
+  mostrarTarjeta('No se ha podido cargar la obra',
+    guardada ? 'La obra está guardada, pero este dispositivo no ha podido prepararla. Toca «Reintentar»; si vuelve a fallar, manda una foto de este aviso.'
+      : navigator.onLine ? 'Comprueba la conexión e inténtalo de nuevo.' : 'No hay conexión y puede que esta obra no esté guardada en el dispositivo. Vuelve a intentarlo cuando la tengas.',
+    'Reintentar', detalleError(e));
+}
+// Detalle técnico en letra pequeña: con una foto del aviso se sabe qué ha fallado y en qué navegador
+function detalleError(e) {
+  const chrome = (navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1];
+  const lib = !window.opensheetmusicdisplay ? 'sin osmd' : document.querySelector('script[src*="opensheetmusicdisplay@1.9.7"]') ? 'osmd 1.9.7' : 'osmd';
+  return 'Detalle: ' + ((e && (e.name + ': ' + e.message)) || String(e)).slice(0, 160) + ' · ' + (chrome ? 'Chrome ' + chrome : navigator.userAgent.slice(0, 60)) + ' · ' + lib + ' · ' + ($('version').textContent || '');
 }
 // Aviso de que no hay conexión: la app sigue funcionando con lo que el service worker tiene guardado
 // Cuántas obras hay guardadas en el dispositivo (lo dice el service worker); null mientras no se sabe
@@ -595,17 +622,28 @@ function arreglarCasillas(texto) {
 async function cargarObra(archivo) {
   parar();
   mostrarCargando();
-  if (!osmd) {
-    osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay('partitura', {
-      autoResize: true, drawTitle: true, drawPartNames: true, drawMeasureNumbers: true,
-      followCursor: false, cursorsOptions: [{ type: 0, color: token('--color-cursor'), alpha: 0.55, follow: false }],
-    });
+  $('play').disabled = false; $('estado').title = '';
+  // Las notas (para reproducir las voces) las dibuja la librería OSMD. Si falla (navegador antiguo, poca memoria…),
+  // la obra se sigue viendo con sus páginas originales: en una actuación es lo único que hace falta
+  let errorNotas = null;
+  try {
+    if (!osmd) {
+      osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay('partitura', {
+        autoResize: true, drawTitle: true, drawPartNames: true, drawMeasureNumbers: true,
+        followCursor: false, cursorsOptions: [{ type: 0, color: token('--color-cursor'), alpha: 0.55, follow: false }],
+      });
+    }
+    if (modoCorregir) await cargarParaCorregir(archivo); else await cargarEnOsmd('partituras/' + archivo);
+    osmd.Zoom = window.innerWidth < 600 ? 0.55 : 0.8;
+    osmd.render();
+    construirEventos(); // también crea los botones de las voces (necesita saber dónde hay desdobles)
+    osmd.cursor.show();
+  } catch (e) {
+    const obra = listaObras.find(o => o.archivo === archivo) || {};
+    if (modoEditor || !(obra.paginas && obra.paginas.length)) throw e; // sin páginas no hay nada que enseñar
+    errorNotas = e; console.error('No se han podido dibujar las notas; se enseñan solo las páginas', e);
   }
-  if (modoCorregir) await cargarParaCorregir(archivo); else await cargarEnOsmd('partituras/' + archivo);
-  osmd.Zoom = window.innerWidth < 600 ? 0.55 : 0.8;
-  osmd.render();
-  construirEventos(); // también crea los botones de las voces (necesita saber dónde hay desdobles)
-  osmd.cursor.show();
+  if (errorNotas) return cargarSoloPaginas(archivo, errorNotas);
   // ¿Tiene PDF original con posiciones de compases?
   obraActual = listaObras.find(o => o.archivo === archivo) || {};
   posiciones = null; paginasPdf = []; pdfCargado = null; $('pdfVista').innerHTML = '';
@@ -625,6 +663,19 @@ async function cargarObra(archivo) {
   prepararTempo(archivo);
   irACompas(0);
   $('hasta').value = osmd.Sheet.SourceMeasures.length;
+  $('cargando').style.display = 'none';
+}
+
+// Plan B: solo las páginas originales, sin reproducción (las notas no se han podido preparar en este dispositivo)
+async function cargarSoloPaginas(archivo, error) {
+  obraActual = listaObras.find(o => o.archivo === archivo) || {};
+  eventos = []; posiciones = null; paginasPdf = []; pdfCargado = null; $('pdfVista').innerHTML = ''; $('voces').innerHTML = '';
+  cargarApuntes();
+  modoPdf = true;
+  await aplicarModo();
+  $('play').disabled = true;
+  $('estado').textContent = 'Se ve la partitura, pero en este dispositivo no se pueden reproducir las voces de esta obra.';
+  $('estado').title = detalleError(error);
   $('cargando').style.display = 'none';
 }
 
@@ -656,6 +707,7 @@ async function cargarPdf() {
     capa.addEventListener('click', ev => {
       const r = capa.getBoundingClientRect(); const fx = (ev.clientX - r.left) / r.width, fy = (ev.clientY - r.top) / r.height;
       const p = +capa.dataset.pagina;
+      if (!posiciones || !eventos.length) return;
       const idx = posiciones.compases.findIndex(c => c && c.p === p && fx >= c.x0 && fx <= c.x1 && fy >= c.y0 && fy <= c.y1);
       if (idx >= 0) { irACompas(idx); $('estado').textContent = 'Empezará en el compás ' + (idx + 1); avisarCompasElegido(idx + 1); }
     });
