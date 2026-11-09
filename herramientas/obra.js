@@ -384,7 +384,7 @@ function repararCompases(xml, avisos) {
   //      juntado (tenor y bajo, por ejemplo): se separa en dos voces;
   //    - si lleva acordes, es el acompañamiento de piano: se quita (si hay al menos dos voces normales).
   const esDoble = cuerpo => /<clef number="2">|<staves>\s*[2-9]|<staff>2<\/staff>/.test(cuerpo);
-  const nombreDe = id => ((xml.match(new RegExp(`<score-part id="${id}">[\\s\\S]*?</score-part>`)) || [''])[0].match(/<part-name>([^<]*)/) || [, ''])[1];
+  const nombreDe = id => ((xml.match(new RegExp(`<score-part id="${id}">[\\s\\S]*?</score-part>`)) || [''])[0].match(/<part-name(?:\s[^>]*)?>([^<]*)/) || [, ''])[1];
   const simples = partes().filter(([, , c]) => !esDoble(c)).length;
   for (const [todo, id, cuerpo] of partes()) {
     if (!esDoble(cuerpo)) continue;
@@ -632,14 +632,14 @@ function limpiarXmlAudiveris(xml) {
 // sol, fa) lo es el tercer pentagrama en clave de sol con alguna voz en clave de fa debajo.
 function bajarTenorOctavado(xml, avisos) {
   const partes = [...xml.matchAll(/<part id="([^"]+)">([\s\S]*?)<\/part>/g)].map(m => ({ id: m[1], cuerpo: m[2], todo: m[0] }));
-  const nombreDe = id => ((xml.match(new RegExp(`<score-part id="${id}">[\\s\\S]*?</score-part>`)) || [''])[0].match(/<part-name>([^<]*)/) || [, ''])[1].trim();
+  const nombreDe = id => ((xml.match(new RegExp(`<score-part id="${id}">[\\s\\S]*?</score-part>`)) || [''])[0].match(/<part-name(?:\s[^>]*)?>([^<]*)/) || [, ''])[1].trim();
   const leerClave = c => { const s = c.match(/<sign>(\w)/), o = c.match(/<clef-octave-change>(-?\d+)/); return { sign: s ? s[1] : '?', oct: o ? +o[1] : 0 }; };
   const primeraClave = c => { const m = c.match(/<clef(?:\s[^>]*)?>[\s\S]*?<\/clef>/); return m ? leerClave(m[0]) : null; };
   const info = partes.map(p => ({ ...p, nombre: nombreDe(p.id), clave: primeraClave(p.cuerpo), doble: /<staves>\s*[2-9]/.test(p.cuerpo) }));
   const conNombres = info.some(p => nombreCanonico(p.nombre));
   const esTenor = (p, i) => {
     if (!p.clave || p.clave.sign !== 'G' || p.doble) return false;
-    if (conNombres) return /^Tenor/.test(nombreCanonico(p.nombre) || ''); // también «Tenor 1», «Tenor 2»
+    if (conNombres) return /^Tenor\b/.test(nombreCanonico(p.nombre) || ''); // también «Tenor 1», «Tenor 2»
     return i >= 2 && info.slice(0, i).every(q => q.clave && q.clave.sign === 'G') && info.slice(i + 1).some(q => q.clave && q.clave.sign === 'F');
   };
   info.forEach((p, i) => {
@@ -653,7 +653,7 @@ function bajarTenorOctavado(xml, avisos) {
     });
     if (!bajadas) return;
     xml = xml.replace(p.todo, () => nuevo);
-    avisos.push(`La voz ${p.nombre || p.id} (tenor) va en clave de sol octavada y Audiveris la había leído una octava alta en ${compases} compás(es): se han bajado una octava (${bajadas} notas).`);
+    avisos.push(`La voz ${p.nombre || p.id} (tenor) iba en clave de sol sin octavar, una octava alta, en ${compases} compás(es): se ha puesto la clave de tenor (sol con 8) y se han bajado una octava (${bajadas} notas).`);
   });
   return xml;
 }
@@ -693,8 +693,12 @@ function editarObra(xml, { titulo, nombres = {}, quitar = [], quitarVoces = [], 
     const n = escapar(nombre.trim());
     const a = xml.indexOf(`<score-part id="${id}">`); if (a < 0) continue;
     const b = xml.indexOf('</score-part>', a);
-    let cab = xml.slice(a, b).replace(/<part-name>[^<]*/, '<part-name>' + n).replace(/<instrument-name>[^<]*/, '<instrument-name>' + n);
-    if (!/<part-name>/.test(cab)) cab = cab.replace(/(<score-part id="[^"]+">)/, `$1\n\t\t\t<part-name>${n}</part-name>`);
+    // El escáner a veces escribe <part-name print-object="no">Part 1</part-name>: se sustituye ese (ya visible) y se
+    // quitan los que sobren; si no, quedarían dos nombres y la app enseñaría el último («Part 1»)
+    let cab = xml.slice(a, b).replace(/<instrument-name>[^<]*/, '<instrument-name>' + n);
+    let puesto = false;
+    cab = cab.replace(/[ \t]*<part-name(?:\s[^>]*)?>[^<]*<\/part-name>[ \t]*\r?\n?/g, m => puesto ? '' : (puesto = true, m.replace(/<part-name(?:\s[^>]*)?>[^<]*/, '<part-name>' + n)));
+    if (!puesto) cab = cab.replace(/(<score-part id="[^"]+">)/, `$1\n\t\t\t<part-name>${n}</part-name>`);
     xml = xml.slice(0, a) + cab + xml.slice(b);
   }
   if (tempo && +tempo >= 20 && +tempo <= 300) {
@@ -775,13 +779,19 @@ function prepararObra({ xml: rutaXml = null, xmlTexto = null, pdf: rutaPdf = nul
   xml = editarObra(xml, { titulo });
 
   xml = repararCompases(xml, avisos);
+  // Cuatro voces en claves sol-sol-sol-fa: la tercera es el tenor. Si viene en clave de sol sin el 8 debajo, suena una
+  // octava alta y al poner nombres por tesitura pasaría por la soprano: se baja (Audiveris ya lo hace al leer)
+  if (!xmlTexto && rutaXml) {
+    const claves = [...xml.matchAll(/<part id="[^"]+">([\s\S]*?)<\/part>/g)].map(m => ((m[1].match(/<clef(?:\s[^>]*)?>[\s\S]*?<sign>(\w)/) || [])[1]) || '?').join('');
+    if (claves === 'GGGF') xml = bajarTenorOctavado(xml, avisos);
+  }
   for (const av of avisos) log('  * ' + av);
 
   // Partes
   const partes = [];
   for (const [, id, cuerpo] of xml.matchAll(/<part id="([^"]+)">([\s\S]*?)<\/part>/g)) {
     const cab = (xml.match(new RegExp(`<score-part id="${id}">[\\s\\S]*?</score-part>`)) || [''])[0];
-    const nombreActual = (cab.match(/<part-name>([^<]*)/) || [, ''])[1].trim();
+    const nombreActual = (cab.match(/<part-name(?:\s[^>]*)?>([^<]*)/) || [, ''])[1].trim();
     partes.push({ id, nombreActual, ...analizarParte(cuerpo) });
   }
   if (!partes.length) throw new Error('No se han encontrado voces en el archivo.');
@@ -952,7 +962,7 @@ function guardarPdf(rutaPdf, base) {
   return destino;
 }
 
-module.exports = {
+module.exports = { bajarTenorOctavado,
   RAIZ, DIR_APP, DIR_PARTITURAS, DIR_PDF, LISTA, NOMBRES_VOCES,
   clave, pdfPara, prepararObra, editarObra, huecosASilencios, leerPartes, tituloDe, tempoDe, limpiarNombreArchivo, vocesExtraDe,
   hayAudiveris, comprobarAudiveris, leerConAudiveris, limpiarXmlAudiveris, nombreCanonico,
