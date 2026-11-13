@@ -24,7 +24,8 @@
     "paginas": [
       "Alegres_pregonan-p1.png",
       "Alegres_pregonan-p2.png"
-    ]
+    ],
+    "ensayo": true
   },
   {
     "titulo": "Anima Christi (Frisina)",
@@ -33,7 +34,8 @@
     "paginas": [
       "Anima_Christi_Frisina-p1.jpg",
       "Anima_Christi_Frisina-p2.jpg"
-    ]
+    ],
+    "ensayo": true
   },
   {
     "titulo": "Ave Maria",
@@ -41,7 +43,8 @@
     "posiciones": "Ave_Maria.pos.json",
     "paginas": [
       "Ave_Maria-p1.jpg"
-    ]
+    ],
+    "ensayo": true
   },
   {
     "titulo": "Aveverumcorpus-Mozart",
@@ -139,7 +142,8 @@
     "posiciones": "En_la_mas_fria_noche.pos.json",
     "paginas": [
       "En_la_mas_fria_noche-p1.png"
-    ]
+    ],
+    "ensayo": true
   },
   {
     "titulo": "Gloria in excelsis (Vivaldi)",
@@ -181,7 +185,8 @@
     "paginas": [
       "Lacrymosa_Mozart-p1.jpg",
       "Lacrymosa_Mozart-p2.jpg"
-    ]
+    ],
+    "ensayo": true
   },
   {
     "titulo": "Nosotros hemos de gloriarnos",
