@@ -170,7 +170,6 @@
   {
     "titulo": "Pan divino y gracioso (Guerrero)",
     "archivo": "Pan_divino_F_Guerrero.xml",
-    "ensayo": true,
     "posiciones": "Pan_divino_F_Guerrero.pos.json",
     "paginas": [
       "Pan_divino_F_Guerrero-p1.jpg",
