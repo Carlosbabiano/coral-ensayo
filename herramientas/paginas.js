@@ -5,26 +5,8 @@
 // Devuelve (por consola, última línea) la lista JSON de archivos creados.
 const fs = require('fs'), path = require('path'), os = require('os'), { execFileSync } = require('child_process');
 
-function contarPaginas(buf) {
-  const s = buf.toString('latin1');
-  const m = s.match(/\/Type\s*\/Pages[^>]*?\/Count\s+(\d+)/); if (m) return +m[1];
-  return (s.match(/\/Type\s*\/Page[^s]/g) || []).length;
-}
-
-// Escaneos: extraer las imágenes JPEG incrustadas
-function extraerJpegs(buf, paginas) {
-  const out = []; let i = 0;
-  while ((i = buf.indexOf('/DCTDecode', i)) >= 0) {
-    const s = buf.indexOf('stream', i); if (s < 0) break;
-    const st = buf[s + 6] === 13 ? s + 8 : s + 7; const e = buf.indexOf('endstream', st);
-    const cab = buf.slice(Math.max(0, i - 400), s).toString('latin1');
-    const w = +(cab.match(/\/Width\s+(\d+)/) || [, 0])[1], h = +(cab.match(/\/Height\s+(\d+)/) || [, 0])[1];
-    const jpg = buf.slice(st, e);
-    if (jpg[0] === 0xFF && jpg[1] === 0xD8 && w > 600 && h > 600) out.push(jpg);
-    i = e;
-  }
-  return out.length === paginas ? out : null; // solo vale si hay exactamente una foto por página
-}
+// Escaneos (una foto JPEG por página): compartido con el gestor del móvil
+const { contarPaginas, extraerJpegs } = require('../app/paginas-pdf.js');
 
 // PDF normal: dibujar con Windows.Data.Pdf
 function dibujarConWindows(pdf, dir, base, ancho) {

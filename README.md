@@ -64,7 +64,17 @@ gestor del PC más `publicar.js`: actualiza lista.json, sube la versión de cach
 `main` y copia `app/` a `gh-pages`. Después espera a que GitHub Pages sirva la versión nueva.
 - La primera vez pide una «llave» de GitHub (fine-grained token) solo para el repositorio `coral-ensayo`, con
   *Contents: Read and write*. Se guarda solo en ese móvil.
-- Para añadir obras, Audiveris, la IA y el editor de compases sigue haciendo falta el gestor del PC.
+- «Añadir obra» (con el XML del Escáner Musical y el PDF) también se hace en el móvil. Se prepara con el mismo código
+  que el PC, compartido en `app/`:
+  - `preparar-obra.js`: reparar el XML y nombrar las voces;
+  - `detector-compases.js`: buscar los compases en la imagen;
+  - `paginas-pdf.js`: sacar las fotos de un PDF escaneado.
+
+  Las páginas de un PDF normal se dibujan con pdf.js a 2000 px de ancho, como salen en el PC. El trabajo pesado va en
+  `app/gestor/trabajador.js`, para que la página no se congele. Antes de publicar se revisan el título, las voces, el
+  tempo, los avisos y los compases marcados sobre cada página.
+- Lo que sigue necesitando el gestor del PC: las obras con solo el PDF (Audiveris o IA), el editor de compases y las
+  voces cantadas.
 - El gestor del PC (al arrancar) y `publicar.js` (antes de subir) se traen primero lo hecho desde el móvil
   (`herramientas/sincronizar.js`). Así nunca lo pisan. Si en el PC había cambios sin publicar, los pone encima y
   recalcula la versión de caché y las huellas.

@@ -36,6 +36,9 @@
     --color-note-fg: #8a5a00;
     --color-skeleton-1: #f0efe9;
     --color-skeleton-2: #fbfbf9;
+    --color-paper: #ffffff;            /* la página de la partitura: siempre blanca, como el papel */
+    --color-caja: rgba(36, 64, 122, .12);
+    --color-caja-borde: #24407a;
     --color-scrim: rgba(0, 0, 0, .45);
     --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px; --space-12: 48px;
     --radius-s: 8px; --radius-m: 12px; --radius-pill: 999px;
@@ -111,7 +114,9 @@
   .cabecera img { width: 32px; height: 32px; border-radius: 50%; }
   .cabecera h1 { flex: 1; margin: 0; font-size: var(--font-l); font-weight: 600; line-height: 1.2; }
   .cabecera h1 small { display: block; font-size: var(--font-xs); font-weight: 400; color: var(--color-fg-muted); }
-  .buscador { max-width: var(--ancho); margin: var(--space-3) auto 0; position: relative; }
+  .fila-buscador { max-width: var(--ancho); margin: var(--space-3) auto 0; display: flex; gap: var(--space-2); }
+  .fila-buscador .btn { flex: none; white-space: nowrap; }
+  .buscador { position: relative; flex: 1; min-width: 0; }
   .buscador svg { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); color: var(--color-fg-muted); pointer-events: none; }
   .buscador input { width: 100%; }
   input[type=search], input[type=text], input[type=password] { font: inherit; font-size: var(--font-m); min-height: var(--tap); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-control); border-radius: var(--radius-s); background: var(--color-surface); color: var(--color-fg); width: 100%; }
@@ -217,6 +222,40 @@
   .tostada.con-barra { bottom: calc(96px + var(--hueco-inferior)); }
   .tostada .btn { color: var(--color-bg); border-color: transparent; background: transparent; text-decoration: underline; }
 
+  /* Añadir obra */
+  .vista-anadir h2 { font-size: var(--font-xl); margin: 0 0 var(--space-2); }
+  .vista-anadir h3 { font-size: var(--font-m); margin: var(--space-6) 0 var(--space-2); }
+  .vista-anadir > p, .vista-anadir .intro { margin: 0 0 var(--space-4); color: var(--color-fg-muted); max-width: 65ch; }
+  .tarjeta { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-m); padding: var(--space-4); margin-bottom: var(--space-4); }
+  ol.pasos.tarjeta { padding: var(--space-3) var(--space-4); }
+  details.tarjeta summary { cursor: pointer; min-height: var(--tap); display: flex; align-items: center; font-weight: 500; }
+  details.tarjeta[open] summary { margin-bottom: var(--space-2); }
+  .titulo-campo { font-weight: 600; margin: 0; }
+  .campo .ayuda + .archivo { margin-top: var(--space-2); }
+  .archivo { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); cursor: pointer; }
+  .archivo .btn { pointer-events: none; }
+  .archivo:focus-within .btn { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+  .archivo .nombre-archivo { max-width: 100%; overflow-wrap: anywhere; font-size: var(--font-s); color: var(--color-fg-muted); }
+  .archivo .nombre-archivo.elegido { color: var(--color-fg); font-weight: 500; }
+  .acciones-fin { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: flex-end; margin-top: var(--space-6); }
+  .acciones-fin .btn.principal { min-width: 12em; }
+  .nota { font-size: var(--font-s); color: var(--color-fg-muted); }
+  input[type=number] { font: inherit; font-size: var(--font-m); min-height: var(--tap); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-control); border-radius: var(--radius-s); background: var(--color-surface); color: var(--color-fg); width: 8em; }
+  ul.voces { list-style: none; margin: 0; padding: 0; }
+  ul.voces li { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-2) var(--space-3); padding: var(--space-3) 0; }
+  ul.voces li + li { border-top: 1px solid var(--color-border); }
+  ul.voces .campo { flex: 1 1 14em; margin: 0; }
+  ul.voces li.quitada input[type=text] { text-decoration: line-through; color: var(--color-fg-muted); }
+  ul.avisos { margin: 0; padding-left: var(--space-4); }
+  ul.avisos li + li { margin-top: var(--space-1); }
+  .paginas-previas { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--space-3); }
+  .pagina-previa { position: relative; margin: 0; border: 1px solid var(--color-border); border-radius: var(--radius-s); overflow: hidden; background: var(--color-paper); }
+  .pagina-previa img { display: block; width: 100%; height: auto; }
+  .pagina-previa .caja { position: absolute; border: 1px solid var(--color-caja-borde); background: var(--color-caja); }
+  .pagina-previa figcaption { position: absolute; left: var(--space-1); bottom: var(--space-1); font-size: var(--font-xs); padding: 0 var(--space-1); border-radius: 4px; background: var(--color-surface); color: var(--color-fg); }
+  details.registro { margin-top: var(--space-4); font-size: var(--font-xs); color: var(--color-fg-muted); }
+  details.registro summary { cursor: pointer; min-height: var(--tap); display: flex; align-items: center; }
+  details.registro pre { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; max-height: 50vh; overflow: auto; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
     .girando { animation: girar 2s linear infinite !important; }
@@ -242,20 +281,27 @@
   <symbol id="i-log-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
   <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
   <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></symbol>
   <symbol id="i-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></symbol>
 </svg>
 
 <header>
   <div class="cabecera">
-    <img src="../icono-192.png" alt="">
-    <h1>Gestor de obras <small id="subtitulo">Coral Villa de Mengíbar</small></h1>
+    <button class="btn plano icono-solo" id="volver" type="button" aria-label="Volver a la lista de obras" title="Volver a la lista de obras" hidden><svg class="icono m"><use href="#i-arrow-left"/></svg></button>
+    <img src="../icono-192.png" alt="" id="logo">
+    <h1><span id="tituloCabecera">Gestor de obras</span> <small id="subtitulo">Coral Villa de Mengíbar</small></h1>
     <button class="btn plano icono-solo" id="recargar" type="button" aria-label="Volver a cargar la lista" title="Volver a cargar la lista" hidden><svg class="icono m"><use href="#i-refresh"/></svg></button>
     <button class="btn plano icono-solo" id="desconectar" type="button" aria-label="Desconectar este móvil" title="Desconectar este móvil" hidden><svg class="icono m"><use href="#i-log-out"/></svg></button>
   </div>
-  <div class="buscador" id="cajaBuscador" hidden>
-    <label class="sr" for="buscar">Buscar obra</label>
-    <svg class="icono"><use href="#i-search"/></svg>
-    <input type="search" id="buscar" placeholder="Buscar obra" autocomplete="off">
+  <div class="fila-buscador" id="cajaBuscador" hidden>
+    <div class="buscador">
+      <label class="sr" for="buscar">Buscar obra</label>
+      <svg class="icono"><use href="#i-search"/></svg>
+      <input type="search" id="buscar" placeholder="Buscar obra" autocomplete="off">
+    </div>
+    <button class="btn" id="anadir" type="button"><svg class="icono"><use href="#i-plus"/></svg>Añadir obra</button>
   </div>
 </header>
 
@@ -263,6 +309,8 @@
   <div id="sinConexion" class="aviso" role="status" hidden><svg class="icono"><use href="#i-wifi-off"/></svg><p>Sin conexión. Puedes preparar cambios; se publicarán cuando vuelva internet.</p></div>
   <div id="avisoGeneral" role="status"></div>
   <div id="contenido" aria-live="polite" aria-busy="true"></div>
+  <!-- Añadir una obra desde el móvil: elegir archivos → preparar → revisar → publicar -->
+  <section id="vistaAnadir" class="vista-anadir" hidden aria-live="polite"></section>
 </main>
 
 <!-- Barra fija con los cambios preparados y la acción principal -->
@@ -308,6 +356,10 @@
   <div class="acciones"><button class="btn principal" type="button" id="cerrarPublicar" hidden>Hecho</button></div>
 </dialog>
 
+<!-- El mismo código que usa el gestor del PC para preparar una obra (el detector de compases va en trabajador.js) -->
+<script src="../compases.js"></script>
+<script src="../preparar-obra.js"></script>
+<script src="../paginas-pdf.js"></script>
 <script>
 'use strict';
 // ---------- Configuración ----------
@@ -401,14 +453,14 @@ const normal = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 function pintar() {
   const c = $('contenido');
   c.setAttribute('aria-busy', 'false');
-  $('cajaBuscador').hidden = false; $('recargar').hidden = false; $('desconectar').hidden = false;
+  $('cajaBuscador').hidden = vista !== 'lista'; $('recargar').hidden = vista !== 'lista'; $('desconectar').hidden = false;
   $('subtitulo').textContent = `${obras.length} obras en la app${version ? ' · ' + version : ''}`;
   pintarBarra();
   if (!obras.length) { c.innerHTML = '<div class="vacio"><strong>Todavía no hay obras en la app</strong>Las obras nuevas se añaden desde el gestor del ordenador. Cuando estén, podrás marcarlas «en ensayo» desde aquí.</div>'; return; }
-  const vista = obras.map(conCambios).filter(o => !filtro || normal(o.titulo).includes(normal(filtro)));
-  vista.sort((a, b) => a.titulo.localeCompare(b.titulo, 'es'));
-  if (!vista.length) { c.innerHTML = `<div class="vacio"><strong>Ninguna obra contiene «${esc(filtro)}»</strong>Revisa cómo está escrito o borra la búsqueda.</div>`; return; }
-  const enEnsayo = vista.filter(o => o.ensayo && !o.quitar), resto = vista.filter(o => !o.ensayo || o.quitar);
+  const visibles = obras.map(conCambios).filter(o => !filtro || normal(o.titulo).includes(normal(filtro)));
+  visibles.sort((a, b) => a.titulo.localeCompare(b.titulo, 'es'));
+  if (!visibles.length) { c.innerHTML = `<div class="vacio"><strong>Ninguna obra contiene «${esc(filtro)}»</strong>Revisa cómo está escrito o borra la búsqueda.</div>`; return; }
+  const enEnsayo = visibles.filter(o => o.ensayo && !o.quitar), resto = visibles.filter(o => !o.ensayo || o.quitar);
   const fila = o => {
     const detalles = [];
     if (o.cambiada) detalles.push(`<span class="marca">${icono('pencil')}Sin publicar</span>`);
@@ -445,7 +497,7 @@ function pintarBarra() {
   const lista = obras ? obras.filter(o => cambios[o.archivo]).map(o => ({ o, textos: describir(o, cambios[o.archivo]) })) : [];
   const n = lista.reduce((s, x) => s + x.textos.length, 0);
   const barra = $('barra');
-  barra.hidden = !n;
+  barra.hidden = !n || vista !== 'lista';
   if (!n) { $('listaCambios').hidden = true; $('verCambios').setAttribute('aria-expanded', 'false'); return; }
   $('resumenCambios').innerHTML = `${n === 1 ? '1 cambio' : n + ' cambios'} sin publicar<small>El coro aún no lo ve</small>`;
   $('listaCambios').innerHTML = lista.map(({ o, textos }) => `<li><span>${textos.map(esc).join('<br>')}</span><button class="btn plano" type="button" data-deshacer="${esc(o.archivo)}">${icono('undo')}Deshacer</button></li>`).join('');
@@ -543,16 +595,18 @@ $('desconectar').onclick = () => {
 
 // ---------- Publicar ----------
 // Hace lo mismo que el gestor del ordenador + publicar.js, pero con la API de GitHub:
+//  0. (obra nueva) sube la partitura, las páginas y el PDF como blobs,
 //  1. lee lista.json, huellas.json y sw.js de main (lo último, aunque se haya cambiado desde el PC),
-//  2. aplica los cambios preparados, sube la versión de caché y rehace las huellas,
+//  2. aplica los cambios, sube la versión de caché y rehace las huellas,
 //  3. un commit en main (si alguien ha cambiado main a la vez, se repite desde el paso 1),
 //  4. la carpeta app/ de ese commit pasa a gh-pages (es lo que sirve GitHub Pages),
 //  5. espera a que GitHub Pages sirva la versión nueva.
-const PASOS = [['guardar', 'Guardando los cambios en GitHub'], ['web', 'Publicando la app'], ['servir', 'Esperando a que la app nueva esté en internet']];
-function paso(actual, hechos = []) {
-  $('pasos').innerHTML = PASOS.map(([k, t]) => {
-    const hecho = hechos.includes(k), ahora = k === actual;
-    return `<li class="${hecho ? 'hecho' : ahora ? 'actual' : ''}">${hecho ? icono('check') : ahora ? '<span class="girando" aria-hidden="true"></span>' : '<span class="punto" aria-hidden="true"></span>'}<span>${t}${hecho ? '<span class="sr"> (hecho)</span>' : ahora ? '<span class="sr"> (en marcha)</span>' : ''}</span></li>`;
+const TEXTO_PASOS = { subir: 'Subiendo la partitura y las páginas', guardar: 'Guardando los cambios en GitHub', web: 'Publicando la app', servir: 'Esperando a que la app nueva esté en internet' };
+let pasos = ['guardar', 'web', 'servir'];
+function paso(actual, hechos = [], detalle = '') {
+  $('pasos').innerHTML = pasos.map(k => {
+    const hecho = hechos.includes(k), ahora = k === actual, t = TEXTO_PASOS[k] + (ahora && detalle ? ` (${detalle})` : '');
+    return `<li class="${hecho ? 'hecho' : ahora ? 'actual' : ''}">${hecho ? icono('check') : ahora ? '<span class="girando" aria-hidden="true"></span>' : '<span class="punto" aria-hidden="true"></span>'}<span>${esc(t)}${hecho ? '<span class="sr"> (hecho)</span>' : ahora ? '<span class="sr"> (en marcha)</span>' : ''}</span></li>`;
   }).join('');
 }
 function aplicar(lista, preparados) {
@@ -566,29 +620,53 @@ function aplicar(lista, preparados) {
     if (c.titulo !== undefined) o.titulo = c.titulo;
     if (c.ensayo !== undefined) { if (c.ensayo) o.ensayo = true; else delete o.ensayo; }
   }
-  // Mismo orden y formato que guardarLista() en herramientas/obra.js
-  nueva.sort((a, b) => a.titulo.localeCompare(b.titulo, 'es'));
-  return { nueva, quitados, hechos };
+  return { nueva: ordenar(nueva), quitados, hechos };
 }
+// Mismo orden y formato que guardarLista() en herramientas/obra.js
+const ordenar = lista => lista.sort((a, b) => a.titulo.localeCompare(b.titulo, 'es'));
 const archivosDe = o => [o.archivo, o.posiciones, ...(o.paginas || []), ...(o.canto || []).flatMap(c => [c.archivo, c.consonantes])].filter(Boolean);
-// huellas.json igual que escribirHuellas() en obra.js; aquí no cambia ningún archivo, así que se reaprovechan las huellas
-function rehacerHuellas(huellasTexto, nueva) {
+// huellas.json igual que escribirHuellas() en obra.js. Se reaprovechan las huellas de los archivos que no cambian;
+// nuevas: { 'partituras/archivo': huella } de los que se suben ahora
+function rehacerHuellas(huellasTexto, nueva, nuevas = {}) {
   const h = JSON.parse(huellasTexto), porArchivo = {};
   for (const o of h.obras) for (const [r, hu] of Object.entries(o.archivos)) porArchivo[r] = hu;
+  Object.assign(porArchivo, nuevas);
   const obrasH = nueva.map(o => ({ titulo: o.titulo, archivos: Object.fromEntries(archivosDe(o).map(a => ['partituras/' + a, porArchivo['partituras/' + a]]).filter(([, x]) => x)) }));
   return JSON.stringify({ obras: obrasH, comunes: h.comunes || {} }) + '\n';
 }
 
-async function publicar() {
-  if (publicando) return;
+// Los cambios rápidos de la lista (en ensayo, título, quitar)
+function publicar() {
+  return publicarEnGitHub({
+    construir: (lista, huellasT) => {
+      const r = aplicar(lista, cambios);
+      const enLista = new Set(r.nueva.flatMap(archivosDe));
+      const borrar = [...new Set(r.quitados.flatMap(archivosDe))].filter(f => !enLista.has(f)).map(f => 'app/partituras/' + f);
+      return { lista: r.nueva, huellas: rehacerHuellas(huellasT, r.nueva), borrar, hechos: r.hechos };
+    },
+    // Ya está guardado: los cambios dejan de estar «preparados»
+    alGuardar: () => { cambios = {}; guardarCambios(); pintar(); },
+    sinNada: () => { cambios = {}; guardarCambios(); },
+    quedaPendiente: () => Object.keys(cambios).length > 0,
+  });
+}
+
+// construir(lista, huellasTexto) → { lista, huellas, entradas: [entradas de árbol ya subidas], borrar: [rutas], hechos }
+// subir (opcional): antes de nada, sube los archivos nuevos; recibe avance(texto)
+async function publicarEnGitHub({ construir, subir = null, alGuardar = () => {}, sinNada = () => {}, quedaPendiente = () => false }) {
+  if (publicando) return false;
   publicando = true; pintarBarra();
   const dlg = $('dlgPublicar');
+  pasos = subir ? ['subir', 'guardar', 'web', 'servir'] : ['guardar', 'web', 'servir'];
   $('dlgPublicarTitulo').textContent = 'Publicando para el coro';
   $('dlgPublicarSub').textContent = 'No cierres esta página hasta que termine. Suele tardar uno o dos minutos.';
   $('dlgPublicarFin').innerHTML = ''; $('cerrarPublicar').hidden = true;
-  paso('guardar'); dlg.showModal();
+  paso(pasos[0]); if (!dlg.open) dlg.showModal();
   let nuevaVersion = '', hechos = [];
   try {
+    // 0: archivos nuevos (blobs), una sola vez aunque haya que repetir el commit
+    if (subir) await subir(texto => paso('subir', [], texto));
+    paso('guardar', subir ? ['subir'] : []);
     // 1-3: commit en main (con reintentos si main se mueve a la vez)
     let commit = null, choque = null;
     for (let intento = 0; intento < 3 && !commit; intento++) {
@@ -597,31 +675,30 @@ async function publicar() {
       const ref = await gh('/git/ref/heads/' + RAMA + '?t=' + Date.now());
       const padre = ref.object.sha;
       const [listaT, huellasT, swT, padreC] = await Promise.all([LISTA, HUELLAS, SW].map(f => gh('/contents/' + f + '?ref=' + padre, { crudo: true })).concat(gh('/git/commits/' + padre)));
-      const r = aplicar(JSON.parse(listaT), cambios);
+      const r = construir(JSON.parse(listaT), huellasT);
       hechos = r.hechos;
       if (!hechos.length) break;
       nuevaVersion = '';
       const sw = swT.replace(/coral-v(\d+)/, (_, v) => (nuevaVersion = 'coral-v' + (+v + 1)));
-      const enLista = new Set(r.nueva.flatMap(archivosDe));
-      const borrar = [...new Set(r.quitados.flatMap(archivosDe))].filter(f => !enLista.has(f));
       const arbol = await gh('/git/trees', { metodo: 'POST', cuerpo: { base_tree: padreC.tree.sha, tree: [
-        { path: LISTA, mode: '100644', type: 'blob', content: JSON.stringify(r.nueva, null, 2) + '\n' },
-        { path: HUELLAS, mode: '100644', type: 'blob', content: rehacerHuellas(huellasT, r.nueva) },
+        ...(r.entradas || []),
+        { path: LISTA, mode: '100644', type: 'blob', content: JSON.stringify(r.lista, null, 2) + '\n' },
+        { path: HUELLAS, mode: '100644', type: 'blob', content: r.huellas },
         { path: SW, mode: '100644', type: 'blob', content: sw },
-        ...borrar.map(f => ({ path: 'app/partituras/' + f, mode: '100644', type: 'blob', sha: null })),
+        ...(r.borrar || []).map(f => ({ path: f, mode: '100644', type: 'blob', sha: null })),
       ] } });
       const mensaje = (hechos.length === 1 ? hechos[0] : hechos.length + ' cambios: ' + hechos.join(' · ')) + ' (desde el móvil)';
       const nuevo = await gh('/git/commits', { metodo: 'POST', cuerpo: { message: mensaje, tree: arbol.sha, parents: [padre] } });
       try { await gh('/git/refs/heads/' + RAMA, { metodo: 'PATCH', cuerpo: { sha: nuevo.sha, force: false } }); commit = nuevo; }
-      catch (e) { if (e.estado !== 422 && e.estado !== 409) throw e; choque = e; await new Promise(r => setTimeout(r, 1500)); } // main ha cambiado: otra vuelta
+      catch (e) { if (e.estado !== 422 && e.estado !== 409) throw e; choque = e; await new Promise(res => setTimeout(res, 1500)); } // main ha cambiado: otra vuelta
     }
-    if (!hechos.length) { cambios = {}; guardarCambios(); terminar('bien', 'No había nada que publicar', 'Esos cambios ya estaban hechos (quizá desde el ordenador).'); return; }
+    if (!hechos.length) { sinNada(); terminar('bien', 'No había nada que publicar', 'Esos cambios ya estaban hechos (quizá desde el ordenador).'); return true; }
     if (!commit) throw choque || new ErrorGitHub('conflicto', 409);
-    // Ya está guardado: los cambios dejan de estar «preparados»
-    cambios = {}; guardarCambios(); pintar();
+    alGuardar();
 
     // 4: gh-pages = carpeta app/ de ese commit (como publicar.js)
-    paso('web', ['guardar']);
+    const hechosPasos = pasos.slice(0, pasos.indexOf('web'));
+    paso('web', hechosPasos);
     const raiz = await gh('/git/trees/' + commit.tree.sha);
     const app = raiz.tree.find(x => x.path === 'app' && x.type === 'tree');
     let padreWeb = null; try { padreWeb = (await gh('/git/ref/heads/' + RAMA_WEB)).object.sha; } catch {}
@@ -631,15 +708,17 @@ async function publicar() {
     try { await gh('/pages/builds', { metodo: 'POST' }); } catch { /* la llave no tiene permiso de Pages: GitHub lo publica igual al cambiar gh-pages */ }
 
     // 5: esperar a que GitHub Pages sirva el sw.js nuevo (como mucho 5 minutos)
-    paso('servir', ['guardar', 'web']);
+    paso('servir', [...hechosPasos, 'web']);
     const listo = await esperarPublicada(nuevaVersion, 5 * 60000);
     version = nuevaVersion;
-    if (listo) paso(null, ['guardar', 'web', 'servir']);
+    if (listo) paso(null, pasos);
     if (listo) terminar('bien', 'Publicado', 'El coro ya lo tiene. Las tablets lo recibirán la próxima vez que abran la app con internet.', hechos);
     else terminar('aviso', 'Guardado, falta que GitHub lo sirva', 'Los cambios están guardados y publicados, pero GitHub está tardando más de lo normal en servirlos. No hace falta que hagas nada: aparecerán en las tablets en unos minutos.', hechos);
+    return true;
   } catch (e) {
     const detalle = e instanceof ErrorGitHub ? `${e.estado} · ${e.peticion} · ${e.message}` : String(e && e.stack || e);
-    terminar('mal', 'No se ha podido publicar', explicar(e) + (Object.keys(cambios).length ? ' Tus cambios siguen preparados.' : ''), [], detalle);
+    terminar('mal', 'No se ha podido publicar', explicar(e) + (quedaPendiente() ? ' Tus cambios siguen preparados.' : ''), [], detalle);
+    return false;
   }
 }
 async function esperarPublicada(v, plazo) {
@@ -662,14 +741,406 @@ function terminar(tipo, titulo, texto, hechos = [], detalle = '') {
   cargar();
 }
 $('publicar').onclick = publicar;
-$('cerrarPublicar').onclick = () => $('dlgPublicar').close();
+$('cerrarPublicar').onclick = () => {
+  $('dlgPublicar').close();
+  // Obra nueva ya publicada: de vuelta a la lista
+  if (vista === 'anadir' && !borrador && !preparacion) mostrarVista('lista');
+};
 $('dlgPublicar').addEventListener('cancel', e => { if (publicando) e.preventDefault(); });
-window.addEventListener('beforeunload', e => { if (publicando) { e.preventDefault(); e.returnValue = ''; } });
+// Salir a medias: se perdería la publicación en marcha o la obra preparada (que no se guarda en el móvil)
+window.addEventListener('beforeunload', e => { if (publicando || borrador || preparacion) { e.preventDefault(); e.returnValue = ''; } });
+
+// ---------- Añadir obra ----------
+// Lo mismo que «Añadir obra» en el gestor del PC con el XML del Escáner Musical y el PDF, pero en el móvil:
+//  - el XML se prepara con app/preparar-obra.js (el mismo código que el PC),
+//  - las páginas: si el PDF es un escaneo se sacan sus fotos (app/paginas-pdf.js); si no, se dibujan con pdf.js al
+//    mismo ancho que en el PC (2000 px),
+//  - los compases se buscan en la imagen con app/detector-compases.js (en trabajador.js, para no congelar la página).
+// Lo que necesita Audiveris o la IA (obras con solo el PDF) y el editor de compases siguen en el PC.
+const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+// generarPaginas() (herramientas/paginas.js) pide 1600 px, pero Windows lo multiplica por la escala de la pantalla del
+// PC (125 %): todas las páginas publicadas tienen 2000 px de ancho. Se dibujan igual para que el detector vea lo mismo
+const ANCHO_PAGINA = 2000;
+let vista = 'lista';       // 'lista' | 'anadir'
+let borrador = null;       // obra preparada en el móvil, pendiente de revisar y publicar
+let preparacion = null;    // { cancelada } mientras se prepara
+class ErrorUsuario extends Error {}
+
+function mostrarVista(v) {
+  vista = v;
+  const anadir = v === 'anadir';
+  $('vistaAnadir').hidden = !anadir;
+  $('contenido').hidden = anadir;
+  $('cajaBuscador').hidden = anadir || !obras;
+  $('recargar').hidden = anadir || !obras;
+  $('volver').hidden = !anadir;
+  $('logo').hidden = anadir;
+  $('tituloCabecera').textContent = anadir ? 'Añadir obra' : 'Gestor de obras';
+  pintarBarra();
+  window.scrollTo(0, 0);
+}
+
+// Trabajador (detector de compases y preparación del XML)
+let trabajador = null, sigTarea = 0;
+const tareas = new Map();
+function tarea(tipo, datos, transferir = []) {
+  if (!trabajador) {
+    trabajador = new Worker('trabajador.js');
+    trabajador.onmessage = e => {
+      const t = tareas.get(e.data.id); if (!t) return;
+      tareas.delete(e.data.id);
+      if (e.data.ok) t.ok(e.data); else t.mal(Object.assign(new Error(e.data.error), { log: e.data.log }));
+    };
+    trabajador.onerror = e => { e.preventDefault(); pararTrabajador(new Error(e.message || 'El análisis ha fallado.')); };
+  }
+  const id = ++sigTarea;
+  return new Promise((ok, mal) => { tareas.set(id, { ok, mal }); trabajador.postMessage({ id, tipo, datos }, transferir); });
+}
+function pararTrabajador(motivo) {
+  if (trabajador) trabajador.terminate();
+  trabajador = null;
+  for (const t of tareas.values()) t.mal(motivo);
+  tareas.clear();
+}
+
+// pdf.js (la librería de PDF de Firefox) se carga solo cuando hace falta dibujar un PDF
+let cargaPdfjs = null;
+function pdfjs() {
+  if (!cargaPdfjs) cargaPdfjs = new Promise((ok, mal) => {
+    const s = document.createElement('script');
+    s.src = PDFJS + 'pdf.min.js';
+    s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js'; ok(window.pdfjsLib); };
+    s.onerror = () => { cargaPdfjs = null; s.remove(); mal(new ErrorUsuario('No se ha podido cargar el lector de PDF. Comprueba la conexión y vuelve a intentarlo.')); };
+    document.head.appendChild(s);
+  });
+  return cargaPdfjs;
+}
+// Imagen en gris como la lee el PC (media de rojo, verde y azul, sin decimales)
+function grisDe(ctx, w, h) {
+  const d = ctx.getImageData(0, 0, w, h).data, g = new Uint8Array(w * h);
+  for (let i = 0, j = 0; j < g.length; i += 4, j++) g[j] = (d[i] + d[i + 1] + d[i + 2]) / 3;
+  return { w, h, g };
+}
+function lienzo(w, h) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); // fondo de papel, como el motor de PDF de Windows
+  return { c, ctx };
+}
+async function grisDeImagen(blob) {
+  const bmp = await createImageBitmap(blob);
+  const { c, ctx } = lienzo(bmp.width, bmp.height);
+  ctx.drawImage(bmp, 0, 0);
+  const g = grisDe(ctx, c.width, c.height);
+  bmp.close && bmp.close(); c.width = c.height = 0;
+  return g;
+}
+async function dibujarPagina(doc, n) {
+  const pagina = await doc.getPage(n);
+  const vp = pagina.getViewport({ scale: ANCHO_PAGINA / pagina.getViewport({ scale: 1 }).width });
+  const { c, ctx } = lienzo(ANCHO_PAGINA, Math.round(vp.height));
+  // intent 'print': pdf.js no espera a requestAnimationFrame, que el navegador para si la página no se ve (pantalla
+  // apagada o al cambiar de app): así sigue dibujando
+  await pagina.render({ canvasContext: ctx, viewport: vp, intent: 'print' }).promise;
+  const blob = await new Promise(ok => c.toBlob(ok, 'image/png'));
+  const gris = grisDe(ctx, c.width, c.height);
+  c.width = c.height = 0; pagina.cleanup();
+  if (!blob) throw new ErrorUsuario('El móvil no ha podido guardar la imagen de una página. Prueba otra vez o añade la obra desde el ordenador.');
+  return { blob, gris };
+}
+
+// Prepara la obra: devuelve el borrador para revisar
+async function prepararEnMovil(archivoXml, archivoPdf, avance) {
+  const log = [], prep = preparacion;
+  const comprobar = () => { if (prep.cancelada) throw new ErrorUsuario('cancelada'); };
+  avance('xml');
+  if (/\.mxl$/i.test(archivoXml.name)) throw new ErrorUsuario('Es un archivo .mxl (comprimido). En el Escáner Musical, expórtalo como MusicXML sin comprimir (.xml o .musicxml).');
+  const texto = await archivoXml.text();
+  if (!/<score-partwise/.test(texto)) throw new ErrorUsuario('Ese archivo no es una partitura MusicXML. Elige el .xml que exporta el Escáner Musical.');
+  const rx = await tarea('xml', { xml: texto, nombreArchivo: archivoXml.name });
+  log.push(...rx.log);
+  const px = rx.r;
+  comprobar();
+  const base = PrepararObra.limpiarNombreArchivo(px.titulo);
+  const b = { ...px, base, archivo: base + '.xml', paginas: [], pos: null, avisoPos: '', pdf: null, log, nombreXml: archivoXml.name, nombrePdf: archivoPdf ? archivoPdf.name : '' };
+
+  if (archivoPdf) {
+    const bytes = new Uint8Array(await archivoPdf.arrayBuffer());
+    if (aTextoCorto(bytes, 5) !== '%PDF-') throw new ErrorUsuario('El segundo archivo no es un PDF. Elige el PDF de la obra (o déjalo vacío).');
+    b.pdf = bytes;
+    const grises = [];
+    const n = PaginasPdf.contarPaginas(bytes);
+    const fotos = n ? PaginasPdf.extraerJpegs(bytes, n) : null;
+    if (fotos) {
+      // Escaneo: las fotos tal cual, como en el PC
+      for (let i = 0; i < fotos.length; i++) {
+        avance('paginas', `${i + 1} de ${fotos.length}`);
+        const blob = new Blob([fotos[i]], { type: 'image/jpeg' });
+        b.paginas.push({ nombre: `${base}-p${i + 1}.jpg`, blob });
+        grises.push(await grisDeImagen(blob)); comprobar();
+      }
+    } else {
+      avance('paginas', 'cargando el lector de PDF');
+      const lib = await pdfjs();
+      let doc;
+      try { doc = await lib.getDocument({ data: bytes.slice() }).promise; }
+      catch { throw new ErrorUsuario('No se ha podido abrir el PDF. Puede que esté dañado o protegido con contraseña.'); }
+      try {
+        for (let p = 1; p <= doc.numPages; p++) {
+          avance('paginas', `${p} de ${doc.numPages}`);
+          const { blob, gris } = await dibujarPagina(doc, p);
+          b.paginas.push({ nombre: `${base}-p${p}.png`, blob }); grises.push(gris); comprobar();
+        }
+      } finally { doc.destroy(); }
+    }
+    // Compases en la página: las posiciones corregidas a mano de la obra publicada con ese nombre se conservan si
+    // cuadran (como en el PC); si no, se buscan en la imagen
+    let manual = null;
+    try { manual = JSON.parse(await gh('/contents/app/partituras/' + encodeURIComponent(base + '.pos.json') + '?ref=' + RAMA, { crudo: true })); } catch {}
+    b.pos = PrepararObra.posicionesManualesValidas([manual], b.paginas.length, px.compases, l => log.push(l));
+    if (b.pos) log.push('  Compases en la página: se conservan las posiciones corregidas a mano (no se vuelven a detectar).');
+    else {
+      avance('compases');
+      try {
+        const rd = await tarea('detectar', { xml: px.xml, grises }, grises.map(g => g.g.buffer));
+        log.push(...rd.log, '  Compases localizados en la imagen de cada página.');
+        b.pos = rd.r;
+      } catch (e) {
+        comprobar();
+        log.push(...(e.log || []), '  ! No se han podido localizar los compases en la página (' + e.message + ').');
+        b.avisoPos = e.message;
+        b.pos = { paginas: b.paginas.length, compases: [], incompleto: true };
+      }
+    }
+  } else log.push('  (sin PDF: la obra irá sin vista de página original)');
+  comprobar();
+  return b;
+}
+const aTextoCorto = (bytes, n) => String.fromCharCode.apply(null, bytes.subarray(0, n));
+const conPagina = b => !!(b.paginas.length && b.pos && !b.pos.incompleto && b.pos.compases.length);
+const NOTA_ES = { C: 'Do', D: 'Re', E: 'Mi', F: 'Fa', G: 'Sol', A: 'La', B: 'Si' };
+const tesituraEs = t => t ? t.replace(/^([A-G])(#?)(-?\d+)$/, (m, n, s, o) => NOTA_ES[n] + (s ? '♯' : '') + o) : '';
+const CLAVES = { G: 'clave de sol', F: 'clave de fa', C: 'clave de do' };
+
+// ---- Pantallas ----
+function pintarElegir(error = {}) {
+  const v = $('vistaAnadir');
+  v.innerHTML = `<form id="formAnadir" novalidate>
+    <h2>Añadir una obra</h2>
+    <p class="intro">Elige el XML que exporta el Escáner Musical y el PDF de la obra. El móvil la prepara igual que el ordenador y te la enseña antes de publicarla.</p>
+    <div class="tarjeta">
+      <div class="campo">
+        <p class="titulo-campo">Partitura del Escáner Musical</p>
+        <p class="ayuda" id="ayudaXml">El archivo .xml o .musicxml. Obligatoria.</p>
+        <label class="archivo" for="archivoXml"><span class="btn">${icono('file')}Elegir partitura</span><span class="nombre-archivo" id="nombreXml">Ningún archivo elegido</span></label>
+        <input type="file" id="archivoXml" class="sr" aria-describedby="ayudaXml errorXml">
+        <p class="error" id="errorXml" ${error.xml ? '' : 'hidden'}>${icono('alert')}<span>${esc(error.xml || '')}</span></p>
+      </div>
+      <div class="campo">
+        <p class="titulo-campo">PDF de la obra</p>
+        <p class="ayuda" id="ayudaPdf">Opcional: sin él, la obra irá sin la vista de página original.</p>
+        <label class="archivo" for="archivoPdf"><span class="btn">${icono('file')}Elegir PDF</span><span class="nombre-archivo" id="nombrePdf">Ningún archivo elegido</span></label>
+        <input type="file" id="archivoPdf" class="sr" accept=".pdf,application/pdf" aria-describedby="ayudaPdf errorPdf">
+        <p class="error" id="errorPdf" ${error.pdf ? '' : 'hidden'}>${icono('alert')}<span>${esc(error.pdf || '')}</span></p>
+      </div>
+    </div>
+    ${error.general ? `<div class="aviso mal" role="alert">${icono('alert')}<p>${esc(error.general)}</p></div>` : ''}
+    <p class="nota">Las obras que solo tienen el PDF (lectura con Audiveris o con IA) y la colocación a mano de los compases se hacen en el gestor del ordenador.</p>
+    <div class="acciones-fin">
+      <button class="btn" type="button" id="cancelarAnadir">Cancelar</button>
+      <button class="btn principal" type="submit">Preparar la obra</button>
+    </div>
+  </form>`;
+  const nombre = (input, salida) => input.addEventListener('change', () => {
+    const f = input.files[0]; salida.textContent = f ? f.name : 'Ningún archivo elegido'; salida.classList.toggle('elegido', !!f);
+  });
+  nombre($('archivoXml'), $('nombreXml')); nombre($('archivoPdf'), $('nombrePdf'));
+  $('archivoXml').addEventListener('change', () => { $('errorXml').hidden = true; });
+  $('cancelarAnadir').onclick = () => mostrarVista('lista');
+  $('formAnadir').addEventListener('submit', e => {
+    e.preventDefault();
+    const xml = $('archivoXml').files[0], pdf = $('archivoPdf').files[0];
+    if (!xml) { const er = $('errorXml'); er.hidden = false; er.querySelector('span').textContent = 'Elige el XML de la partitura.'; $('archivoXml').focus(); return; }
+    if (pdf && !/\.pdf$/i.test(pdf.name) && pdf.type !== 'application/pdf') { const er = $('errorPdf'); er.hidden = false; er.querySelector('span').textContent = 'Ese archivo no es un PDF.'; $('archivoPdf').focus(); return; }
+    empezarPreparacion(xml, pdf);
+  });
+}
+
+const PASOS_PREP = [['xml', 'Leyendo la partitura y nombrando las voces'], ['paginas', 'Dibujando las páginas'], ['compases', 'Buscando los compases en cada página']];
+function pintarPreparando(conPdf, actual, detalle = '') {
+  const lista = conPdf ? PASOS_PREP : PASOS_PREP.slice(0, 1);
+  const i = lista.findIndex(([k]) => k === actual);
+  $('vistaAnadir').innerHTML = `<h2>Preparando la obra</h2>
+    <p class="intro">Puede tardar un minuto, sobre todo si la obra tiene muchas páginas. No cierres esta página.</p>
+    <ol class="pasos tarjeta">${lista.map(([k, t], j) => `<li class="${j < i ? 'hecho' : j === i ? 'actual' : ''}">${j < i ? icono('check') : j === i ? '<span class="girando" aria-hidden="true"></span>' : '<span class="punto" aria-hidden="true"></span>'}<span>${esc(t)}${j === i && detalle ? ` (${esc(detalle)})` : ''}</span></li>`).join('')}</ol>
+    <div class="acciones-fin"><button class="btn" type="button" id="cancelarPrep">Cancelar</button></div>`;
+  $('cancelarPrep').onclick = () => { if (preparacion) preparacion.cancelada = true; pararTrabajador(new ErrorUsuario('cancelada')); };
+}
+
+async function empezarPreparacion(xml, pdf) {
+  preparacion = { cancelada: false };
+  pintarPreparando(!!pdf, 'xml');
+  try {
+    borrador = await prepararEnMovil(xml, pdf, (paso, detalle) => pintarPreparando(!!pdf, paso, detalle));
+    pintarRevision();
+  } catch (e) {
+    if (e.message === 'cancelada') { mostrarVista('lista'); return; }
+    pintarElegir({ general: e instanceof ErrorUsuario ? e.message : e instanceof ErrorGitHub ? explicar(e) : 'No se ha podido preparar la obra (' + e.message + '). Revisa que los archivos sean los del Escáner Musical o añádela desde el ordenador.' });
+  } finally { preparacion = null; }
+}
+
+function pintarRevision() {
+  const b = borrador;
+  const previa = obras.find(o => o.archivo === b.archivo);
+  const paginas = conPagina(b);
+  // Tramos en que el detector no ha cuadrado la página con el XML; con muchos, la marca iría desviada: se propone
+  // publicar sin la página original (en el PC se colocan a mano)
+  const desajustes = paginas && Array.isArray(b.pos.desajustes) ? b.pos.desajustes : [];
+  const dudosa = desajustes.length > 3;
+  const urls = b.paginas.map(p => URL.createObjectURL(p.blob));
+  b.urls = urls;
+  const cajas = p => paginas ? b.pos.compases.filter(c => c.p === p).map(c => `<span class="caja" style="left:${(c.x0 * 100).toFixed(2)}%;top:${(c.y0 * 100).toFixed(2)}%;width:${((c.x1 - c.x0) * 100).toFixed(2)}%;height:${((c.y1 - c.y0) * 100).toFixed(2)}%"></span>`).join('') : '';
+  $('vistaAnadir').innerHTML = `<form id="formRevision" novalidate>
+    <h2>Revisa la obra antes de publicarla</h2>
+    <p class="intro">${b.compases} compases · ${b.partes.length} ${b.partes.length === 1 ? 'voz' : 'voces'}${b.paginas.length ? ` · ${b.paginas.length} página${b.paginas.length === 1 ? '' : 's'}` : ''}. Puedes cambiar el título, los nombres de las voces y el tempo.</p>
+    ${previa ? `<div class="aviso" role="status">${icono('alert')}<div><p><strong>Ya hay una obra con este nombre en la app («${esc(previa.titulo)}»).</strong> Al publicar, esta la sustituirá.</p><p>Si corregiste notas o compases de la que está publicada (en el gestor del ordenador o con «Corregir» en la app), esas correcciones se perderán. Se conservan sus voces cantadas${previa.ensayo ? ' y la marca «en ensayo»' : ''}.</p></div></div>` : ''}
+    <div class="tarjeta">
+      <div class="campo">
+        <label for="revTitulo">Título en la app</label>
+        <input type="text" id="revTitulo" value="${esc(b.titulo)}" maxlength="120" autocomplete="off" aria-describedby="errorRevTitulo">
+        <p class="error" id="errorRevTitulo" hidden>${icono('alert')}<span></span></p>
+      </div>
+      <div class="campo">
+        <label for="revTempo">Tempo (negras por minuto)</label>
+        <input type="number" id="revTempo" inputmode="numeric" min="20" max="300" step="1" value="${b.tempo || ''}" aria-describedby="ayudaTempo errorRevTempo">
+        <p class="ayuda" id="ayudaTempo">${b.tempo ? 'El que trae la partitura.' : 'La partitura no lo trae. Déjalo vacío y la app usará uno normal.'}</p>
+        <p class="error" id="errorRevTempo" hidden>${icono('alert')}<span></span></p>
+      </div>
+      <button class="interruptor" type="button" role="switch" id="revEnsayo" aria-checked="${!!(previa && previa.ensayo)}"><span>En ensayo</span><span class="pista" aria-hidden="true"></span></button>
+    </div>
+
+    <h3 id="tituloVoces">Voces</h3>
+    <div class="tarjeta">
+      <ul class="voces" aria-labelledby="tituloVoces">${b.partes.map((p, i) => `<li data-id="${esc(p.id)}">
+        <div class="campo">
+          <label for="voz-${i}">Voz ${i + 1}</label>
+          <input type="text" id="voz-${i}" value="${esc(p.nombre)}" maxlength="40" autocomplete="off" aria-describedby="ayudaVoz-${i}">
+          <p class="ayuda" id="ayudaVoz-${i}">${[p.nombreActual && p.nombreActual !== p.nombre ? `En la partitura: «${esc(p.nombreActual)}»` : '', tesituraEs(p.tesitura) ? 'tesitura media ' + tesituraEs(p.tesitura) : '', CLAVES[p.clave] || ''].filter(Boolean).join(' · ')}</p>
+        </div>
+        <button class="interruptor" type="button" role="switch" aria-checked="true" data-incluir aria-describedby="voz-${i}"><span>Incluir</span><span class="pista" aria-hidden="true"></span></button>
+      </li>`).join('')}</ul>
+      <p class="error" id="errorVoces" hidden>${icono('alert')}<span></span></p>
+    </div>
+
+    ${b.sospechosos.length ? `<div class="aviso">${icono('alert')}<div><p><strong>${b.sospechosos.length === 1 ? 'Un compás no cuadra' : b.sospechosos.length + ' compases no cuadran'}</strong>: ${esc(b.sospechosos.join(', '))}.</p><p class="nota">Sus figuras no suman lo que pide el compás (el escáner se ha saltado o inventado alguna). Se pueden corregir en el gestor del ordenador; si la publicas así, la app los toca igual.</p></div></div>` : `<div class="aviso bien">${icono('check')}<p>Todos los compases cuadran.</p></div>`}
+    ${b.avisos.length ? `<details class="tarjeta"><summary>Lo que se ha arreglado del escáner (${b.avisos.length})</summary><ul class="avisos">${b.avisos.map(a => `<li>${esc(a)}</li>`).join('')}</ul></details>` : ''}
+
+    <h3>Página original</h3>
+    ${!b.paginas.length ? `<p class="nota">Sin PDF: la obra irá sin la vista de página original${previa && previa.paginas ? ' (se conserva la de la obra que ya estaba)' : ''}.</p>`
+      : paginas ? `${dudosa ? `<div class="aviso mal">${icono('alert')}<div><p>Los compases de la página no cuadran bien con la partitura en ${desajustes.length} tramos, así que la marca iría desviada. Mejor publicarla sin la página original y colocar los compases en el gestor del ordenador.</p><details class="detalles"><summary>Ver los tramos</summary><code>${esc(desajustes.join('\n'))}</code></details></div></div>`
+          : desajustes.length ? `<div class="aviso">${icono('alert')}<p>En ${desajustes.length === 1 ? 'un tramo' : desajustes.length + ' tramos'} los compases de la página no cuadran del todo con la partitura (${esc(desajustes.join('; '))}): ahí la marca puede ir algo desviada.</p></div>` : ''}
+        <button class="interruptor" type="button" role="switch" id="revPagina" aria-checked="${!dudosa}" aria-describedby="ayudaPagina"><span>Incluir la página original</span><span class="pista" aria-hidden="true"></span></button>
+        <p class="nota" id="ayudaPagina">Cada recuadro es un compás, tal como lo marcará la app al tocar. Si alguno está mal colocado, se puede corregir después en el gestor del ordenador.</p>`
+      : `<div class="aviso mal">${icono('alert')}<p>No se han podido localizar los compases en la página${b.avisoPos ? ' (' + esc(b.avisoPos) + ')' : ''}. La obra se publicará sin la vista de página original${previa && previa.paginas ? ' (se conserva la de la obra que ya estaba)' : ''}; los compases se pueden colocar a mano en el gestor del ordenador.</p></div>`}
+    ${b.paginas.length ? `<div class="paginas-previas">${b.paginas.map((p, i) => `<figure class="pagina-previa"><img src="${urls[i]}" alt="Página ${i + 1} de la partitura" loading="lazy">${cajas(i)}<figcaption>Página ${i + 1}</figcaption></figure>`).join('')}</div>` : ''}
+
+    <details class="registro"><summary>Registro de la preparación</summary><pre>${esc(b.log.join('\n'))}</pre></details>
+    <div class="acciones-fin">
+      <button class="btn" type="button" id="descartar">Descartar</button>
+      <button class="btn principal" type="submit">${icono('upload')}Publicar para el coro</button>
+    </div>
+  </form>`;
+  const f = $('formRevision');
+  f.addEventListener('click', e => {
+    const s = e.target.closest('.interruptor'); if (!s) return;
+    const on = s.getAttribute('aria-checked') !== 'true'; s.setAttribute('aria-checked', String(on));
+    const li = s.closest('li'); if (li) li.classList.toggle('quitada', !on);
+  });
+  $('revTitulo').addEventListener('blur', () => validarRevision(['titulo']));
+  $('revTempo').addEventListener('blur', () => validarRevision(['tempo']));
+  $('descartar').onclick = () => { if (confirm('¿Descartar esta obra? No se publicará nada.')) { soltarBorrador(); mostrarVista('lista'); } };
+  f.addEventListener('submit', e => { e.preventDefault(); const a = validarRevision(); if (a) publicarBorrador(a); });
+  window.scrollTo(0, 0);
+}
+function errorCampo(id, msg) { const e = $(id); e.hidden = !msg; e.querySelector('span').textContent = msg || ''; const input = e.parentElement.querySelector('input'); if (input) input.setAttribute('aria-invalid', msg ? 'true' : 'false'); return !msg; }
+// Lee y valida la pantalla de revisión; devuelve los ajustes o null (con los errores junto a cada campo)
+function validarRevision(campos = ['titulo', 'tempo', 'voces']) {
+  const titulo = $('revTitulo').value.trim().replace(/\s+/g, ' ');
+  const tempoTxt = $('revTempo').value.trim(), tempo = tempoTxt ? Math.round(+tempoTxt) : null;
+  const voces = [...document.querySelectorAll('#formRevision ul.voces li')].map(li => ({ id: li.dataset.id, nombre: li.querySelector('input').value.trim(), incluir: li.querySelector('[data-incluir]').getAttribute('aria-checked') === 'true' }));
+  let ok = true, primero = null;
+  const fallo = (id, foco) => { ok = false; if (!primero) primero = foco; };
+  if (campos.includes('titulo')) {
+    const otra = obras.find(o => o.archivo !== borrador.archivo && normal(o.titulo) === normal(titulo));
+    if (!errorCampo('errorRevTitulo', !titulo ? 'Escribe el título que verá el coro.' : otra ? `Ya hay otra obra que se llama «${otra.titulo}». Añade algo que las distinga, por ejemplo el autor.` : '')) fallo('titulo', $('revTitulo'));
+  }
+  if (campos.includes('tempo')) {
+    if (!errorCampo('errorRevTempo', tempoTxt && !(tempo >= 20 && tempo <= 300) ? 'Pon un tempo entre 20 y 300, o déjalo vacío.' : '')) fallo('tempo', $('revTempo'));
+  }
+  if (campos.includes('voces')) {
+    const incluidas = voces.filter(v => v.incluir);
+    const msg = !incluidas.length ? 'Deja al menos una voz.' : incluidas.some(v => !v.nombre) ? 'Cada voz que se incluye necesita un nombre.' : '';
+    if (!errorCampo('errorVoces', msg)) fallo('voces', document.querySelector('#formRevision ul.voces input'));
+  }
+  if (!ok) { if (primero) primero.focus(); return null; }
+  return { titulo, tempo, ensayo: $('revEnsayo').getAttribute('aria-checked') === 'true', pagina: !$('revPagina') || $('revPagina').getAttribute('aria-checked') === 'true', nombres: Object.fromEntries(voces.filter(v => v.incluir).map(v => [v.id, v.nombre])), quitar: voces.filter(v => !v.incluir).map(v => v.id) };
+}
+function soltarBorrador() { if (borrador && borrador.urls) borrador.urls.forEach(u => URL.revokeObjectURL(u)); borrador = null; }
+
+// ---- Publicar la obra nueva ----
+const utf8 = s => new TextEncoder().encode(s);
+function aBase64(bytes) { let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(s); }
+// Huella como la calcula el PC (las 12 primeras cifras del SHA-1 del archivo)
+async function huellaDe(bytes) { const d = new Uint8Array(await crypto.subtle.digest('SHA-1', bytes)); return [...d].map(x => x.toString(16).padStart(2, '0')).join('').slice(0, 12); }
+
+async function publicarBorrador(a) {
+  const b = borrador;
+  // XML final con los ajustes, como «Aplicar» en el gestor del PC (el nombre del archivo no cambia con el título)
+  const xml = PrepararObra.editarObra(b.xml, { titulo: a.titulo, nombres: a.nombres, quitar: a.quitar, tempo: a.tempo });
+  const pagina = conPagina(b) && a.pagina;
+  const archivos = [{ ruta: 'app/partituras/' + b.archivo, bytes: utf8(xml) }];
+  if (pagina) {
+    archivos.push({ ruta: 'app/partituras/' + b.base + '.pos.json', bytes: utf8(JSON.stringify(b.pos)) });
+    for (const p of b.paginas) archivos.push({ ruta: 'app/partituras/' + p.nombre, bytes: new Uint8Array(await p.blob.arrayBuffer()) });
+  }
+  if (b.pdf) archivos.push({ ruta: 'originales/pdf/' + b.base + '.pdf', bytes: b.pdf }); // copia del PDF, como guardarPdf() en el PC
+  const subidos = [], nuevas = {};
+  await publicarEnGitHub({
+    subir: async avance => {
+      for (const [i, f] of archivos.entries()) {
+        avance(`${i + 1} de ${archivos.length}`);
+        const blob = await gh('/git/blobs', { metodo: 'POST', cuerpo: { content: aBase64(f.bytes), encoding: 'base64' } });
+        subidos.push({ path: f.ruta, mode: '100644', type: 'blob', sha: blob.sha });
+        if (f.ruta.startsWith('app/')) nuevas[f.ruta.slice(4)] = await huellaDe(f.bytes);
+      }
+    },
+    // Como incorporarEnApp() en herramientas/obra.js
+    construir: (lista, huellasT) => {
+      const previa = lista.find(o => o.archivo === b.archivo) || {};
+      const nueva = { titulo: a.titulo, archivo: b.archivo };
+      if (a.ensayo) nueva.ensayo = true;
+      if (pagina) { nueva.posiciones = b.base + '.pos.json'; nueva.paginas = b.paginas.map(p => p.nombre); }
+      else if (previa.paginas) { nueva.posiciones = previa.posiciones; nueva.paginas = previa.paginas; }
+      if (previa.canto && previa.canto.length) nueva.canto = previa.canto;
+      const l = ordenar([...lista.filter(o => o.archivo !== b.archivo), nueva]);
+      return { lista: l, huellas: rehacerHuellas(huellasT, l, nuevas), entradas: subidos, hechos: [(previa.archivo ? 'Actualizar obra: ' : 'Añadir obra: ') + a.titulo] };
+    },
+    alGuardar: () => { soltarBorrador(); },
+    quedaPendiente: () => !!borrador,
+  });
+}
+
+$('anadir').onclick = () => { if (borrador) { mostrarVista('anadir'); pintarRevision(); return; } mostrarVista('anadir'); pintarElegir(); $('archivoXml').focus(); };
+$('volver').onclick = () => {
+  if (preparacion) { preparacion.cancelada = true; pararTrabajador(new ErrorUsuario('cancelada')); }
+  mostrarVista('lista');
+};
 
 // ---------- Conectar ----------
 function desconectar(motivo) {
   llave = null; guardado('gestor.llave', null);
   obras = null;
+  if (vista !== 'lista') { soltarBorrador(); mostrarVista('lista'); }
   $('cajaBuscador').hidden = true; $('recargar').hidden = true; $('desconectar').hidden = true; $('barra').hidden = true;
   $('subtitulo').textContent = 'Coral Villa de Mengíbar';
   const c = $('contenido'); c.setAttribute('aria-busy', 'false');
