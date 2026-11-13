@@ -571,6 +571,191 @@ function posicionesManualesValidas(candidatas, nPaginas, nCompases, log = () => 
   return null;
 }
 
+// ---------- Arreglos de lo que lee mal Audiveris (los llama limpiarXmlAudiveris en herramientas/obra.js) ----------
+const RE_PARTES = /<part id="([^"]+)">([\s\S]*?)<\/part>/g;
+const RE_COMPASES = /<measure number="([^"]+)"[^>]*>[\s\S]*?<\/measure>/g;
+
+// Una parte por rótulo: si la partitura pone «Soprano, Contralto, Tenor, Bajo» en el primer sistema y «S., C., T., B.» en
+// los demás, Audiveris no los reconoce como las mismas voces y crea 8 partes: 4 que solo suenan en el primer sistema y 4
+// que solo suenan en el resto. Aquí se juntan, compás a compás, cuando el reparto está claro:
+//  - las partes se dividen en bloques seguidos del mismo tamaño (las voces de cada rótulo);
+//  - la parte j de cada bloque tiene la misma clave (sol, fa) que la j de los demás;
+//  - los bloques suenan en tramos de la obra que no se solapan (cada parte j de un bloque calla donde suena la de otro).
+// Si no, no se toca nada. El nombre de cada voz es el que se reconozca (nombreCanonico) en alguno de sus rótulos; con
+// cuatro voces y uno sin reconocer («Tenar», «1: l»…), el que falte de Soprano, Contralto, Tenor y Bajo.
+function juntarPartesPorRotulo(xml, avisos) {
+  const partes = [...xml.matchAll(RE_PARTES)].map(([todo, id, cuerpo]) => {
+    const compases = [...cuerpo.matchAll(RE_COMPASES)].map(m => ({ num: m[1], xml: m[0] }));
+    const cab = (xml.match(new RegExp(`<score-part id="${id}">[\\s\\S]*?</score-part>`)) || [''])[0];
+    return { id, todo, compases, suena: compases.map(c => /<pitch>/.test(c.xml)), clave: (cuerpo.match(/<clef(?:\s[^>]*)?>\s*<sign>(\w)/) || [, '?'])[1], nombre: (cab.match(/<part-name(?:\s[^>]*)?>([^<]*)/) || [, ''])[1].trim() };
+  });
+  const k = partes.length;
+  if (k < 4 || partes.some(p => p.compases.length !== partes[0].compases.length)) return xml;
+  const total = partes[0].compases.length;
+  // ¿Bloques de n voces?
+  let elegido = null;
+  for (let n = 2; n <= k / 2 && !elegido; n++) {
+    if (k % n) continue;
+    const bloques = Array.from({ length: k / n }, (_, b) => partes.slice(b * n, (b + 1) * n));
+    let bien = true;
+    for (let j = 0; j < n && bien; j++) {
+      const columna = bloques.map(b => b[j]);
+      if (new Set(columna.map(p => p.clave)).size !== 1 || columna[0].clave === '?') bien = false;
+      // en cada compás suena como mucho una parte de la columna, y cada parte suena en algún compás
+      for (let i = 0; i < total && bien; i++) if (columna.filter(p => p.suena[i]).length > 1) bien = false;
+      if (columna.some(p => !p.suena.some(Boolean))) bien = false;
+    }
+    // cada bloque ocupa un tramo seguido de la obra y no se mete en el de otro
+    if (bien) {
+      const tramos = bloques.map(b => { const ii = []; b.forEach(p => p.suena.forEach((s, i) => s && ii.push(i))); return [Math.min(...ii), Math.max(...ii)]; }).sort((a, c) => a[0] - c[0]);
+      for (let t = 1; t < tramos.length; t++) if (tramos[t][0] <= tramos[t - 1][1]) bien = false;
+    }
+    if (bien) elegido = { n, bloques };
+  }
+  if (!elegido) return xml;
+  const { n, bloques } = elegido;
+  const nombres = {};
+  for (let j = 0; j < n; j++) {
+    const columna = bloques.map(b => b[j]), base = columna[0];
+    const juntos = base.compases.map((c, i) => { const p = columna.find(x => x.suena[i]); return p ? p.compases[i].xml.replace(/\s+width="[^"]*"/, '') : c.xml; });
+    xml = xml.replace(base.todo, () => `<part id="${base.id}">\n    ${juntos.join('\n    ')}\n  </part>`);
+    for (const p of columna.slice(1)) xml = xml.replace(p.todo, '').replace(new RegExp(`\\s*<score-part id="${p.id}">[\\s\\S]*?</score-part>`), '');
+    // el rótulo más largo manda: «Contralto» es más fiable que «C.» (que también podría ser Cantus, la soprano)
+    const reconocido = columna.slice().sort((a, c) => c.nombre.length - a.nombre.length).map(p => nombreCanonico(p.nombre)).find(Boolean);
+    if (reconocido) nombres[base.id] = reconocido;
+  }
+  xml = xml.replace(/\n\s*\n(\s*<part id=)/g, '\n$1');
+  // Con las cuatro voces del coro y solo una sin nombre reconocido, es la que falta
+  const coro = ['Soprano', 'Contralto', 'Tenor', 'Bajo'], ids = bloques[0].map(p => p.id);
+  const sin = ids.filter(id => !nombres[id]), faltan = coro.filter(c => !Object.values(nombres).includes(c));
+  if (n === 4 && sin.length === 1 && faltan.length === 1) nombres[sin[0]] = faltan[0];
+  xml = editarObra(xml, { nombres });
+  const rotulos = bloques.map(b => b.map(p => p.nombre || p.id).join(', '));
+  avisos.push(`Audiveris había hecho una parte por cada rótulo de la partitura (${rotulos.map(r => '«' + r + '»').join(' y ')}): eran ${k} partes y se han juntado en ${n}.`);
+  return xml;
+}
+
+// Tresillos sin leer: Audiveris lee las figuras de un tresillo pero no siempre el «3» de encima, y el tiempo le dura 1,5
+// en vez de 1 (compases de 2,5 negras en 2/4). Solo si la obra tiene algún tresillo leído (prueba de que los hay), en
+// compases de negra (x/4), en cada voz cuyas figuras escritas sumen medio tiempo de más: el grupo de notas seguidas
+// que empieza en un tiempo y suma tiempo y medio pasa a tresillo (3 en el tiempo de 2), y las
+// demás quedan con lo que dice su figura. El compás que manda es el que suman la mayoría de los compases: Audiveris lee
+// a veces mal la indicación (5/4 por 2/4); repararCompases la corrige después.
+const NEGRAS_FIGURA = { breve: 8, whole: 4, half: 2, quarter: 1, eighth: 0.5, '16th': 0.25, '32nd': 0.125, '64th': 0.0625 };
+function ponerTresillosNoLeidos(xml, avisos) {
+  if (!/<time-modification>/.test(xml)) return xml;
+  // lo que vale la figura escrita, en negras (sin tresillos); null si no se sabe (silencio de compás entero, figura rara)
+  const figura = n => {
+    const base = NEGRAS_FIGURA[(n.match(/<type>([\w]+)<\/type>/) || [])[1]];
+    if (/<rest measure="yes"/.test(n) || base === undefined) return null;
+    const puntillos = (n.match(/<dot\s*\/>/g) || []).length;
+    return base * (puntillos === 2 ? 1.75 : puntillos === 1 ? 1.5 : 1);
+  };
+  const vozDe = n => (n.match(/<voice>(\d+)/) || [, '1'])[1];
+  const RE_TOK = /<note(?:\s[^>]*)?>[\s\S]*?<\/note>|<backup>[\s\S]*?<\/backup>|<forward>[\s\S]*?<\/forward>/g;
+  // Compás real de la obra: lo que suma la voz 1 en la mayoría de los compases (si es una sola indicación y no cuadra)
+  const indicaciones = new Set([...xml.matchAll(/<beats>(\d+)<\/beats>\s*<beat-type>(\d+)/g)].map(m => m[1] + '/' + m[2]));
+  let real = null;
+  if (indicaciones.size === 1) {
+    const hist = {}; let n = 0;
+    for (const [, , p] of xml.matchAll(RE_PARTES)) {
+      let div = 1;
+      for (const [m] of p.matchAll(RE_COMPASES)) {
+        const d = m.match(/<divisions>(\d+)/); if (d) div = +d[1];
+        let s = 0; for (const [x] of m.matchAll(/<note(?:\s[^>]*)?>[\s\S]*?<\/note>/g)) if (!/<chord|<grace|<voice>[2-9]/.test(x)) s += +(x.match(/<duration>(\d+)/) || [, 0])[1];
+        if (s) { const q = (s / div).toFixed(2); hist[q] = (hist[q] || 0) + 1; n++; }
+      }
+    }
+    const [valor, veces] = Object.entries(hist).sort((a, b) => b[1] - a[1])[0] || [];
+    if (veces >= n * 0.5) real = +valor;
+  }
+  const quitarTres = n => n.replace(/\s*<time-modification>[\s\S]*?<\/time-modification>/, '').replace(/\s*<tuplet\b[^>]*?(?:\/>|>[\s\S]*?<\/tuplet>)/g, '').replace(/\s*<notations>\s*<\/notations>/, '');
+  const ponerTres = (n, corchete) => {
+    n = quitarTres(n);
+    const tm = '<time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>';
+    const ult = [...n.matchAll(/<\/type>|<dot\s*\/>|<\/accidental>/g)].pop();
+    n = ult ? n.slice(0, ult.index + ult[0].length) + tm + n.slice(ult.index + ult[0].length) : n.replace('</note>', tm + '</note>');
+    if (corchete) {
+      const t = `<tuplet type="${corchete}" number="1"${corchete === 'start' ? ' placement="above"' : ''}/>`;
+      n = /<notations>/.test(n) ? n.replace('<notations>', '<notations>' + t) : /<lyric\b/.test(n) ? n.replace(/<lyric\b/, `<notations>${t}</notations><lyric`) : n.replace('</note>', `<notations>${t}</notations></note>`);
+    }
+    return n;
+  };
+  const arreglados = new Set();
+  xml = xml.replace(RE_PARTES, (todo, id, parte) => {
+    let div = 1, beats = 4, bt = 4;
+    return `<part id="${id}">` + parte.replace(/(<measure number="([^"]+)"[^>]*>)([\s\S]*?)(<\/measure>)/g, (m, ini, num, cuerpo, fin) => {
+      const d = cuerpo.match(/<divisions>(\d+)/); if (d) div = +d[1];
+      const b = cuerpo.match(/<beats>(\d+)<\/beats>\s*<beat-type>(\d+)/); if (b) { beats = +b[1]; bt = +b[2]; }
+      if (bt !== 4) return m;
+      const esperado = real || beats;
+      // Huecos (<forward>): Audiveris los deja donde no ve el silencio, a menudo el del tresillo. Se escriben como silencio
+      // de la voz de la nota siguiente, con la figura que les corresponde (si valen un tercio de la figura, es de tresillo)
+      if (/<forward>/.test(cuerpo)) {
+        const nombreDe = negras => Object.keys(NEGRAS_FIGURA).find(k => Math.abs(NEGRAS_FIGURA[k] - negras) < 0.001);
+        let raro = false;
+        const nuevo = cuerpo.replace(/<forward>\s*<duration>(\d+)<\/duration>\s*(?:<voice>(\d+)<\/voice>\s*)?(?:<staff>(\d+)<\/staff>\s*)?<\/forward>/g, (f, dur, voz, staff, offset) => {
+          const sig = cuerpo.slice(offset + f.length).match(/<note(?:\s[^>]*)?>[\s\S]*?<voice>(\d+)/);
+          const v = voz || (sig ? sig[1] : '1'), negras = +dur / div;
+          const tipo = nombreDe(negras) || nombreDe(negras * 1.5);
+          if (!tipo) { raro = true; return f; }
+          return `<note><rest/><duration>${dur}</duration><voice>${v}</voice><type>${tipo}</type>${staff ? `<staff>${staff}</staff>` : ''}</note>`;
+        });
+        if (raro) return m;
+        cuerpo = nuevo;
+      }
+      const voces = {};
+      for (const [t] of cuerpo.matchAll(RE_TOK)) if (t.startsWith('<note') && !/<chord\s*\/>|<grace/.test(t)) (voces[vozDe(t)] = voces[vozDe(t)] || []).push(t);
+      const plan = {}; // voz -> [inicio, fin) del grupo que pasa a tresillo
+      for (const [v, notas] of Object.entries(voces)) {
+        const fig = notas.map(figura);
+        if (fig.some(x => x === null)) continue;
+        const dura = notas.reduce((a, n) => a + +(n.match(/<duration>(\d+)/) || [, 0])[1], 0) / div;
+        if (Math.abs(dura - esperado) < 0.01) continue;
+        const sobra = fig.reduce((a, x) => a + x, 0) - esperado;
+        if (Math.abs(sobra - 0.5) > 0.01) continue; // solo medio tiempo de más: un tresillo dentro de un tiempo (con más, se adivinaría)
+        const grupo = sobra * 3;
+        let pos = 0;
+        for (let i = 0; i < fig.length && plan[v] === undefined; i++) {
+          if (Math.abs(pos - Math.round(pos)) < 0.01) { // empieza en un tiempo
+            let s = 0;
+            for (let j = i; j < fig.length; j++) { s += fig[j]; if (Math.abs(s - grupo) < 0.01) { if (j > i) plan[v] = [i, j + 1]; break; } if (s > grupo) break; }
+          }
+          pos += fig[i];
+        }
+      }
+      if (!Object.keys(plan).length) return m;
+      const indice = {}; let viejo = 0, nuevo = 0, ultimo = null;
+      const out = cuerpo.replace(RE_TOK, t => {
+        if (t.startsWith('<backup')) {
+          const dur = +t.match(/<duration>(\d+)/)[1], nd = dur === viejo ? nuevo : dur; // si vuelve al principio, a lo que dure ahora
+          viejo -= dur; nuevo -= nd; return t.replace(/<duration>\d+/, '<duration>' + nd);
+        }
+        if (t.startsWith('<forward') || /<grace/.test(t)) return t;
+        const v = vozDe(t);
+        if (/<chord\s*\/>/.test(t)) return ultimo && ultimo.v === v && plan[v] ? (ultimo.tres ? ponerTres(t, null) : quitarTres(t)).replace(/<duration>\d+/, '<duration>' + ultimo.dur) : t;
+        const antes = +(t.match(/<duration>(\d+)/) || [, 0])[1];
+        let dur = antes, r = t;
+        if (plan[v]) {
+          const i = indice[v] = (indice[v] ?? -1) + 1, [a, z] = plan[v], tres = i >= a && i < z;
+          dur = Math.round(figura(t) * div * (tres ? 2 / 3 : 1));
+          r = (tres ? ponerTres(t, i === a ? 'start' : i === z - 1 ? 'stop' : null) : quitarTres(t)).replace(/<duration>\d+/, '<duration>' + dur);
+          ultimo = { v, tres, dur };
+        } else ultimo = null;
+        viejo += antes; nuevo += dur;
+        return r;
+      });
+      if (Object.values(plan).length) arreglados.add(num);
+      return ini + out + fin;
+    }) + '</part>';
+  });
+  if (arreglados.size) {
+    const lista = [...arreglados].sort((a, b) => a - b);
+    avisos.push(`Audiveris no había leído el «3» de algún tresillo en ${lista.length} compás(es) (${lista.length > 12 ? lista.slice(0, 12).join(', ') + '…' : lista.join(', ')}): se han puesto como tresillo para que cuadren. Compruébalo en la página.`);
+  }
+  return xml;
+}
+
 // La parte del MusicXML de prepararObra (herramientas/obra.js): título, reparaciones, tenor octavado, nombres de las voces
 // y compases sospechosos. nombreArchivo: el del XML o el PDF (para el título si la partitura no trae uno); delEscaner:
 // el XML viene del Escáner Musical (no de Audiveris ni de la IA); avisos: los que ya hubiera (se añaden los nuevos y se
@@ -622,5 +807,5 @@ function prepararXml(xml, { nombreArchivo = '', delEscaner = true, avisos = [], 
 
 return { NOMBRES_VOCES, NOMBRES_CONOCIDOS, SEMITONOS, NOTAS, analizarParte, nombresPorTesitura, pareceAcompanamiento, separarPentagramas,
   huecosASilencios, recomponerPartesCorridas, repararCompases, nombreCanonico, bajarTenorOctavado, limpiarNombreArchivo, tituloDe, tempoDe,
-  vocesExtraDe, editarObra, compasesDe, posicionesManualesValidas, prepararXml };
+  vocesExtraDe, editarObra, compasesDe, posicionesManualesValidas, prepararXml, juntarPartesPorRotulo, ponerTresillosNoLeidos };
 });

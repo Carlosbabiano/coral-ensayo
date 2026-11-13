@@ -157,6 +157,9 @@ function limpiarXmlAudiveris(xml) {
       avisos.push(`Audiveris no ha leído la indicación de compás (pasa con el compás partido): se ha puesto ${tiempo[0]}/${tiempo[1]}, que es lo que suman los compases. Compruébalo en la página.`);
     } else avisos.push('Audiveris no ha leído ninguna indicación de compás y no se ha podido deducir: la app supondrá 4/4.');
   }
+  // Una parte por rótulo (Soprano… en el primer sistema, S.… en el resto) y tresillos sin el «3»: app/preparar-obra.js
+  xml = juntarPartesPorRotulo(xml, avisos);
+  xml = ponerTresillosNoLeidos(xml, avisos);
   xml = bajarTenorOctavado(xml, avisos);
   // Audiveris inventa a veces una segunda voz hecha solo de silencios: fuera. Si lleva alguna nota suelta se deja,
   // con aviso, para que el director decida (en «Voces» del gestor se puede quitar)
@@ -175,7 +178,7 @@ function limpiarXmlAudiveris(xml) {
 const { leerPartes, escapar, recorrerCompases, sumaCompas, sospechososDe, detalleCompas, notasCompas, escribirCompas, ponerTiempo, fijarCompas, FIGURA_NEGRAS, vocesDe, quitarVoz } = require('../app/compases.js');
 // Reparación del XML, nombres de las voces, etc.: compartido con el gestor del móvil
 const { NOMBRES_VOCES, NOMBRES_CONOCIDOS, SEMITONOS, NOTAS, analizarParte, nombresPorTesitura, huecosASilencios, recomponerPartesCorridas, repararCompases, nombreCanonico,
-  bajarTenorOctavado, limpiarNombreArchivo, tituloDe, tempoDe, vocesExtraDe, editarObra, compasesDe, posicionesManualesValidas, prepararXml } = require('../app/preparar-obra.js');
+  bajarTenorOctavado, limpiarNombreArchivo, tituloDe, tempoDe, vocesExtraDe, editarObra, compasesDe, posicionesManualesValidas, prepararXml, juntarPartesPorRotulo, ponerTresillosNoLeidos } = require('../app/preparar-obra.js');
 
 
 // Prepara una obra: repara el XML, nombra las voces, saca letra y página original del PDF y deja los archivos en dirSalida.
