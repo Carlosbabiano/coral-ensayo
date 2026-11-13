@@ -210,6 +210,15 @@
     ]
   },
   {
+    "titulo": "Nostra gloria e la croce",
+    "archivo": "Nostra_gloria_e_la_croce.xml",
+    "paginas": [
+      "Nostra_gloria_e_la_croce-p1.jpg"
+    ],
+    "sinVoces": true,
+    "ensayo": true
+  },
+  {
     "titulo": "Pan divino y gracioso (Guerrero)",
     "archivo": "Pan_divino_F_Guerrero.xml",
     "posiciones": "Pan_divino_F_Guerrero.pos.json",
