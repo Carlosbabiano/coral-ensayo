@@ -175,6 +175,15 @@
     ]
   },
   {
+    "titulo": "Lacrymosa Mozart",
+    "archivo": "Lacrymosa_Mozart.xml",
+    "posiciones": "Lacrymosa_Mozart.pos.json",
+    "paginas": [
+      "Lacrymosa_Mozart-p1.jpg",
+      "Lacrymosa_Mozart-p2.jpg"
+    ]
+  },
+  {
     "titulo": "Nosotros hemos de gloriarnos",
     "archivo": "1_Nosotros_hemos_de_gloriarnos.xml",
     "posiciones": "1_Nosotros_hemos_de_gloriarnos.pos.json",
