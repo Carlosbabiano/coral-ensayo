@@ -134,6 +134,14 @@
     ]
   },
   {
+    "titulo": "En la más fría noche",
+    "archivo": "En_la_mas_fria_noche.xml",
+    "posiciones": "En_la_mas_fria_noche.pos.json",
+    "paginas": [
+      "En_la_mas_fria_noche-p1.png"
+    ]
+  },
+  {
     "titulo": "Gloria in excelsis (Vivaldi)",
     "archivo": "Gloria_in_excelsis_Vivaldi.xml",
     "posiciones": "Gloria_in_excelsis_Vivaldi.pos.json",

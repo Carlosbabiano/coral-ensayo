@@ -1,0 +1,3848 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0.3 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0.3">
+	<work>
+		<work-title>En la más fría noche</work-title>
+	</work>
+  <identification>
+    <creator type="lyricist">comu. Pöumnm</creator>
+    <creator type="composer">James J. Spilman</creator>
+    <creator type="lyricist">MONTELLANENSE</creator>
+    <encoding>
+      <software>Audiveris 5.11.0</software>
+      <supports type="yes" element="print" attribute="new-system" value="yes"></supports>
+      <supports type="yes" element="print" attribute="new-page" value="yes"></supports>
+      <supports type="yes" element="accidental"></supports>
+      <supports type="yes" element="beam"></supports>
+      <supports type="yes" element="stem"></supports>
+      <software>ProxyMusic 4.0.3</software>
+      <encoding-date>2026-11-13</encoding-date>
+    </encoding>
+  </identification>
+  <part-list>
+    <score-part id="P1">
+      <part-name>Soprano</part-name>
+      <score-instrument id="P1-I1">
+        <instrument-name>Soprano</instrument-name>
+      </score-instrument>
+      <midi-instrument id="P1-I1">
+        <midi-channel>1</midi-channel>
+        <midi-program>54</midi-program>
+        <volume>78</volume>
+      </midi-instrument>
+    </score-part>
+    <score-part id="P2">
+      <part-name>Contralto</part-name>
+      <score-instrument id="P2-I1">
+        <instrument-name>Contralto</instrument-name>
+      </score-instrument>
+      <midi-instrument id="P2-I1">
+        <midi-channel>2</midi-channel>
+        <midi-program>54</midi-program>
+        <volume>78</volume>
+      </midi-instrument>
+    </score-part>
+    <score-part id="P3">
+      <part-name>Tenor</part-name>
+      <score-instrument id="P3-I1">
+        <instrument-name>Tenor</instrument-name>
+      </score-instrument>
+      <midi-instrument id="P3-I1">
+        <midi-channel>3</midi-channel>
+        <midi-program>54</midi-program>
+        <volume>78</volume>
+      </midi-instrument>
+    </score-part>
+    <score-part id="P4">
+      <part-name>Bajo</part-name>
+      <score-instrument id="P4-I1">
+        <instrument-name>Bajo</instrument-name>
+      </score-instrument>
+      <midi-instrument id="P4-I1">
+        <midi-channel>4</midi-channel>
+        <midi-program>54</midi-program>
+        <volume>78</volume>
+      </midi-instrument>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="0" implicit="yes">
+      <attributes>
+        <divisions>2</divisions>
+        <key>
+          <fifths>1</fifths>
+        </key>
+        <time>
+          <beats>3</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <direction placement="above">
+        <direction-type>
+          <words font-family="serif" font-size="10">Allegro</words>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>”¿flan</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>El</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="1">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <tie type="start"></tie>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <tied type="start" orientation="under"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>la</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>rui</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <tie type="stop"></tie>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <slur type="start" number="1" placement="below" bezier-x="13" bezier-y="-2"></slur>
+          <tied type="stop"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>más</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>do</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>up</stem>
+        <beam number="1">begin</beam>
+        <notations>
+          <slur type="stop" number="1" bezier-x="-13" bezier-y="-2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>fri</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>A</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>up</stem>
+        <beam number="1">end</beam>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>a</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>deles</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="2">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>ne;</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>«ta</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>clic:</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>blole</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>de =</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>im</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="3">
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>la</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>pi</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>Na</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>de</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>vi</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>dor</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="4">
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>dad,</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>mir.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>en</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>Je</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="5">
+      <attributes>
+      </attributes>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <tie type="start"></tie>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <tied type="start" orientation="over"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>ci</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>sús</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <tie type="stop"></tie>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <tied type="stop"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>u</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>se</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>A</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>nas</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>dæ</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="6">
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>pa</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>picr</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <articulations>
+            <tenuto placement="above"></tenuto>
+          </articulations>
+          <slur type="start" number="1" placement="below" bezier-x="7" bezier-y="-2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>jas</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>m</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <slur type="stop" number="1" bezier-x="-7" bezier-y="-2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>Je</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>y</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="7">
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>sús</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <slur type="start" number="1" placement="below" bezier-x="12" bezier-y="-2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>duer</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <slur type="stop" number="1" bezier-x="-13" bezier-y="-2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>me</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>re</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="8">
+      <note>
+        <pitch>
+          <step>A</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>ir.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>yap?</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>Je</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="9">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <articulations>
+            <tenuto placement="below"></tenuto>
+          </articulations>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>to</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>sús,</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>das</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>ni</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>up</stem>
+        <beam number="1">begin</beam>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>las</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>ño</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>A</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>up</stem>
+        <beam number="1">end</beam>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>es</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>que</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="10">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>lre</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>ri</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>llasque</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>do,</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>en</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>ml</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="11">
+      <attributes>
+      </attributes>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>el</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <slur type="start" number="1" placement="below" bezier-x="4" bezier-y="-1"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>cie</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>lo</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <slur type="stop" number="1" bezier-x="-4" bezier-y="-1"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>es</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>S'e</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="12">
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>tán</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>fiot.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>con</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>Mi</text>
+        </lyric>
+        <lyric placement="below" number="3">
+          <syllabic>single</syllabic>
+          <text>Grass.</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="13">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>tem</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>rad</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>plan</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>me,</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>A</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <articulations>
+            <caesura placement="above"></caesura>
+          </articulations>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>cop</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>mi</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="14">
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>gq</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>m</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <articulations>
+            <staccato placement="above"></staccato>
+          </articulations>
+          <slur type="start" number="1" placement="above" bezier-x="3" bezier-y="14"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>zo</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>ño</text>
+        </lyric>
+      </note>
+      <direction placement="above">
+        <direction-type>
+          <dynamics>
+            <f/>
+          </dynamics>
+        </direction-type>
+        <sound dynamics="100"></sound>
+      </direction>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <technical>
+            <up-bow placement="above"></up-bow>
+          </technical>
+          <slur type="stop" number="1" bezier-x="-3" bezier-y="14"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>su</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="15">
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>ros</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>me</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>tro</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>vues</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>ga</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>a</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="16">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>6</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <dot/>
+        <stem>up</stem>
+        <notations>
+          <fermata type="upright"></fermata>
+          <articulations>
+            <staccato placement="above"></staccato>
+          </articulations>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>lán.</text>
+        </lyric>
+      </note>
+      <barline location="right">
+        <bar-style>light-heavy</bar-style>
+      </barline>
+    </measure>
+  </part>
+  <part id="P2">
+    <measure number="0" implicit="yes">
+      <attributes>
+        <divisions>2</divisions>
+        <key>
+          <fifths>1</fifths>
+        </key>
+        <time>
+          <beats>3</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>men</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>El</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="1">
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>la</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>rui</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>más</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>do</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>F</step>
+          <alter>1</alter>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <tie type="start"></tie>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>up</stem>
+        <beam number="1">begin</beam>
+        <notations>
+          <tied type="start" orientation="under"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>fri</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>deles</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>F</step>
+          <alter>1</alter>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <tie type="stop"></tie>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>up</stem>
+        <beam number="1">end</beam>
+        <notations>
+          <tied type="stop"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>a</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="2">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>rio</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>ta</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>che</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>de</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>blolejm</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="3">
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>la</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>pi</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>Na</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>de</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>vi</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>dor</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="4">
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>dad,</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>mir</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>Je</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="5">
+      <attributes>
+      </attributes>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>ci</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>sús</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>u</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>se</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>F</step>
+          <alter>1</alter>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>nas</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>des</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="6">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <articulations>
+            <caesura placement="above"></caesura>
+          </articulations>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>pex</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>picr</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <slur type="start" number="1" placement="above" bezier-x="12" bezier-y="2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>jas</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>tay</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>F</step>
+          <alter>1</alter>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <slur type="stop" number="1" bezier-x="-12" bezier-y="2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>Je</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>em</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="7">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>sús</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>pie</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>duer</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>za).</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>me</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>re</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="8">
+      <note>
+        <pitch>
+          <step>F</step>
+          <alter>1</alter>
+          <octave>4</octave>
+        </pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <stem>up</stem>
+        <notations>
+          <slur type="start" number="1" placement="below" bezier-x="4" bezier-y="-2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>ir.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <slur type="stop" number="1" bezier-x="-4" bezier-y="-2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>yap?</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>Je</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="9">
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>to</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>sús,</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>das</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>ni</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>F</step>
+          <alter>1</alter>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>up</stem>
+        <beam number="1">begin</beam>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>las</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>F</step>
+          <alter>1</alter>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>up</stem>
+        <beam number="1">end</beam>
+        <notations>
+          <slur type="start" number="1" placement="above" bezier-x="7" bezier-y="2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>es</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>ñoque</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="10">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <articulations>
+            <staccato placement="below"></staccato>
+          </articulations>
+          <slur type="stop" number="1" bezier-x="-7" bezier-y="2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>tre</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>ri</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>llasque</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <articulations>
+            <staccato placement="below"></staccato>
+          </articulations>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>en</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>ml</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="11">
+      <attributes>
+      </attributes>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <slur type="start" number="1" placement="above" bezier-x="19" bezier-y="1"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>el</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>rad</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <slur type="stop" number="1" bezier-x="-19" bezier-y="2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>cie</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>me,</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>loss</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>S'Íe</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="12">
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>tán</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>nor.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <articulations>
+            <staccato placement="above"></staccato>
+          </articulations>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>con</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>Mi</text>
+        </lyric>
+        <lyric placement="below" number="3">
+          <syllabic>single</syllabic>
+          <text>erase.</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="13">
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>tem</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>rad</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>plan</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>me,</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>F</step>
+          <alter>1</alter>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>cop</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>mi</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="14">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>go</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>rii</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>F</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <accidental>natural</accidental>
+        <stem>up</stem>
+        <notations>
+          <slur type="start" number="1" placement="above" bezier-x="2" bezier-y="15"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>zo</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>fio,</text>
+        </lyric>
+        <lyric placement="below" number="3">
+          <syllabic>single</syllabic>
+          <text>A</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <slur type="stop" number="1" bezier-x="-1" bezier-y="16"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>su</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>dad</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="15">
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>ros</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>me</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <alter>1</alter>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <accidental>sharp</accidental>
+        <stem>up</stem>
+        <notations>
+          <slur type="start" number="1" placement="above" bezier-x="52" bezier-y="3"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>tro</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>wæ</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <accidental>natural</accidental>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>ga</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>a</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="16">
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>6</duration>
+        <voice>1</voice>
+        <type>half</type><dot/>
+        <stem>up</stem>
+        <notations>
+          <slur type="stop" number="1" bezier-x="-58" bezier-y="1"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>liili</text>
+        </lyric>
+      </note>
+      <barline location="right">
+        <bar-style>light-heavy</bar-style>
+      </barline>
+    </measure>
+  </part>
+  <part id="P3">
+    <measure number="0" implicit="yes">
+      <attributes>
+        <divisions>2</divisions>
+        <key>
+          <fifths>1</fifths>
+        </key>
+        <time>
+          <beats>3</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+          <clef-octave-change>-1</clef-octave-change>
+        </clef>
+      </attributes>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>El</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="1">
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>rui</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>do</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>down</stem>
+        <beam number="1">begin</beam>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>del</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>down</stem>
+        <beam number="1">end</beam>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>es</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="2">
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>ta</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>blo</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <slur type="start" number="1" placement="below" bezier-x="16" bezier-y="0"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>lc</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="3">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <slur type="start" number="2" placement="above" bezier-x="11" bezier-y="2"></slur>
+          <slur type="stop" number="1" bezier-x="-16" bezier-y="-2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>pi</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <slur type="stop" number="2" bezier-x="-11" bezier-y="1"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>de</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <articulations>
+            <strong-accent type="down" placement="below"></strong-accent>
+            <staccato placement="below"></staccato>
+          </articulations>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>dor</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="4">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>mir</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>Je</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="5">
+      <attributes>
+      </attributes>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <tie type="start"></tie>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <articulations>
+            <staccato placement="below"></staccato>
+          </articulations>
+          <tied type="start" orientation="under"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>c¡</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>sús</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <tie type="stop"></tie>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <tied type="stop"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>ma</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>u</text>
+        </lyric>
+        <lyric placement="below" number="3">
+          <syllabic>single</syllabic>
+          <text>se</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>nas</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>des</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="6">
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>pa</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>picr</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <articulations>
+            <staccato placement="below"></staccato>
+          </articulations>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>Jas</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>ta</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <tie type="start"></tie>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <tied type="start" orientation="over"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>Je</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>y</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="7">
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <tie type="stop"></tie>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <articulations>
+            <staccatissimo placement="below"></staccatissimo>
+            <staccato placement="below"></staccato>
+          </articulations>
+          <tied type="stop"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>sus</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>pie</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>duer</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>za</text>
+        </lyric>
+        <lyric placement="below" number="3">
+          <syllabic>end</syllabic>
+          <text>a</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <alter>1</alter>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <accidental>sharp</accidental>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>me</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>re</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="8">
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>ya.</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>ir.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>Y</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>Je</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="9">
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>to</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>sús,</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <slur type="start" number="1" placement="below" bezier-x="5" bezier-y="-4"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>das</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>ni</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>down</stem>
+        <beam number="1">begin</beam>
+        <notations>
+          <slur type="stop" number="1" bezier-x="-4" bezier-y="-4"></slur>
+          <slur type="start" number="1" placement="above" bezier-x="4" bezier-y="2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>las</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>ño</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>down</stem>
+        <beam number="1">end</beam>
+        <notations>
+          <slur type="stop" number="1" bezier-x="-4" bezier-y="2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>es</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>que</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="10">
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>tre</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>ri</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>llasque</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>do,</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>en</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>mi</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="11">
+      <attributes>
+        <clef>
+          <sign>G</sign>
+          <line>2</line><clef-octave-change>-1</clef-octave-change>
+        </clef>
+      </attributes>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>ei</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>rad</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>cie</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>lo</text>
+        </lyric>
+        <lyric placement="below" number="3">
+          <syllabic>end</syllabic>
+          <text>me,</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>es</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>Se</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="12">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <stem>up</stem>
+        <notations>
+          <articulations>
+            <tenuto placement="below"></tenuto>
+          </articulations>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>tán</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>ñor.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>con</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>Mi</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="13">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>tem</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>rad</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>plan</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>me,</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <articulations>
+            <tenuto placement="above"></tenuto>
+          </articulations>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>cop</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>mi</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="14">
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>gg</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>m</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <articulations>
+            <staccato placement="above"></staccato>
+          </articulations>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>áo</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>ño,</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <slur type="start" number="1" placement="below" bezier-x="18" bezier-y="-2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>su</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="15">
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <slur type="start" number="2" placement="above" bezier-x="13" bezier-y="1"></slur>
+          <slur type="stop" number="1" bezier-x="-18" bezier-y="-2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>ros</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>me</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step><alter>-1</alter>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type><accidental>flat</accidental>
+        <stem>down</stem>
+        <notations>
+          <slur type="stop" number="2" bezier-x="-13" bezier-y="1"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>tro</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>vues</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>A</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>ga</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>a</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="16">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>6</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <dot/>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>lán.</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>mor.</text>
+        </lyric>
+      </note>
+      <barline location="right">
+        <bar-style>light-heavy</bar-style>
+      </barline>
+    </measure>
+  </part>
+  <part id="P4">
+    <measure number="0" implicit="yes">
+      <attributes>
+        <divisions>2</divisions>
+        <key>
+          <fifths>1</fifths>
+        </key>
+        <time>
+          <beats>3</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <clef>
+          <sign>F</sign>
+          <line>4</line>
+        </clef>
+      </attributes>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>El</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="1">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>la</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>mi</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>más</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>do</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>1</duration>
+        <tie type="start"></tie>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>down</stem>
+        <beam number="1">begin</beam>
+        <notations>
+          <tied type="start" orientation="over"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>fri</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>del</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>1</duration>
+        <tie type="stop"></tie>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>down</stem>
+        <beam number="1">end</beam>
+        <notations>
+          <tied type="stop"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>a</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>es</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="2">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>no</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>ta.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>che</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>blo</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>de</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>le.</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="3">
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>la</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>pi</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>Na</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>de</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>vi</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>dor</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="4">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>2</octave>
+        </pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>dad,</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>mir.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>en</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>Je</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="5">
+      <attributes>
+      </attributes>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <tie type="start"></tie>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <tied type="start" orientation="over"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>ci</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>sús</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <tie type="stop"></tie>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <tied type="stop"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>ma</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>u</text>
+        </lyric>
+        <lyric placement="below" number="3">
+          <syllabic>single</syllabic>
+          <text>se</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <articulations>
+            <staccato placement="below"></staccato>
+          </articulations>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>nas</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>des</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="6">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>pa</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>picr</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>jas</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>tay</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>A</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>Je</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>em</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="7">
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <slur type="start" number="1" placement="below" bezier-x="11" bezier-y="-2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>sús</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <slur type="stop" number="1" bezier-x="-11" bezier-y="-2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>(luer</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>me</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>re</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="8">
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>4</duration>
+        <tie type="start"></tie>
+        <voice>1</voice>
+        <type>half</type>
+        <stem>down</stem>
+        <notations>
+          <tied type="start" orientation="under"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>yap?</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>ir.</text>
+        </lyric>
+      </note>
+      <direction placement="above">
+        <direction-type>
+          <dynamics>
+            <p/>
+          </dynamics>
+        </direction-type>
+        <sound dynamics="56"></sound>
+      </direction>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <tie type="stop"></tie>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <tied type="stop"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>Je</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="9">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>to</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>sús,</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>das</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>ni</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>down</stem>
+        <beam number="1">begin</beam>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>las &amp;</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>down</stem>
+        <beam number="1">end</beam>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>ñoque</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="10">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>tre</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>ri</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>llasque</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>do,</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>2</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>en</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>ml</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="11">
+      <attributes>
+      </attributes>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>el</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>rad</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <slur type="start" number="1" placement="below" bezier-x="8" bezier-y="-2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>cie</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>me,</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <slur type="stop" number="1" bezier-x="-8" bezier-y="-2"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>lo</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>Sé</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="12">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>tán</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>ñor.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>2</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>con</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>Mi</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="13">
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <articulations>
+            <caesura placement="below"></caesura>
+          </articulations>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>middle</syllabic>
+          <text>tem</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>rad</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>plan</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>mc,</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>con</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>single</syllabic>
+          <text>mi</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="14">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>gen</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>ni</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <articulations>
+            <staccato placement="above"></staccato>
+          </articulations>
+          <slur type="start" number="1" placement="above" bezier-x="4" bezier-y="14"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>zo"</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>ño,</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations>
+          <slur type="stop" number="1" bezier-x="-3" bezier-y="14"></slur>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>single</syllabic>
+          <text>su</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>begin</syllabic>
+          <text>dnd</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="15">
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <articulations>
+            <caesura placement="above"></caesura>
+          </articulations>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>ros</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>middle</syllabic>
+          <text>me</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <tie type="start"></tie>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <tied type="start" orientation="under"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>tro</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>2</duration>
+        <tie type="stop"></tie>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <notations>
+          <articulations>
+            <tenuto placement="above"></tenuto>
+          </articulations>
+          <tied type="stop"></tied>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>begin</syllabic>
+          <text>ga</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="16">
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>2</octave>
+        </pitch>
+        <duration>6</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <dot/>
+        <stem>up</stem>
+        <notations>
+          <articulations>
+            <caesura placement="above"></caesura>
+            <staccato placement="above"></staccato>
+          </articulations>
+        </notations>
+        <lyric placement="below" number="1">
+          <syllabic>end</syllabic>
+          <text>lán.</text>
+        </lyric>
+        <lyric placement="below" number="2">
+          <syllabic>end</syllabic>
+          <text>mor.</text>
+        </lyric>
+      </note>
+      <barline location="right">
+        <bar-style>light-heavy</bar-style>
+      </barline>
+    </measure>
+  </part>
+</score-partwise>
