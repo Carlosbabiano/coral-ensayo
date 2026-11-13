@@ -18,6 +18,15 @@
     ]
   },
   {
+    "titulo": "Alegres pregonan",
+    "archivo": "Alegres_pregonan.xml",
+    "posiciones": "Alegres_pregonan.pos.json",
+    "paginas": [
+      "Alegres_pregonan-p1.png",
+      "Alegres_pregonan-p2.png"
+    ]
+  },
+  {
     "titulo": "Anima Christi (Frisina)",
     "archivo": "Anima_Christi_Frisina.xml",
     "posiciones": "Anima_Christi_Frisina.pos.json",
