@@ -81,7 +81,7 @@ async function leerHuellas() {
       const datos = await r.json();
       if (nombre === 'huellas.json') return { ...datos, deRed };
       // Sin huellas: cualquier copia guardada vale
-      const archivos = o => [o.archivo, o.posiciones, ...(o.paginas || []), ...(o.canto || []).flatMap(c => [c.archivo, c.consonantes])].filter(Boolean);
+      const archivos = o => [o.sinVoces ? null : o.archivo, o.posiciones, ...(o.paginas || []), ...(o.canto || []).flatMap(c => [c.archivo, c.consonantes])].filter(Boolean);
       return { obras: datos.map(o => ({ titulo: o.titulo, archivos: Object.fromEntries(archivos(o).map(a => ['partituras/' + a, null])) })), comunes: {}, deRed: false };
     } catch {}
   }

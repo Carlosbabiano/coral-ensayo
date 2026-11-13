@@ -334,12 +334,15 @@ async function refrescar() {
   for (const o of estado.publicadas) {
     const li = document.createElement('li');
     li.className = 'obra'; li.title = o.titulo;
-    li.innerHTML = `<span class="t">${o.ensayo ? '★ ' : ''}${esc(o.titulo)} <span class="e">${o.ensayo ? 'en ensayo · ' : ''}${o.paginas ? 'con página original' : 'solo partitura'}</span></span>`;
+    li.innerHTML = `<span class="t">${o.ensayo ? '★ ' : ''}${esc(o.titulo)} <span class="e">${o.ensayo ? 'en ensayo · ' : ''}${o.sinVoces ? '<strong style="color:var(--warn)">sin voces</strong> (subida desde el móvil con solo el PDF)' : o.paginas ? 'con página original' : 'sin página original'}</span></span>`;
     const en = document.createElement('button'); en.className = 'mini'; en.textContent = o.ensayo ? '★ Quitar de ensayo' : '☆ En ensayo'; en.title = o.ensayo ? 'La obra deja de salir en el grupo «En ensayo» de la app' : 'La obra sale la primera en la app, en el grupo «En ensayo»';
     en.onclick = () => marcarEnsayo(o);
     li.appendChild(en);
-    const e = document.createElement('button'); e.className = 'mini'; e.textContent = 'Editar'; e.title = 'Crea un borrador a partir de la obra publicada para retocarla y volverla a publicar';
-    e.onclick = async () => { e.disabled = true; try { const r = await api(`/api/publicadas/${encodeURIComponent(o.archivo)}/borrador`, { method: 'POST' }); await refrescar(); seleccionar(r.id); } catch (err) { alert(err.message); e.disabled = false; } };
+    // Sin voces: «Añadir las voces» (borrador con su PDF, que al publicarse la sustituye); con voces: «Editar»
+    const e = document.createElement('button'); e.className = o.sinVoces ? 'mini principal' : 'mini';
+    e.textContent = o.sinVoces ? 'Añadir las voces' : 'Editar';
+    e.title = o.sinVoces ? 'Crea un borrador con su PDF para añadirle las voces (XML del Escáner Musical, Audiveris o la IA); al publicarlo sustituye a la versión sin voces' : 'Crea un borrador a partir de la obra publicada para retocarla y volverla a publicar';
+    e.onclick = async () => { e.disabled = true; try { const r = await api(`/api/publicadas/${encodeURIComponent(o.archivo)}/${o.sinVoces ? 'voces' : 'borrador'}`, { method: 'POST' }); await refrescar(); seleccionar(r.id); } catch (err) { alert(err.message); e.disabled = false; } };
     li.appendChild(e);
     const b = document.createElement('button'); b.className = 'mini peligro'; b.textContent = 'Retirar';
     b.onclick = () => retirar(o);
@@ -381,7 +384,7 @@ async function subir(archivos) {
   if (primero) seleccionar(primero);
 }
 // Nombre de un borrador en la lista: el título si ya está preparado; si no, el del XML o el del PDF subido
-const nombreBorrador = b => b.entrada?.titulo || (b.archivos?.find(a => /\.(xml|musicxml)$/i.test(a)) || b.archivos?.find(a => /\.pdf$/i.test(a)) || '').replace(/\.[^.]+$/, '').replace(/_+/g, ' ') || 'Borrador';
+const nombreBorrador = b => b.entrada?.titulo || b.fijo?.titulo || (b.archivos?.find(a => /\.(xml|musicxml)$/i.test(a)) || b.archivos?.find(a => /\.pdf$/i.test(a)) || '').replace(/\.[^.]+$/, '').replace(/_+/g, ' ') || 'Borrador';
 
 // ---------- Panel del borrador ----------
 const tiempoLegible = s => s < 60 ? `${Math.round(s)} s` : `${Math.floor(s / 60)} min ${Math.round(s % 60)} s`;
@@ -411,6 +414,8 @@ function pintarPanel() {
   let html = `<div class="cab"><h3>${esc(nombre)}</h3>`;
   if (b.estado === 'preparando') html += `<span class="progreso"></span> <span class="ayuda">${b.metodo === 'ia' ? 'La IA está leyendo la partitura, sistema a sistema. Después se prepara la obra.' : soloPdf ? 'Audiveris está leyendo las notas del PDF: tarda unos minutos la primera vez (las siguientes, segundos). Después se prepara la obra.' : 'Preparando la obra…'}</span>`;
   html += `</div>`;
+  // Borrador de «Añadir las voces» a una obra publicada sin voces
+  if (b.fijo) html += `<div class="aviso">Añadir las voces a <strong>${esc(b.fijo.titulo)}</strong>, publicada sin voces desde el móvil. Su PDF ya está aquí: añade el XML del Escáner Musical (arrástralo) o prepárala con Audiveris o con la IA. Al publicar, sustituye a la versión sin voces con el mismo título.</div>`;
   // Lectura con IA en marcha: barra de progreso, coste hasta ahora y «Parar» (lectura-ia.js)
   if (b.estado === 'preparando' && b.metodo === 'ia') html += `<div id="iaProgreso"></div>`;
 

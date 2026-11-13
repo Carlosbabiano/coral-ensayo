@@ -98,6 +98,7 @@ function procesar(id, { metodo = null, modelo = null } = {}) {
     else if (m.tipo === 'fin') {
       const r = m.resultado;
       Object.assign(b, { estado: 'listo', entrada: r.entrada, avisos: r.avisos, partes: r.partes, sospechosos: r.sospechosos, tempo: r.tempo, audiveris: r.audiveris || null, lecturaIA: r.lecturaIA || null });
+      if (b.fijo) { try { aplicarFijo(b); registrar(`Se conservan el título y el nombre de la obra publicada sin voces («${b.fijo.titulo}»): al publicar la sustituye.`); } catch (e) { b.estado = 'error'; b.error = 'No se han podido renombrar los archivos: ' + e.message; registrar('X ' + b.error); terminar(); return; } }
       registrar('Lista para revisar.');
       terminar();
     } else if (m.tipo === 'error') {
@@ -462,8 +463,41 @@ function publicarBorrador(id) {
   return idPub;
 }
 // Crea un borrador a partir de una obra ya publicada (para retocarla y volver a publicarla encima)
+// Obra publicada «sin voces» (subida desde el móvil con solo el PDF): borrador con su PDF para añadirle las voces (con el
+// XML del Escáner Musical, Audiveris o la IA). Al prepararlo se conservan su título, su nombre de archivo y «en ensayo»
+// (b.fijo), así que al publicar sustituye a la versión sin voces en vez de crear otra obra.
+function borradorParaVoces(archivo) {
+  const o = obra.leerLista().find(x => x.archivo === archivo);
+  if (!o) throw new Error('Esa obra no está en la app: ' + archivo);
+  if (!o.sinVoces) throw new Error('Esta obra ya tiene las voces: para retocarla, usa «Editar».');
+  const base = archivo.replace(/\.xml$/, '');
+  const pdf = path.join(obra.DIR_PDF, base + '.pdf');
+  if (!fs.existsSync(pdf)) throw new Error(`No encuentro su PDF (originales/pdf/${base}.pdf). Si la acabas de subir desde el móvil, cierra el gestor y vuelve a abrirlo para que se traiga los cambios.`);
+  const id = nuevoId();
+  fs.mkdirSync(path.join(dirDe(id), 'entrada'), { recursive: true });
+  fs.copyFileSync(pdf, path.join(dirDe(id), 'entrada', base + '.pdf'));
+  guardarBorrador({ id, creado: new Date().toISOString(), estado: 'nuevo', archivos: [base + '.pdf'], origen: 'sin-voces', fijo: { titulo: o.titulo, archivo, ensayo: !!o.ensayo },
+    log: [`Borrador para añadir las voces a «${o.titulo}», publicada sin voces. Añade el XML del Escáner Musical, o prepárala con Audiveris o con la IA.`] });
+  return id;
+}
+// Tras preparar un borrador de «Añadir las voces»: los archivos se renombran al nombre de la obra publicada y se le
+// devuelven su título y su marca «en ensayo» (el XML puede traer otro título, del que saldría otro nombre de archivo)
+function aplicarFijo(b) {
+  const f = b.fijo, e = b.entrada, dir = path.join(dirDe(b.id), 'partituras');
+  const nueva = e.archivo.replace(/\.xml$/, ''), fija = f.archivo.replace(/\.xml$/, '');
+  const renombrar = nombre => nombre && nombre.startsWith(nueva) ? fija + nombre.slice(nueva.length) : nombre;
+  if (nueva !== fija) {
+    for (const a of fs.readdirSync(dir)) if (a.startsWith(nueva)) fs.renameSync(path.join(dir, a), path.join(dir, renombrar(a)));
+    e.archivo = f.archivo; e.posiciones = renombrar(e.posiciones); if (e.paginas) e.paginas = e.paginas.map(renombrar);
+  }
+  const ruta = path.join(dir, e.archivo);
+  fs.writeFileSync(ruta, obra.editarObra(fs.readFileSync(ruta, 'utf8'), { titulo: f.titulo }));
+  e.titulo = f.titulo; e.ensayo = f.ensayo;
+}
+
 function borradorDesdePublicada(archivo) {
   const o = obra.leerLista().find(x => x.archivo === archivo);
+  if (o && o.sinVoces) throw new Error('Esta obra todavía no tiene las voces: usa «Añadir las voces».');
   if (!o) throw new Error('Esa obra no está en la app: ' + archivo);
   const id = nuevoId();
   const dirSalida = path.join(dirDe(id), 'partituras');
@@ -545,7 +579,7 @@ function urlPublicada() {
 }
 async function comprobarEnInternet() {
   const url = urlPublicada(); if (!url) return;
-  const archivos = obra.leerLista().flatMap(o => [o.archivo, o.posiciones, ...(o.paginas || [])].filter(Boolean));
+  const archivos = obra.leerLista().flatMap(o => [o.sinVoces ? null : o.archivo, o.posiciones, ...(o.paginas || [])].filter(Boolean));
   const mia = comprobacion = { estado: 'comprobando', archivos: archivos.length, faltan: [], hora: Date.now() };
   await new Promise(r => setTimeout(r, 120000));
   if (comprobacion !== mia) return; // ha empezado otra publicación después; manda su comprobación
@@ -765,6 +799,9 @@ const servidor = http.createServer(async (req, res) => {
     }
     if ((m = ruta.match(/^\/api\/publicadas\/([^/]+)\/borrador$/)) && req.method === 'POST') {
       try { return json(res, { id: borradorDesdePublicada(decodeURIComponent(m[1])) }); } catch (e) { return json(res, { error: e.message }, 400); }
+    }
+    if ((m = ruta.match(/^\/api\/publicadas\/([^/]+)\/voces$/)) && req.method === 'POST') {
+      try { return json(res, { id: borradorParaVoces(decodeURIComponent(m[1])) }); } catch (e) { return json(res, { error: e.message }, 400); }
     }
     if (ruta === '/api/publicar' && req.method === 'POST') {
       try { return json(res, { ok: true, id: publicarPendiente() }); } catch (e) { return json(res, { error: e.message }, 400); }

@@ -64,17 +64,19 @@ gestor del PC más `publicar.js`: actualiza lista.json, sube la versión de cach
 `main` y copia `app/` a `gh-pages`. Después espera a que GitHub Pages sirva la versión nueva.
 - La primera vez pide una «llave» de GitHub (fine-grained token) solo para el repositorio `coral-ensayo`, con
   *Contents: Read and write*. Se guarda solo en ese móvil.
-- «Añadir obra» (con el XML del Escáner Musical y el PDF) también se hace en el móvil. Se prepara con el mismo código
-  que el PC, compartido en `app/`:
-  - `preparar-obra.js`: reparar el XML y nombrar las voces;
-  - `detector-compases.js`: buscar los compases en la imagen;
-  - `paginas-pdf.js`: sacar las fotos de un PDF escaneado.
-
-  Las páginas de un PDF normal se dibujan con pdf.js a 2000 px de ancho, como salen en el PC. El trabajo pesado va en
-  `app/gestor/trabajador.js`, para que la página no se congele. Antes de publicar se revisan el título, las voces, el
-  tempo, los avisos y los compases marcados sobre cada página.
-- Lo que sigue necesitando el gestor del PC: las obras con solo el PDF (Audiveris o IA), el editor de compases y las
-  voces cantadas.
+- «Añadir obra» en el móvil sube **solo el PDF** (con título y «en ensayo») y publica la obra **sin voces**. En
+  `lista.json` va con `sinVoces: true` y sin XML: el coro ve la partitura, pero no puede reproducirla hasta que se
+  añadan las voces. Leer bien una obra cuesta incluso en el PC, así que en el móvil no se intenta.
+  - Las páginas salen de las fotos de un PDF escaneado (`app/paginas-pdf.js`, el mismo código que el PC) o se dibujan
+    con pdf.js a 2000 px, como en el PC.
+  - El PDF se guarda en `originales/pdf/`.
+- En el gestor del PC, esas obras llevan la marca «sin voces» y el botón **«Añadir las voces»**. Crea un borrador con su
+  PDF: se le añade el XML del Escáner Musical, o se prepara con Audiveris o con la IA. Al prepararlo se conservan el
+  título, el nombre de archivo y «en ensayo» de la obra publicada (`b.fijo`). Al publicarlo, sustituye a la versión sin
+  voces.
+- La app del coro enseña las obras sin voces como «Título (sin voces)», solo con sus páginas
+  (`cargarSoloPaginas`), con el botón de reproducir desactivado y un mensaje que lo explica. Todo lo que recorre los
+  archivos de una obra se salta el XML de esas obras (`archivosDe`, el service worker, `publicar.js`).
 - El gestor del PC (al arrancar) y `publicar.js` (antes de subir) se traen primero lo hecho desde el móvil
   (`herramientas/sincronizar.js`). Así nunca lo pisan. Si en el PC había cambios sin publicar, los pone encima y
   recalcula la versión de caché y las huellas.

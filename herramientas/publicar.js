@@ -47,7 +47,7 @@ console.log(`\nListo. La app estará disponible en 1-2 minutos en:\n\n   ${url}\
 // Comprobación: que todos los archivos de las obras existan de verdad en internet (con el mismo nombre exacto)
 if (!sinComprobar) (async () => {
   const lista = JSON.parse(require('fs').readFileSync(path.join(RAIZ, 'app', 'partituras', 'lista.json'), 'utf8'));
-  const archivos = lista.flatMap(o => [o.archivo, o.posiciones, ...(o.paginas || [])].filter(Boolean));
+  const archivos = lista.flatMap(o => [o.sinVoces ? null : o.archivo, o.posiciones, ...(o.paginas || [])].filter(Boolean));
   process.stdout.write('\nComprobando los archivos en internet (espera un par de minutos)...');
   await new Promise(r => setTimeout(r, 120000));
   const faltan = [];

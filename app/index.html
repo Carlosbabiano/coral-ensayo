@@ -474,7 +474,9 @@ function marcarSinGuardar() {
   const faltan = new Set((estadoObras && estadoObras.sinGuardar) || []);
   for (const op of $('obra').options) {
     if (!op.dataset.titulo) op.dataset.titulo = op.textContent;
-    op.textContent = op.dataset.titulo + (faltan.has(op.value) ? ' · sin guardar' : '');
+    // las obras «sin voces» no tienen XML: el service worker las nombra por su título
+    const o = listaObras.find(x => x.archivo === op.value);
+    op.textContent = op.dataset.titulo + (faltan.has(op.value) || (o && o.sinVoces && faltan.has(o.titulo)) ? ' · sin guardar' : '');
   }
 }
 window.addEventListener('online', indicarConexion); window.addEventListener('offline', indicarConexion); indicarConexion();
@@ -569,7 +571,7 @@ async function cargarLista() {
   listaObras = lista;
   // Las obras marcadas «en ensayo» van las primeras, en su propio grupo, para encontrarlas rápido
   const enEnsayo = lista.filter(o => o.ensayo), resto = lista.filter(o => !o.ensayo);
-  const opcion = o => { const op = document.createElement('option'); op.value = o.archivo; op.textContent = (o.ensayo ? '★ ' : '') + o.titulo; return op; };
+  const opcion = o => { const op = document.createElement('option'); op.value = o.archivo; op.textContent = (o.ensayo ? '★ ' : '') + o.titulo + (o.sinVoces ? ' (sin voces)' : ''); return op; };
   const grupo = (nombre, obras) => { const g = document.createElement('optgroup'); g.label = nombre; obras.forEach(o => g.appendChild(opcion(o))); $('obra').appendChild(g); };
   if (enEnsayo.length) { grupo('En ensayo', enEnsayo); if (resto.length) grupo('Repertorio', resto); }
   else lista.forEach(o => $('obra').appendChild(opcion(o)));
@@ -623,6 +625,8 @@ async function cargarObra(archivo) {
   parar();
   mostrarCargando();
   $('play').disabled = false; $('estado').title = '';
+  // Obra «sin voces»: subida con solo el PDF (las voces se añaden después en el ordenador). Se ve la partitura y ya
+  if ((listaObras.find(o => o.archivo === archivo) || {}).sinVoces) return cargarSoloPaginas(archivo, null, 'Esta obra todavía no tiene las voces para ensayar: de momento solo se puede ver la partitura.');
   // Las notas (para reproducir las voces) las dibuja la librería OSMD. Si falla (navegador antiguo, poca memoria…),
   // la obra se sigue viendo con sus páginas originales: en una actuación es lo único que hace falta
   let errorNotas = null;
@@ -667,15 +671,15 @@ async function cargarObra(archivo) {
 }
 
 // Plan B: solo las páginas originales, sin reproducción (las notas no se han podido preparar en este dispositivo)
-async function cargarSoloPaginas(archivo, error) {
+async function cargarSoloPaginas(archivo, error, mensaje) {
   obraActual = listaObras.find(o => o.archivo === archivo) || {};
   eventos = []; posiciones = null; paginasPdf = []; pdfCargado = null; $('pdfVista').innerHTML = ''; $('voces').innerHTML = '';
   cargarApuntes();
   modoPdf = true;
   await aplicarModo();
   $('play').disabled = true;
-  $('estado').textContent = 'Se ve la partitura, pero en este dispositivo no se pueden reproducir las voces de esta obra.';
-  $('estado').title = detalleError(error);
+  $('estado').textContent = mensaje || 'Se ve la partitura, pero en este dispositivo no se pueden reproducir las voces de esta obra.';
+  $('estado').title = error ? detalleError(error) : '';
   $('cargando').style.display = 'none';
 }
 

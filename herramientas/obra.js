@@ -276,7 +276,8 @@ function prepararObra({ xml: rutaXml = null, xmlTexto = null, pdf: rutaPdf = nul
 
 function leerLista() { try { return JSON.parse(fs.readFileSync(LISTA, 'utf8')); } catch { return []; } }
 // Todos los archivos de una obra de la lista: partitura, posiciones, páginas y voces cantadas
-function archivosDe(o) { return [o.archivo, o.posiciones, ...(o.paginas || []), ...(o.canto || []).flatMap(c => [c.archivo, c.consonantes])].filter(Boolean); }
+// Una obra «sin voces» (subida desde el móvil con solo el PDF) tiene páginas pero todavía no XML
+function archivosDe(o) { return [o.sinVoces ? null : o.archivo, o.posiciones, ...(o.paginas || []), ...(o.canto || []).flatMap(c => [c.archivo, c.consonantes])].filter(Boolean); }
 function guardarLista(lista) {
   lista.sort((a, b) => a.titulo.localeCompare(b.titulo, 'es'));
   fs.mkdirSync(DIR_PARTITURAS, { recursive: true });
