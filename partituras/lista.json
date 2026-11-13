@@ -57,8 +57,7 @@
     "posiciones": "Brindis.pos.json",
     "paginas": [
       "Brindis-p1.png"
-    ],
-    "ensayo": true
+    ]
   },
   {
     "titulo": "Cantares",
@@ -69,8 +68,7 @@
       "Cantares-p2.png",
       "Cantares-p3.png",
       "Cantares-p4.png"
-    ],
-    "ensayo": true
+    ]
   },
   {
     "titulo": "canticorum",
@@ -108,8 +106,7 @@
       "Con_amores_la_mi_madre-p1.png",
       "Con_amores_la_mi_madre-p2.png",
       "Con_amores_la_mi_madre-p3.png"
-    ],
-    "ensayo": true
+    ]
   },
   {
     "titulo": "Cristo por nosotros",
@@ -135,8 +132,7 @@
       "Gloria_in_excelsis_Vivaldi-p1.jpg",
       "Gloria_in_excelsis_Vivaldi-p2.jpg",
       "Gloria_in_excelsis_Vivaldi-p3.jpg"
-    ],
-    "ensayo": true
+    ]
   },
   {
     "titulo": "Hasta mi final",
@@ -174,7 +170,6 @@
   {
     "titulo": "Pan divino y gracioso (Guerrero)",
     "archivo": "Pan_divino_F_Guerrero.xml",
-    "ensayo": true,
     "posiciones": "Pan_divino_F_Guerrero.pos.json",
     "paginas": [
       "Pan_divino_F_Guerrero-p1.jpg",
@@ -260,8 +255,7 @@
         "archivo": "Si_la_nieve_resbala_Dominguez.canto.Bajo.mp3",
         "consonantes": "Si_la_nieve_resbala_Dominguez.canto.Bajo.json"
       }
-    ],
-    "ensayo": true
+    ]
   },
   {
     "titulo": "Signore delle Cime",
@@ -269,8 +263,7 @@
     "posiciones": "Signore_delle_Cime.pos.json",
     "paginas": [
       "Signore_delle_Cime-p1.jpg"
-    ],
-    "ensayo": true
+    ]
   },
   {
     "titulo": "Tres morillas",
@@ -278,8 +271,7 @@
     "posiciones": "Tres_morillas.pos.json",
     "paginas": [
       "Tres_morillas-p1.png"
-    ],
-    "ensayo": true
+    ]
   },
   {
     "titulo": "Ubi caritas (Gjeilo)",
