@@ -55,6 +55,20 @@ pide el XML del escáner (o la lectura con IA). La lectura con IA (`herramientas
 vuelve a leer con el mismo modelo, lo ya leído no se paga otra vez. Suelto: `node herramientas/lectura-ia.js obra.pdf`
 (`--estimar` solo calcula el coste; `--modelo <id>` elige el modelo; `GESTOR_MODELO_LECTURA=<id>` cambia el predeterminado).
 
+## Gestor de obras en el móvil (sin encender el ordenador)
+
+`https://carlosbabiano.github.io/coral-ensayo/gestor/` (`app/gestor/index.html`), que no está enlazado desde la app
+del coro. Sirve para cambios rápidos: marcar o quitar «en ensayo», cambiar el título y quitar una obra. Los cambios se
+preparan (con «Deshacer») y «Publicar para el coro» los guarda directamente en GitHub. La página hace lo mismo que el
+gestor del PC más `publicar.js`: actualiza lista.json, sube la versión de caché, rehace huellas.json, hace un commit en
+`main` y copia `app/` a `gh-pages`. Después espera a que GitHub Pages sirva la versión nueva.
+- La primera vez pide una «llave» de GitHub (fine-grained token) solo para el repositorio `coral-ensayo`, con
+  *Contents: Read and write*. Se guarda solo en ese móvil.
+- Para añadir obras, Audiveris, la IA y el editor de compases sigue haciendo falta el gestor del PC.
+- El gestor del PC (al arrancar) y `publicar.js` (antes de subir) se traen primero lo hecho desde el móvil
+  (`herramientas/sincronizar.js`). Así nunca lo pisan. Si en el PC había cambios sin publicar, los pone encima y
+  recalcula la versión de caché y las huellas.
+
 ## Modo corregir (para el director)
 Abrir la app con `?corregir=1` al final de la dirección (https://carlosbabiano.github.io/coral-ensayo/?corregir=1).
 Tocar una nota la selecciona y suena; con la barra (o el teclado en el PC) se sube o baja, se cambia la figura, el puntillo,

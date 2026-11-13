@@ -220,6 +220,7 @@
   <h1>Gestor de obras · Coral Villa de Mengíbar</h1>
   <span class="muted" id="info"></span>
   <div id="sinPublicar" style="display:none" class="aviso">Hay cambios sin publicar. <button class="mini" id="publicarAhora">Publicar ahora</button></div>
+  <div id="sincronizacion" style="display:none" class="aviso" role="status"></div>
   <div id="comprobacion" style="display:none" class="aviso" role="status"></div>
   <a href="/app/" target="_blank"><button class="mini">Abrir la app del PC</button></a>
   <a href="https://carlosbabiano.github.io/coral-ensayo/" target="_blank"><button class="mini">Ver la app publicada</button></a>
@@ -290,6 +291,11 @@ async function refrescar() {
   $('info').textContent = `${estado.publicadas.length} obras publicadas · caché ${estado.version}`;
   $('sinPublicar').style.display = estado.sinPublicar ? '' : 'none';
   $('sinPublicar').firstChild.textContent = estado.sinPublicar === 1 ? 'Hay un cambio sin publicar para el coro. ' : `Hay ${estado.sinPublicar} cambios sin publicar para el coro. `;
+  // Cambios traídos del gestor del móvil al arrancar (o por qué no se han podido traer)
+  const sn = estado.sincronizacion || {}, snEl = $('sincronizacion');
+  snEl.style.display = sn.estado && sn.estado !== 'al-dia' ? '' : 'none';
+  snEl.className = 'aviso' + (sn.estado === 'conflicto' ? ' mal' : sn.estado === 'sin-conexion' ? '' : ' bien');
+  snEl.textContent = sn.mensaje || '';
   // Comprobación de internet tras publicar: en marcha, todo bien (se enseña diez minutos) o archivos que faltan
   const c = estado.comprobacion, cEl = $('comprobacion');
   cEl.style.display = c && (c.estado !== 'bien' || Date.now() - c.hora < 10 * 60000) ? '' : 'none';

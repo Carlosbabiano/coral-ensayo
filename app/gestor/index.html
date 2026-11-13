@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Gestor de obras</title>
+<meta name="theme-color" content="#24407a" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15161a" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="../icono-192.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<!-- Gestor de obras para el móvil: cambios rápidos (en ensayo, título, quitar) guardados directamente en GitHub y
+     publicados para el coro sin encender el ordenador. Lo pesado (añadir obras, Audiveris, IA, compases) sigue en el
+     gestor del PC, que al arrancar y al publicar se trae lo hecho aquí (herramientas/sincronizar.js). -->
+<style>
+  :root {
+    --color-bg: #fafaf7;
+    --color-surface: #ffffff;
+    --color-surface-2: #f0efe9;
+    --color-fg: #1d1d1b;
+    --color-fg-muted: #6b6b66;
+    --color-border: #dcdcd6;
+    --color-border-control: #8e8e87;
+    --color-primary: #24407a;
+    --color-primary-hover: #1b3161;
+    --color-on-primary: #ffffff;
+    --color-primary-soft: #e8edf7;
+    --color-danger: #b3261e;
+    --color-danger-soft: #fbeeed;
+    --color-danger-border: #d58a85;
+    --color-ok: #2e7d32;
+    --color-ok-soft: #eaf5ea;
+    --color-note-bg: #fff7e6;
+    --color-note-border: #b5731c;
+    --color-note-fg: #8a5a00;
+    --color-skeleton-1: #f0efe9;
+    --color-skeleton-2: #fbfbf9;
+    --color-scrim: rgba(0, 0, 0, .45);
+    --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px; --space-12: 48px;
+    --radius-s: 8px; --radius-m: 12px; --radius-pill: 999px;
+    --font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-xs: 13px; --font-s: 14px; --font-m: 16px; --font-l: 18px; --font-xl: 22px;
+    --line-height: 1.45;
+    --shadow-card: 0 1px 6px rgba(0, 0, 0, .12);
+    --shadow-bar: 0 -4px 16px rgba(0, 0, 0, .08);
+    --tap: 44px;
+    --icon-s: 18px; --icon-m: 22px;
+    --ancho: 720px;
+    --duracion: 200ms; --easing: cubic-bezier(.2, .7, .3, 1);
+    --hueco-inferior: env(safe-area-inset-bottom, 0px);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: #15161a;
+      --color-surface: #1e2026;
+      --color-surface-2: #292c34;
+      --color-fg: #ececea;
+      --color-fg-muted: #a9a9a3;
+      --color-border: #353840;
+      --color-border-control: #7f828b;
+      --color-primary: #9db3ee;
+      --color-primary-hover: #b8c8f3;
+      --color-on-primary: #0f1a33;
+      --color-primary-soft: #263252;
+      --color-danger: #f28b82;
+      --color-danger-soft: #3a1d1b;
+      --color-danger-border: #8a3a35;
+      --color-ok: #81c995;
+      --color-ok-soft: #1c2e21;
+      --color-note-bg: #2e2616;
+      --color-note-border: #c9933f;
+      --color-note-fg: #f0c57a;
+      --color-skeleton-1: #23252c;
+      --color-skeleton-2: #2c2f37;
+      --color-scrim: rgba(0, 0, 0, .6);
+      --shadow-card: 0 1px 6px rgba(0, 0, 0, .5);
+      --shadow-bar: 0 -4px 16px rgba(0, 0, 0, .4);
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); font: var(--font-m)/var(--line-height) var(--font-family); -webkit-text-size-adjust: 100%; }
+  body { min-height: 100vh; }
+  [hidden] { display: none !important; }
+  :focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+  html { scroll-padding-top: 140px; scroll-padding-bottom: 120px; }
+  .icono { width: var(--icon-s); height: var(--icon-s); flex: none; }
+  .icono.m { width: var(--icon-m); height: var(--icon-m); }
+  .muted { color: var(--color-fg-muted); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* Botones */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: var(--tap); padding: var(--space-2) var(--space-4); border-radius: var(--radius-s); border: 1px solid var(--color-border-control); background: var(--color-surface); color: var(--color-fg); font: inherit; font-weight: 500; cursor: pointer; text-decoration: none; transition: background var(--duracion) var(--easing), border-color var(--duracion) var(--easing); }
+  .btn:hover { background: var(--color-surface-2); }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: .55; cursor: default; transform: none; }
+  .btn.principal { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); font-weight: 600; }
+  .btn.principal:hover:not(:disabled) { background: var(--color-primary-hover); border-color: var(--color-primary-hover); }
+  .btn.peligro { color: var(--color-danger); border-color: var(--color-danger-border); }
+  .btn.peligro:hover:not(:disabled) { background: var(--color-danger-soft); }
+  .btn.plano { border-color: transparent; background: transparent; }
+  .btn.plano:hover:not(:disabled) { background: var(--color-surface-2); }
+  .btn.icono-solo { width: var(--tap); padding: 0; }
+  .btn.ancho { width: 100%; }
+
+  /* Cabecera */
+  header { position: sticky; top: 0; z-index: 5; background: var(--color-bg); border-bottom: 1px solid var(--color-border); padding: var(--space-2) var(--space-4) var(--space-3); padding-top: max(var(--space-2), env(safe-area-inset-top)); }
+  .cabecera { max-width: var(--ancho); margin: 0 auto; display: flex; align-items: center; gap: var(--space-3); }
+  .cabecera img { width: 32px; height: 32px; border-radius: 50%; }
+  .cabecera h1 { flex: 1; margin: 0; font-size: var(--font-l); font-weight: 600; line-height: 1.2; }
+  .cabecera h1 small { display: block; font-size: var(--font-xs); font-weight: 400; color: var(--color-fg-muted); }
+  .buscador { max-width: var(--ancho); margin: var(--space-3) auto 0; position: relative; }
+  .buscador svg { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); color: var(--color-fg-muted); pointer-events: none; }
+  .buscador input { width: 100%; }
+  input[type=search], input[type=text], input[type=password] { font: inherit; font-size: var(--font-m); min-height: var(--tap); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-control); border-radius: var(--radius-s); background: var(--color-surface); color: var(--color-fg); width: 100%; }
+  .buscador input { padding-left: calc(var(--space-3) + var(--icon-s) + var(--space-2)); }
+
+  main { max-width: var(--ancho); margin: 0 auto; padding: var(--space-4) var(--space-4) calc(var(--space-12) * 3 + var(--hueco-inferior)); }
+
+  /* Avisos */
+  .aviso { display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3) var(--space-4); border-radius: var(--radius-m); border: 1px solid var(--color-note-border); background: var(--color-note-bg); color: var(--color-fg); margin-bottom: var(--space-4); }
+  .aviso svg { color: var(--color-note-fg); margin-top: 2px; }
+  .aviso.mal { border-color: var(--color-danger-border); background: var(--color-danger-soft); }
+  .aviso.mal svg { color: var(--color-danger); }
+  .aviso.bien { border-color: var(--color-ok); background: var(--color-ok-soft); }
+  .aviso.bien svg { color: var(--color-ok); }
+  .aviso p { margin: 0; }
+  .aviso .btn { margin-top: var(--space-2); }
+
+  /* Lista de obras */
+  h2.grupo { font-size: var(--font-s); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-fg-muted); margin: var(--space-6) 0 var(--space-2); }
+  h2.grupo:first-child { margin-top: 0; }
+  ul.obras { list-style: none; margin: 0; padding: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-m); overflow: hidden; }
+  ul.obras li { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4); min-height: 64px; }
+  ul.obras li + li { border-top: 1px solid var(--color-border); }
+  ul.obras li.quitada .titulo { text-decoration: line-through; color: var(--color-fg-muted); }
+  .obra-texto { flex: 1; min-width: 0; }
+  .titulo { display: block; font-weight: 500; overflow-wrap: anywhere; }
+  .detalle { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); font-size: var(--font-xs); color: var(--color-fg-muted); }
+  .marca { display: inline-flex; align-items: center; gap: var(--space-1); padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--color-note-bg); color: var(--color-note-fg); border: 1px solid var(--color-note-border); font-weight: 600; }
+  .marca svg { width: 12px; height: 12px; }
+
+  /* Interruptor «En ensayo» */
+  .interruptor { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--tap); padding: 0 var(--space-2); border: 0; background: none; color: var(--color-fg-muted); font: inherit; font-size: var(--font-xs); cursor: pointer; border-radius: var(--radius-s); }
+  .interruptor:hover { background: var(--color-surface-2); }
+  .interruptor .pista { position: relative; width: 44px; height: 26px; border-radius: var(--radius-pill); background: var(--color-surface-2); border: 1px solid var(--color-border-control); transition: background var(--duracion) var(--easing), border-color var(--duracion) var(--easing); flex: none; }
+  .interruptor .pista::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: var(--color-fg-muted); transition: transform var(--duracion) var(--easing), background var(--duracion) var(--easing); }
+  .interruptor[aria-checked=true] { color: var(--color-primary); font-weight: 600; }
+  .interruptor[aria-checked=true] .pista { background: var(--color-primary); border-color: var(--color-primary); }
+  .interruptor[aria-checked=true] .pista::after { transform: translateX(18px); background: var(--color-on-primary); }
+  .interruptor:disabled { opacity: .5; cursor: default; }
+
+  /* Esqueleto de carga */
+  .esqueleto { height: 64px; border-radius: var(--radius-m); margin-bottom: var(--space-2); background: linear-gradient(90deg, var(--color-skeleton-1) 25%, var(--color-skeleton-2) 50%, var(--color-skeleton-1) 75%); background-size: 200% 100%; animation: brillo 1.4s ease-in-out infinite; }
+  .esqueleto.corto { height: 18px; width: 40%; margin-bottom: var(--space-3); }
+  @keyframes brillo { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+  .vacio { text-align: center; padding: var(--space-8) var(--space-4); color: var(--color-fg-muted); }
+  .vacio strong { display: block; color: var(--color-fg); font-size: var(--font-l); margin-bottom: var(--space-2); }
+
+  /* Pantalla de conexión */
+  .conectar { max-width: 560px; margin: 0 auto; }
+  .conectar h2 { font-size: var(--font-xl); margin: var(--space-4) 0 var(--space-2); }
+  .conectar ol { padding-left: var(--space-6); margin: var(--space-3) 0 var(--space-6); }
+  .conectar li { margin-bottom: var(--space-2); }
+  .conectar code { font-size: var(--font-s); background: var(--color-surface-2); padding: 1px var(--space-1); border-radius: 4px; }
+  .campo { margin-bottom: var(--space-4); }
+  .campo label { display: block; font-weight: 600; margin-bottom: var(--space-1); }
+  .campo .ayuda { font-size: var(--font-s); color: var(--color-fg-muted); margin: var(--space-1) 0 0; }
+  .campo .error { display: flex; gap: var(--space-2); align-items: flex-start; font-size: var(--font-s); color: var(--color-danger); margin: var(--space-2) 0 0; }
+  .campo .error svg { margin-top: 2px; }
+  input[aria-invalid=true] { border-color: var(--color-danger); }
+  .privacidad { font-size: var(--font-s); color: var(--color-fg-muted); border-top: 1px solid var(--color-border); margin-top: var(--space-6); padding-top: var(--space-4); }
+
+  /* Barra inferior de cambios sin publicar */
+  .barra { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--color-surface); border-top: 1px solid var(--color-border); box-shadow: var(--shadow-bar); padding: var(--space-3) var(--space-4) calc(var(--space-3) + var(--hueco-inferior)); transform: translateY(0); transition: transform var(--duracion) var(--easing); }
+  .barra[hidden] { display: block !important; transform: translateY(110%); visibility: hidden; }
+  .barra-dentro { max-width: var(--ancho); margin: 0 auto; }
+  .barra-fila { display: flex; align-items: center; gap: var(--space-2); }
+  .barra-fila .resumen { flex: 1; min-width: 0; font-weight: 600; }
+  .barra-fila .resumen small { display: block; font-weight: 400; font-size: var(--font-xs); color: var(--color-fg-muted); }
+  .barra-fila .btn.principal { white-space: nowrap; flex: none; }
+  @media (max-width: 479px) { .barra-fila .largo { display: none; } }
+  ul.cambios { list-style: none; margin: var(--space-2) 0 var(--space-3); padding: 0; max-height: 40vh; overflow: auto; }
+  ul.cambios li { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) 0; font-size: var(--font-s); }
+  ul.cambios li span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+  /* Progreso de publicación */
+  ol.pasos { list-style: none; padding: 0; margin: var(--space-3) 0 0; }
+  ol.pasos li { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) 0; color: var(--color-fg-muted); }
+  ol.pasos li.hecho { color: var(--color-fg); }
+  ol.pasos li.hecho svg { color: var(--color-ok); }
+  ol.pasos li.actual { color: var(--color-fg); font-weight: 600; }
+  .girando { width: var(--icon-s); height: var(--icon-s); border-radius: 50%; border: 2px solid var(--color-border); border-top-color: var(--color-primary); animation: girar .9s linear infinite; flex: none; }
+  .punto { width: var(--icon-s); height: var(--icon-s); display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .punto::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--color-border-control); }
+  @keyframes girar { to { transform: rotate(360deg); } }
+
+  /* Diálogos */
+  dialog { border: 1px solid var(--color-border); border-radius: var(--radius-m); background: var(--color-surface); color: var(--color-fg); padding: var(--space-4); width: min(calc(100vw - 2 * var(--space-4)), 460px); box-shadow: var(--shadow-card); }
+  dialog::backdrop { background: var(--color-scrim); }
+  dialog[open] { animation: aparecer var(--duracion) var(--easing); }
+  @keyframes aparecer { from { opacity: 0; transform: translateY(8px); } }
+  dialog h2 { font-size: var(--font-l); margin: 0 0 var(--space-1); overflow-wrap: anywhere; }
+  dialog .sub { margin: 0 0 var(--space-4); font-size: var(--font-s); color: var(--color-fg-muted); }
+  dialog .acciones { display: flex; gap: var(--space-2); justify-content: flex-end; flex-wrap: wrap; margin-top: var(--space-4); }
+  dialog hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--space-4) 0; }
+  dialog .quitar p { margin: 0 0 var(--space-2); font-size: var(--font-s); color: var(--color-fg-muted); }
+
+  /* Aviso flotante (tostada) */
+  .tostada { position: fixed; left: var(--space-4); right: var(--space-4); margin: 0 auto; width: fit-content; max-width: 480px; bottom: calc(var(--space-4) + var(--hueco-inferior)); z-index: 20; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4); border-radius: var(--radius-m); background: var(--color-fg); color: var(--color-bg); box-shadow: var(--shadow-card); animation: aparecer var(--duracion) var(--easing); }
+  .tostada.con-barra { bottom: calc(96px + var(--hueco-inferior)); }
+  .tostada .btn { color: var(--color-bg); border-color: transparent; background: transparent; text-decoration: underline; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+    .girando { animation: girar 2s linear infinite !important; }
+  }
+  @media (min-width: 768px) {
+    main { padding-top: var(--space-6); }
+    ul.obras li { padding-left: var(--space-6); }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><!-- iconos (Lucide), los mismos que usa la app -->
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-wifi-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 13a10 10 0 0 1 5.24-2.76"/><path d="m2 2 20 20"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></symbol>
+  <symbol id="i-chevron-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-log-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></symbol>
+</svg>
+
+<header>
+  <div class="cabecera">
+    <img src="../icono-192.png" alt="">
+    <h1>Gestor de obras <small id="subtitulo">Coral Villa de Mengíbar</small></h1>
+    <button class="btn plano icono-solo" id="recargar" type="button" aria-label="Volver a cargar la lista" title="Volver a cargar la lista" hidden><svg class="icono m"><use href="#i-refresh"/></svg></button>
+    <button class="btn plano icono-solo" id="desconectar" type="button" aria-label="Desconectar este móvil" title="Desconectar este móvil" hidden><svg class="icono m"><use href="#i-log-out"/></svg></button>
+  </div>
+  <div class="buscador" id="cajaBuscador" hidden>
+    <label class="sr" for="buscar">Buscar obra</label>
+    <svg class="icono"><use href="#i-search"/></svg>
+    <input type="search" id="buscar" placeholder="Buscar obra" autocomplete="off">
+  </div>
+</header>
+
+<main id="principal">
+  <div id="sinConexion" class="aviso" role="status" hidden><svg class="icono"><use href="#i-wifi-off"/></svg><p>Sin conexión. Puedes preparar cambios; se publicarán cuando vuelva internet.</p></div>
+  <div id="avisoGeneral" role="status"></div>
+  <div id="contenido" aria-live="polite" aria-busy="true"></div>
+</main>
+
+<!-- Barra fija con los cambios preparados y la acción principal -->
+<section class="barra" id="barra" aria-label="Cambios sin publicar" hidden>
+  <div class="barra-dentro">
+    <ul class="cambios" id="listaCambios" hidden></ul>
+    <div class="barra-fila">
+      <button class="btn plano icono-solo" id="verCambios" type="button" aria-expanded="false" aria-controls="listaCambios" aria-label="Ver los cambios"><svg class="icono m"><use href="#i-chevron-up"/></svg></button>
+      <div class="resumen" id="resumenCambios"></div>
+      <button class="btn principal" id="publicar" type="button"><svg class="icono"><use href="#i-upload"/></svg><span>Publicar<span class="largo"> para el coro</span></span></button>
+    </div>
+  </div>
+</section>
+
+<!-- Opciones de una obra -->
+<dialog id="dlgObra" aria-labelledby="dlgObraTitulo">
+  <form id="formTitulo" method="dialog" novalidate>
+    <h2 id="dlgObraTitulo"></h2>
+    <p class="sub" id="dlgObraSub"></p>
+    <div class="campo">
+      <label for="nuevoTitulo">Título en la app</label>
+      <input type="text" id="nuevoTitulo" autocomplete="off" maxlength="120" aria-describedby="errorTitulo">
+      <p class="error" id="errorTitulo" hidden><svg class="icono"><use href="#i-alert"/></svg><span></span></p>
+    </div>
+    <div class="acciones">
+      <button class="btn" type="button" id="cancelarObra">Cancelar</button>
+      <button class="btn principal" type="submit" id="guardarTitulo">Cambiar el título</button>
+    </div>
+    <hr>
+    <div class="quitar">
+      <p id="textoQuitar">Se quitará de las tablets del coro al publicar. Si te equivocas, puedes deshacerlo antes de publicar.</p>
+      <button class="btn peligro ancho" type="button" id="quitarObra"><svg class="icono"><use href="#i-trash"/></svg>Quitar de la app</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Progreso y resultado de la publicación -->
+<dialog id="dlgPublicar" aria-labelledby="dlgPublicarTitulo">
+  <h2 id="dlgPublicarTitulo">Publicando para el coro</h2>
+  <p class="sub" id="dlgPublicarSub">No cierres esta página hasta que termine.</p>
+  <ol class="pasos" id="pasos"></ol>
+  <div id="dlgPublicarFin"></div>
+  <div class="acciones"><button class="btn principal" type="button" id="cerrarPublicar" hidden>Hecho</button></div>
+</dialog>
+
+<script>
+'use strict';
+// ---------- Configuración ----------
+// Repositorio de la app. Se puede cambiar con ?repo=usuario/nombre (para pruebas); se recuerda en este móvil.
+const parametros = new URLSearchParams(location.search);
+const guardado = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { return null; } };
+for (const k of ['repo', 'api', 'web']) if (parametros.get(k)) guardado('gestor.' + k, parametros.get(k)); // api y web: solo para probar con un GitHub simulado
+const REPO = guardado('gestor.repo') || 'Carlosbabiano/coral-ensayo';
+const API = (guardado('gestor.api') || 'https://api.github.com') + '/repos/' + REPO;
+const RAMA = 'main', RAMA_WEB = 'gh-pages';
+const LISTA = 'app/partituras/lista.json', HUELLAS = 'app/partituras/huellas.json', SW = 'app/sw.js';
+const URL_APP = guardado('gestor.web') || (() => { const [u, r] = REPO.split('/'); return `https://${u.toLowerCase()}.github.io/${r}/`; })();
+const PLANTILLA_LLAVE = 'https://github.com/settings/personal-access-tokens/new?' + new URLSearchParams({ name: 'Gestor de obras (móvil)', description: 'Cambios en la app del coro desde el móvil', target_name: REPO.split('/')[0], expires_in: '366', contents: 'write' });
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const icono = (n, extra = '') => `<svg class="icono ${extra}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+
+// ---------- Estado ----------
+let llave = guardado('gestor.llave');
+let obras = null;            // lista.json tal cual está en GitHub
+let version = '';            // versión de caché publicada (coral-vNNN)
+let cambios = leerCambios(); // { [archivo]: { ensayo?: bool, titulo?: string, quitar?: true } } preparados, sin publicar
+let filtro = '';
+let publicando = false;
+let obraAbierta = null;
+
+function leerCambios() { try { return JSON.parse(guardado('gestor.cambios') || '{}') || {}; } catch { return {}; } }
+function guardarCambios() { for (const k of Object.keys(cambios)) if (!Object.keys(cambios[k]).length) delete cambios[k]; guardado('gestor.cambios', Object.keys(cambios).length ? JSON.stringify(cambios) : null); }
+
+// ---------- GitHub ----------
+class ErrorGitHub extends Error { constructor(msg, estado) { super(msg); this.estado = estado; } }
+async function gh(ruta, { metodo = 'GET', cuerpo, crudo = false } = {}) {
+  if (!navigator.onLine) throw new ErrorGitHub('sin-conexion', 0);
+  let r;
+  try {
+    r = await fetch(ruta.startsWith('http') ? ruta : API + ruta, {
+      method: metodo, cache: 'no-store',
+      headers: { Authorization: 'Bearer ' + llave, Accept: crudo ? 'application/vnd.github.raw+json' : 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', ...(cuerpo ? { 'Content-Type': 'application/json' } : {}) },
+      body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+    });
+  } catch { throw new ErrorGitHub('sin-conexion', 0); }
+  if (!r.ok) { let d = ''; try { d = (await r.json()).message || ''; } catch {} throw new ErrorGitHub(d || ('HTTP ' + r.status), r.status); }
+  return crudo ? r.text() : r.status === 204 ? null : r.json();
+}
+// Mensaje para personas a partir de un error de GitHub
+function explicar(e) {
+  if (e.estado === 0) return 'No hay conexión a internet. Prueba otra vez cuando tengas cobertura o wifi.';
+  if (e.estado === 401) return 'La llave de GitHub ya no vale (ha caducado o se ha borrado). Crea una nueva y vuelve a conectar.';
+  if (e.estado === 403 || e.estado === 404) return 'La llave no tiene permiso para cambiar la app. Al crearla, elige el repositorio «' + REPO.split('/')[1] + '» y en «Contents» marca «Read and write».';
+  if (e.estado === 409 || e.estado === 422) return 'Alguien ha cambiado la app a la vez (quizá el gestor del ordenador). Vuelve a intentarlo.';
+  return 'GitHub ha respondido con un error inesperado. Espera un momento y vuelve a intentarlo.';
+}
+
+async function cargar() {
+  mostrarCargando();
+  try {
+    const [lista, sw] = await Promise.all([gh('/contents/' + LISTA + '?ref=' + RAMA, { crudo: true }), gh('/contents/' + SW + '?ref=' + RAMA, { crudo: true })]);
+    obras = JSON.parse(lista);
+    version = (sw.match(/coral-v\d+/) || [''])[0];
+    guardado('gestor.copia', JSON.stringify({ lista: obras, version }));
+    // Cambios preparados de obras que ya no existen (quitadas desde el ordenador): fuera
+    for (const k of Object.keys(cambios)) if (!obras.some(o => o.archivo === k)) delete cambios[k];
+    guardarCambios();
+    $('avisoGeneral').innerHTML = '';
+    pintar();
+  } catch (e) {
+    // Sin conexión: la última lista vista en este móvil, para poder preparar cambios y publicarlos luego
+    let copia = null; try { copia = JSON.parse(guardado('gestor.copia') || 'null'); } catch {}
+    if (e.estado === 0 && copia) { obras = copia.lista; version = copia.version; pintar(); return; }
+    if (e.estado === 401) { desconectar('La llave de GitHub ya no vale (ha caducado o se ha borrado). Crea una nueva y pégala aquí.'); return; }
+    $('contenido').setAttribute('aria-busy', 'false');
+    $('contenido').innerHTML = `<div class="aviso mal" role="alert">${icono('alert')}<div><p><strong>No se ha podido cargar la lista de obras.</strong></p><p>${esc(explicar(e))}</p><button class="btn" type="button" id="reintentar">${icono('refresh')}Reintentar</button></div></div>`;
+    $('reintentar').onclick = cargar;
+  }
+}
+
+// ---------- Pintar ----------
+function mostrarCargando() {
+  $('contenido').setAttribute('aria-busy', 'true');
+  $('contenido').innerHTML = '<div class="esqueleto corto"></div>' + '<div class="esqueleto"></div>'.repeat(6);
+}
+
+// La obra tal como quedará con los cambios preparados
+function conCambios(o) { const c = cambios[o.archivo] || {}; return { ...o, titulo: c.titulo ?? o.titulo, ensayo: c.ensayo ?? !!o.ensayo, quitar: !!c.quitar, cambiada: !!cambios[o.archivo] }; }
+const normal = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+function pintar() {
+  const c = $('contenido');
+  c.setAttribute('aria-busy', 'false');
+  $('cajaBuscador').hidden = false; $('recargar').hidden = false; $('desconectar').hidden = false;
+  $('subtitulo').textContent = `${obras.length} obras en la app${version ? ' · ' + version : ''}`;
+  pintarBarra();
+  if (!obras.length) { c.innerHTML = '<div class="vacio"><strong>Todavía no hay obras en la app</strong>Las obras nuevas se añaden desde el gestor del ordenador. Cuando estén, podrás marcarlas «en ensayo» desde aquí.</div>'; return; }
+  const vista = obras.map(conCambios).filter(o => !filtro || normal(o.titulo).includes(normal(filtro)));
+  vista.sort((a, b) => a.titulo.localeCompare(b.titulo, 'es'));
+  if (!vista.length) { c.innerHTML = `<div class="vacio"><strong>Ninguna obra contiene «${esc(filtro)}»</strong>Revisa cómo está escrito o borra la búsqueda.</div>`; return; }
+  const enEnsayo = vista.filter(o => o.ensayo && !o.quitar), resto = vista.filter(o => !o.ensayo || o.quitar);
+  const fila = o => {
+    const detalles = [];
+    if (o.cambiada) detalles.push(`<span class="marca">${icono('pencil')}Sin publicar</span>`);
+    if (o.quitar) detalles.push('<span>Se quitará de la app</span>');
+    else {
+      const n = (o.paginas || []).length; if (n) detalles.push(`<span>${n} página${n === 1 ? '' : 's'}</span>`);
+      if ((o.canto || []).length) detalles.push('<span>con voces cantadas</span>');
+    }
+    const id = 'o-' + encodeURIComponent(o.archivo).replace(/[^a-zA-Z0-9]/g, '_');
+    return `<li class="${o.quitar ? 'quitada' : ''}" data-archivo="${esc(o.archivo)}">
+      <div class="obra-texto"><span class="titulo" id="${id}">${esc(o.titulo)}</span><span class="detalle">${detalles.join('')}</span></div>
+      ${o.quitar
+        ? `<button class="btn" type="button" data-accion="deshacer" aria-describedby="${id}">${icono('undo')}Deshacer</button>`
+        : `<button class="interruptor" type="button" role="switch" aria-checked="${o.ensayo}" data-accion="ensayo" aria-describedby="${id}"><span>En ensayo</span><span class="pista" aria-hidden="true"></span></button>
+           <button class="btn plano icono-solo" type="button" data-accion="mas" aria-label="Más opciones de ${esc(o.titulo)}">${icono('more', 'm')}</button>`}
+    </li>`;
+  };
+  let html = '';
+  if (enEnsayo.length) html += `<h2 class="grupo" id="g-ensayo">En ensayo (${enEnsayo.length})</h2><ul class="obras" aria-labelledby="g-ensayo">${enEnsayo.map(fila).join('')}</ul>`;
+  if (resto.length) html += `<h2 class="grupo" id="g-resto">${enEnsayo.length ? 'Resto de obras' : 'Obras'} (${resto.length})</h2><ul class="obras" aria-labelledby="g-resto">${resto.map(fila).join('')}</ul>`;
+  if (!enEnsayo.length && !filtro) html = '<div class="aviso">' + icono('alert') + '<p>Ninguna obra está marcada «en ensayo». Activa el interruptor de las que estéis ensayando y saldrán las primeras en la app.</p></div>' + html;
+  c.innerHTML = html;
+}
+
+// Descripción de cada cambio preparado, para la barra y el mensaje del commit
+function describir(o, c) {
+  const t = [];
+  if (c.quitar) return ['Quitar: ' + o.titulo];
+  if (c.titulo !== undefined) t.push(`Título: ${o.titulo} → ${c.titulo}`);
+  if (c.ensayo !== undefined) t.push((c.ensayo ? 'En ensayo: ' : 'Fuera de ensayo: ') + (c.titulo ?? o.titulo));
+  return t;
+}
+function pintarBarra() {
+  const lista = obras ? obras.filter(o => cambios[o.archivo]).map(o => ({ o, textos: describir(o, cambios[o.archivo]) })) : [];
+  const n = lista.reduce((s, x) => s + x.textos.length, 0);
+  const barra = $('barra');
+  barra.hidden = !n;
+  if (!n) { $('listaCambios').hidden = true; $('verCambios').setAttribute('aria-expanded', 'false'); return; }
+  $('resumenCambios').innerHTML = `${n === 1 ? '1 cambio' : n + ' cambios'} sin publicar<small>El coro aún no lo ve</small>`;
+  $('listaCambios').innerHTML = lista.map(({ o, textos }) => `<li><span>${textos.map(esc).join('<br>')}</span><button class="btn plano" type="button" data-deshacer="${esc(o.archivo)}">${icono('undo')}Deshacer</button></li>`).join('');
+  $('publicar').disabled = publicando;
+}
+
+// ---------- Cambios ----------
+function cambiar(archivo, campo, valor) {
+  const o = obras.find(x => x.archivo === archivo);
+  const c = cambios[archivo] = { ...(cambios[archivo] || {}) };
+  const original = campo === 'ensayo' ? !!o.ensayo : campo === 'titulo' ? o.titulo : false;
+  if (valor === original) delete c[campo]; else c[campo] = valor;
+  guardarCambios(); pintar();
+}
+let tostadaTiempo = null;
+function tostada(texto, deshacer) {
+  document.querySelectorAll('.tostada').forEach(t => t.remove());
+  clearTimeout(tostadaTiempo);
+  const t = document.createElement('div');
+  t.className = 'tostada' + ($('barra').hidden ? '' : ' con-barra');
+  t.setAttribute('role', 'status');
+  t.innerHTML = `<span>${esc(texto)}</span>` + (deshacer ? '<button class="btn" type="button">Deshacer</button>' : '');
+  if (deshacer) t.querySelector('button').onclick = () => { deshacer(); t.remove(); };
+  document.body.appendChild(t);
+  tostadaTiempo = setTimeout(() => t.remove(), 6000);
+}
+
+$('contenido').addEventListener('click', e => {
+  const b = e.target.closest('button[data-accion]'); if (!b) return;
+  const archivo = b.closest('li').dataset.archivo, o = obras.find(x => x.archivo === archivo);
+  if (b.dataset.accion === 'ensayo') {
+    const nuevo = b.getAttribute('aria-checked') !== 'true';
+    cambiar(archivo, 'ensayo', nuevo);
+    // El foco vuelve al interruptor de la obra (al cambiar de grupo, se ha movido de sitio)
+    const li = document.querySelector(`li[data-archivo="${CSS.escape(archivo)}"] .interruptor`); if (li) li.focus();
+  } else if (b.dataset.accion === 'mas') abrirObra(o);
+  else if (b.dataset.accion === 'deshacer') { const c = cambios[archivo]; if (c) delete c.quitar; guardarCambios(); pintar(); }
+});
+
+function abrirObra(o) {
+  obraAbierta = o;
+  const v = conCambios(o);
+  $('dlgObraTitulo').textContent = v.titulo;
+  $('dlgObraSub').textContent = 'Archivo: ' + o.archivo;
+  $('nuevoTitulo').value = v.titulo;
+  errorTitulo('');
+  $('dlgObra').showModal();
+}
+function errorTitulo(msg) {
+  const e = $('errorTitulo'); e.hidden = !msg; e.querySelector('span').textContent = msg;
+  $('nuevoTitulo').setAttribute('aria-invalid', msg ? 'true' : 'false');
+}
+function validarTitulo() {
+  const t = $('nuevoTitulo').value.trim().replace(/\s+/g, ' ');
+  if (!t) return errorTitulo('Escribe el título que verá el coro.'), null;
+  if (obras.some(x => x.archivo !== obraAbierta.archivo && normal(conCambios(x).titulo) === normal(t))) return errorTitulo('Ya hay otra obra con ese título. Añade algo que las distinga, por ejemplo el autor.'), null;
+  errorTitulo(''); return t;
+}
+$('nuevoTitulo').addEventListener('blur', () => { if ($('dlgObra').open && $('nuevoTitulo').value.trim() !== '') validarTitulo(); });
+$('formTitulo').addEventListener('submit', e => {
+  e.preventDefault();
+  const t = validarTitulo(); if (!t) { $('nuevoTitulo').focus(); return; }
+  const o = obraAbierta, antes = cambios[o.archivo] ? { ...cambios[o.archivo] } : null;
+  $('dlgObra').close();
+  if (t === conCambios(o).titulo) return;
+  cambiar(o.archivo, 'titulo', t);
+  tostada('Título cambiado. Falta publicar.', () => { if (antes) cambios[o.archivo] = antes; else delete cambios[o.archivo]; guardarCambios(); pintar(); });
+});
+$('cancelarObra').onclick = () => $('dlgObra').close();
+$('quitarObra').onclick = () => {
+  const o = obraAbierta;
+  $('dlgObra').close();
+  cambios[o.archivo] = { quitar: true }; guardarCambios(); pintar();
+  tostada(`«${o.titulo}» se quitará al publicar.`, () => { delete cambios[o.archivo]; guardarCambios(); pintar(); });
+};
+
+$('verCambios').onclick = () => {
+  const l = $('listaCambios'), abierto = l.hidden;
+  l.hidden = !abierto; $('verCambios').setAttribute('aria-expanded', String(abierto));
+  $('verCambios').innerHTML = icono(abierto ? 'chevron-down' : 'chevron-up', 'm');
+  $('verCambios').setAttribute('aria-label', abierto ? 'Ocultar los cambios' : 'Ver los cambios');
+};
+$('listaCambios').addEventListener('click', e => {
+  const b = e.target.closest('button[data-deshacer]'); if (!b) return;
+  delete cambios[b.dataset.deshacer]; guardarCambios(); pintar();
+  if (!$('barra').hidden) $('verCambios').focus(); else $('buscar').focus();
+});
+$('buscar').addEventListener('input', e => { filtro = e.target.value.trim(); pintar(); });
+$('recargar').onclick = cargar;
+$('desconectar').onclick = () => {
+  const n = Object.keys(cambios).length;
+  if (n && !confirm('Hay cambios sin publicar. Si desconectas, se perderán. ¿Desconectar igualmente?')) return;
+  cambios = {}; guardarCambios(); desconectar();
+};
+
+// ---------- Publicar ----------
+// Hace lo mismo que el gestor del ordenador + publicar.js, pero con la API de GitHub:
+//  1. lee lista.json, huellas.json y sw.js de main (lo último, aunque se haya cambiado desde el PC),
+//  2. aplica los cambios preparados, sube la versión de caché y rehace las huellas,
+//  3. un commit en main (si alguien ha cambiado main a la vez, se repite desde el paso 1),
+//  4. la carpeta app/ de ese commit pasa a gh-pages (es lo que sirve GitHub Pages),
+//  5. espera a que GitHub Pages sirva la versión nueva.
+const PASOS = [['guardar', 'Guardando los cambios en GitHub'], ['web', 'Publicando la app'], ['servir', 'Esperando a que la app nueva esté en internet']];
+function paso(actual, hechos = []) {
+  $('pasos').innerHTML = PASOS.map(([k, t]) => {
+    const hecho = hechos.includes(k), ahora = k === actual;
+    return `<li class="${hecho ? 'hecho' : ahora ? 'actual' : ''}">${hecho ? icono('check') : ahora ? '<span class="girando" aria-hidden="true"></span>' : '<span class="punto" aria-hidden="true"></span>'}<span>${t}${hecho ? '<span class="sr"> (hecho)</span>' : ahora ? '<span class="sr"> (en marcha)</span>' : ''}</span></li>`;
+  }).join('');
+}
+function aplicar(lista, preparados) {
+  const quitados = [], hechos = [];
+  let nueva = lista.map(o => ({ ...o }));
+  for (const [archivo, c] of Object.entries(preparados)) {
+    const o = nueva.find(x => x.archivo === archivo);
+    if (!o) continue; // quitada mientras tanto desde el ordenador
+    hechos.push(...describir(o, c));
+    if (c.quitar) { quitados.push(o); nueva = nueva.filter(x => x !== o); continue; }
+    if (c.titulo !== undefined) o.titulo = c.titulo;
+    if (c.ensayo !== undefined) { if (c.ensayo) o.ensayo = true; else delete o.ensayo; }
+  }
+  // Mismo orden y formato que guardarLista() en herramientas/obra.js
+  nueva.sort((a, b) => a.titulo.localeCompare(b.titulo, 'es'));
+  return { nueva, quitados, hechos };
+}
+const archivosDe = o => [o.archivo, o.posiciones, ...(o.paginas || []), ...(o.canto || []).flatMap(c => [c.archivo, c.consonantes])].filter(Boolean);
+// huellas.json igual que escribirHuellas() en obra.js; aquí no cambia ningún archivo, así que se reaprovechan las huellas
+function rehacerHuellas(huellasTexto, nueva) {
+  const h = JSON.parse(huellasTexto), porArchivo = {};
+  for (const o of h.obras) for (const [r, hu] of Object.entries(o.archivos)) porArchivo[r] = hu;
+  const obrasH = nueva.map(o => ({ titulo: o.titulo, archivos: Object.fromEntries(archivosDe(o).map(a => ['partituras/' + a, porArchivo['partituras/' + a]]).filter(([, x]) => x)) }));
+  return JSON.stringify({ obras: obrasH, comunes: h.comunes || {} }) + '\n';
+}
+
+async function publicar() {
+  if (publicando) return;
+  publicando = true; pintarBarra();
+  const dlg = $('dlgPublicar');
+  $('dlgPublicarTitulo').textContent = 'Publicando para el coro';
+  $('dlgPublicarSub').textContent = 'No cierres esta página hasta que termine. Suele tardar uno o dos minutos.';
+  $('dlgPublicarFin').innerHTML = ''; $('cerrarPublicar').hidden = true;
+  paso('guardar'); dlg.showModal();
+  let nuevaVersion = '', hechos = [];
+  try {
+    // 1-3: commit en main (con reintentos si main se mueve a la vez)
+    let commit = null;
+    for (let intento = 0; intento < 3 && !commit; intento++) {
+      const ref = await gh('/git/ref/heads/' + RAMA);
+      const padre = ref.object.sha;
+      const [listaT, huellasT, swT, padreC] = await Promise.all([LISTA, HUELLAS, SW].map(f => gh('/contents/' + f + '?ref=' + padre, { crudo: true })).concat(gh('/git/commits/' + padre)));
+      const r = aplicar(JSON.parse(listaT), cambios);
+      hechos = r.hechos;
+      if (!hechos.length) break;
+      nuevaVersion = '';
+      const sw = swT.replace(/coral-v(\d+)/, (_, v) => (nuevaVersion = 'coral-v' + (+v + 1)));
+      const enLista = new Set(r.nueva.flatMap(archivosDe));
+      const borrar = [...new Set(r.quitados.flatMap(archivosDe))].filter(f => !enLista.has(f));
+      const arbol = await gh('/git/trees', { metodo: 'POST', cuerpo: { base_tree: padreC.tree.sha, tree: [
+        { path: LISTA, mode: '100644', type: 'blob', content: JSON.stringify(r.nueva, null, 2) + '\n' },
+        { path: HUELLAS, mode: '100644', type: 'blob', content: rehacerHuellas(huellasT, r.nueva) },
+        { path: SW, mode: '100644', type: 'blob', content: sw },
+        ...borrar.map(f => ({ path: 'app/partituras/' + f, mode: '100644', type: 'blob', sha: null })),
+      ] } });
+      const mensaje = (hechos.length === 1 ? hechos[0] : hechos.length + ' cambios: ' + hechos.join(' · ')) + ' (desde el móvil)';
+      const nuevo = await gh('/git/commits', { metodo: 'POST', cuerpo: { message: mensaje, tree: arbol.sha, parents: [padre] } });
+      try { await gh('/git/refs/heads/' + RAMA, { metodo: 'PATCH', cuerpo: { sha: nuevo.sha, force: false } }); commit = nuevo; }
+      catch (e) { if (e.estado !== 422 && e.estado !== 409) throw e; } // main ha cambiado: otra vuelta
+    }
+    if (!hechos.length) { cambios = {}; guardarCambios(); terminar('bien', 'No había nada que publicar', 'Esos cambios ya estaban hechos (quizá desde el ordenador).'); return; }
+    if (!commit) throw new ErrorGitHub('conflicto', 409);
+    // Ya está guardado: los cambios dejan de estar «preparados»
+    cambios = {}; guardarCambios(); pintar();
+
+    // 4: gh-pages = carpeta app/ de ese commit (como publicar.js)
+    paso('web', ['guardar']);
+    const raiz = await gh('/git/trees/' + commit.tree.sha);
+    const app = raiz.tree.find(x => x.path === 'app' && x.type === 'tree');
+    let padreWeb = null; try { padreWeb = (await gh('/git/ref/heads/' + RAMA_WEB)).object.sha; } catch {}
+    const web = await gh('/git/commits', { metodo: 'POST', cuerpo: { message: `Publicar la app (${commit.sha.slice(0, 7)}, desde el móvil)`, tree: app.sha, parents: padreWeb ? [padreWeb] : [] } });
+    if (padreWeb) await gh('/git/refs/heads/' + RAMA_WEB, { metodo: 'PATCH', cuerpo: { sha: web.sha, force: true } });
+    else await gh('/git/refs', { metodo: 'POST', cuerpo: { ref: 'refs/heads/' + RAMA_WEB, sha: web.sha } });
+    try { await gh('/pages/builds', { metodo: 'POST' }); } catch { /* la llave no tiene permiso de Pages: GitHub lo publica igual al cambiar gh-pages */ }
+
+    // 5: esperar a que GitHub Pages sirva el sw.js nuevo (como mucho 5 minutos)
+    paso('servir', ['guardar', 'web']);
+    const listo = await esperarPublicada(nuevaVersion, 5 * 60000);
+    version = nuevaVersion;
+    if (listo) paso(null, ['guardar', 'web', 'servir']);
+    if (listo) terminar('bien', 'Publicado', 'El coro ya lo tiene. Las tablets lo recibirán la próxima vez que abran la app con internet.', hechos);
+    else terminar('aviso', 'Guardado, falta que GitHub lo sirva', 'Los cambios están guardados y publicados, pero GitHub está tardando más de lo normal en servirlos. No hace falta que hagas nada: aparecerán en las tablets en unos minutos.', hechos);
+  } catch (e) {
+    terminar('mal', 'No se ha podido publicar', explicar(e) + (Object.keys(cambios).length ? ' Tus cambios siguen preparados.' : ''));
+  }
+}
+async function esperarPublicada(v, plazo) {
+  const fin = Date.now() + plazo;
+  while (Date.now() < fin) {
+    await new Promise(r => setTimeout(r, 8000));
+    try { const t = await (await fetch(URL_APP + 'sw.js?t=' + Date.now(), { cache: 'no-store' })).text(); if (t.includes(`'${v}'`)) return true; } catch {}
+  }
+  return false;
+}
+function terminar(tipo, titulo, texto, hechos = []) {
+  publicando = false;
+  $('dlgPublicarTitulo').textContent = titulo;
+  $('dlgPublicarSub').textContent = '';
+  if (tipo === 'mal') $('pasos').innerHTML = '';
+  $('dlgPublicarFin').innerHTML = `<div class="aviso ${tipo === 'bien' ? 'bien' : tipo === 'mal' ? 'mal' : ''}" role="alert">${icono(tipo === 'bien' ? 'check' : 'alert')}<div><p>${esc(texto)}</p>${hechos.length ? '<p class="muted" style="margin-top:var(--space-2)">' + hechos.map(esc).join('<br>') + '</p>' : ''}</div></div>`;
+  $('cerrarPublicar').hidden = false; $('cerrarPublicar').focus();
+  cargar();
+}
+$('publicar').onclick = publicar;
+$('cerrarPublicar').onclick = () => $('dlgPublicar').close();
+$('dlgPublicar').addEventListener('cancel', e => { if (publicando) e.preventDefault(); });
+window.addEventListener('beforeunload', e => { if (publicando) { e.preventDefault(); e.returnValue = ''; } });
+
+// ---------- Conectar ----------
+function desconectar(motivo) {
+  llave = null; guardado('gestor.llave', null);
+  obras = null;
+  $('cajaBuscador').hidden = true; $('recargar').hidden = true; $('desconectar').hidden = true; $('barra').hidden = true;
+  $('subtitulo').textContent = 'Coral Villa de Mengíbar';
+  const c = $('contenido'); c.setAttribute('aria-busy', 'false');
+  c.innerHTML = `<form class="conectar" id="formLlave" novalidate>
+    ${motivo ? `<div class="aviso mal" role="alert">${icono('alert')}<p>${esc(motivo)}</p></div>` : ''}
+    <h2>Conecta este móvil</h2>
+    <p>Para cambiar la app desde aquí hace falta una «llave» de GitHub, la cuenta donde está guardada la app. Solo se hace una vez.</p>
+    <ol>
+      <li><a href="${esc(PLANTILLA_LLAVE)}" target="_blank" rel="noopener">Abre GitHub para crear la llave ${icono('external')}</a> (entra con tu cuenta si te lo pide).</li>
+      <li>En <strong>Repository access</strong> elige <strong>Only select repositories</strong> y marca <code>${esc(REPO.split('/')[1])}</code>.</li>
+      <li>En <strong>Permissions → Contents</strong> elige <strong>Read and write</strong>. Si ya lo pone, déjalo.</li>
+      <li>Pulsa <strong>Generate token</strong>, cópialo y pégalo aquí abajo.</li>
+    </ol>
+    <div class="campo">
+      <label for="campoLlave">Llave de GitHub</label>
+      <input type="password" id="campoLlave" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="ayudaLlave errorLlave">
+      <p class="ayuda" id="ayudaLlave">Empieza por <code>github_pat_</code>.</p>
+      <p class="error" id="errorLlave" hidden>${icono('alert')}<span></span></p>
+    </div>
+    <button class="btn principal ancho" type="submit" id="botonConectar">Conectar</button>
+    <p class="privacidad">La llave se guarda solo en este móvil y solo sirve para cambiar la app del coro. Para quitarla, pulsa el botón de salir arriba a la derecha o bórrala en GitHub (Settings → Developer settings → Personal access tokens).</p>
+  </form>`;
+  const campo = $('campoLlave'), err = $('errorLlave');
+  const error = m => { err.hidden = !m; err.querySelector('span').textContent = m || ''; campo.setAttribute('aria-invalid', m ? 'true' : 'false'); };
+  const formato = v => !v ? 'Pega la llave que te ha dado GitHub.' : !/^(github_pat_|ghp_)[A-Za-z0-9_]{20,}$/.test(v) ? 'Esto no parece una llave de GitHub. Cópiala entera, empieza por github_pat_.' : '';
+  campo.addEventListener('blur', () => { if (campo.value.trim()) error(formato(campo.value.trim())); });
+  $('formLlave').addEventListener('submit', async e => {
+    e.preventDefault();
+    const v = campo.value.trim(), f = formato(v);
+    if (f) { error(f); campo.focus(); return; }
+    error(''); const b = $('botonConectar'); b.disabled = true; b.innerHTML = '<span class="girando" aria-hidden="true"></span>Comprobando la llave…';
+    llave = v;
+    try {
+      await gh('/contents/' + LISTA + '?ref=' + RAMA, { crudo: true });
+      guardado('gestor.llave', v);
+      cargar();
+    } catch (er) {
+      llave = null; b.disabled = false; b.textContent = 'Conectar';
+      error(er.estado === 401 ? 'GitHub no reconoce esta llave. Comprueba que la has copiado entera.' : explicar(er));
+      campo.focus();
+    }
+  });
+}
+
+// ---------- Conexión ----------
+function pintarConexion() { $('sinConexion').hidden = navigator.onLine; }
+addEventListener('online', () => { pintarConexion(); if (llave && !obras) cargar(); });
+addEventListener('offline', pintarConexion);
+pintarConexion();
+
+if (llave) cargar(); else desconectar();
+</script>
+</body>
+</html>

@@ -637,7 +637,7 @@ const servidor = http.createServer(async (req, res) => {
 
     // API
     if (ruta === '/api/estado' && req.method === 'GET') {
-      return json(res, { borradores: listarBorradores().map(resumen), publicadas: obra.leerLista(), publicando, publicacion: publicando ? publicacion.id : null, comprobacion, sinPublicar: cambiosSinPublicar(), version: obra.versionCache(), raiz: obra.RAIZ, preparando: [...trabajando], entrada: listarEntrada(), cantante: { ...canto.estadoCantante(), instalando: instalandoVoz, cantando } });
+      return json(res, { borradores: listarBorradores().map(resumen), publicadas: obra.leerLista(), publicando, publicacion: publicando ? publicacion.id : null, comprobacion, sinPublicar: cambiosSinPublicar(), sincronizacion, version: obra.versionCache(), raiz: obra.RAIZ, preparando: [...trabajando], entrada: listarEntrada(), cantante: { ...canto.estadoCantante(), instalando: instalandoVoz, cantando } });
     }
     if (ruta === '/api/borradores' && req.method === 'POST') {
       const id = nuevoId();
@@ -815,6 +815,10 @@ const SIN_LATIDO_MS = 3 * 60 * 1000;
 if (!process.env.GESTOR_SIN_APAGADO) setInterval(() => {
   if (Date.now() - Math.max(ultimoLatido, arranque) > SIN_LATIDO_MS && !ocupado()) { console.log('Sin ninguna pestaña del gestor abierta: se cierra.'); process.exit(0); }
 }, 30 * 1000).unref();
+
+// Al arrancar, se traen los cambios hechos desde el gestor del móvil (si no, se trabajaría con una lista vieja)
+const sincronizacion = process.env.GESTOR_SIN_INTERNET ? { estado: 'al-dia' } : require('./sincronizar.js').traerCambios(console.log);
+if (sincronizacion.estado !== 'al-dia') console.log(sincronizacion.mensaje);
 
 servidor.listen(PUERTO, '127.0.0.1', () => {
   const direccion = `http://localhost:${PUERTO}/`;

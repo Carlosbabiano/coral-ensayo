@@ -19,6 +19,9 @@ if (!remoto) {
   sh(`gh repo create ${nombre} --public --source . --remote origin --push`);
   remoto = out('git remote get-url origin');
 } else {
+  // Antes de subir, lo que se haya cambiado desde el gestor del móvil (si no, el push fallaría o lo pisaría)
+  const sinc = require('./sincronizar.js').traerCambios(console.log);
+  if (sinc.estado === 'conflicto') { console.error('X ' + sinc.mensaje); process.exit(1); }
   console.log('Subiendo cambios a ' + remoto);
   sh('git push origin main');
 }

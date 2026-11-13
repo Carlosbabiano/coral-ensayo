@@ -1,0 +1,15 @@
+{
+  "name": "Gestor de obras · Coral Villa de Mengíbar",
+  "short_name": "Gestor",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fafaf7",
+  "theme_color": "#24407a",
+  "lang": "es",
+  "icons": [
+    { "src": "../icono-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "../icono-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "../icono-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
