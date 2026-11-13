@@ -7,7 +7,7 @@
 //    está entera. Antes todo iba en VERSION y cada publicación lo borraba: si en ese momento no había buena conexión,
 //    la tablet se quedaba sin partituras.
 //  - EXTERNOS: librerías y sonidos de internet (OpenSheetMusicDisplay, smplr, soundfonts). Tampoco se borra.
-const VERSION = 'coral-v161';
+const VERSION = 'coral-v162';
 const OBRAS = 'coral-obras';
 const EXTERNOS = 'coral-externos';
 const BASE = ['./', './index.html', './compases.js', './manifest.json', './icono-192.png', './icono-512.png', './icono-512-maskable.png', './apple-touch-icon.png', './pantalla.mp4', './partituras/lista.json'];
