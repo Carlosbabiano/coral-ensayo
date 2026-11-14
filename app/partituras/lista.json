@@ -179,6 +179,14 @@
     ]
   },
   {
+    "titulo": "La Primera Navidad",
+    "archivo": "La_Primera_Navidad.xml",
+    "posiciones": "La_Primera_Navidad.pos.json",
+    "paginas": [
+      "La_Primera_Navidad-p1.png"
+    ]
+  },
+  {
     "titulo": "Lacrymosa Mozart",
     "archivo": "Lacrymosa_Mozart.xml",
     "posiciones": "Lacrymosa_Mozart.pos.json",
