@@ -184,7 +184,8 @@
     "posiciones": "La_Primera_Navidad.pos.json",
     "paginas": [
       "La_Primera_Navidad-p1.png"
-    ]
+    ],
+    "ensayo": true
   },
   {
     "titulo": "Lacrymosa Mozart",
@@ -389,6 +390,7 @@
     "paginas": [
       "Villancico_Yaucano-p1.png",
       "Villancico_Yaucano-p2.png"
-    ]
+    ],
+    "ensayo": true
   }
 ]
