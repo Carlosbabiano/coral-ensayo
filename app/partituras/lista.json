@@ -373,5 +373,14 @@
         "consonantes": "Ubi_caritas_Gjeilo.canto.Bajo.json"
       }
     ]
+  },
+  {
+    "titulo": "Villancico Yaucano",
+    "archivo": "Villancico_Yaucano.xml",
+    "posiciones": "Villancico_Yaucano.pos.json",
+    "paginas": [
+      "Villancico_Yaucano-p1.png",
+      "Villancico_Yaucano-p2.png"
+    ]
   }
 ]
