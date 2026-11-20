@@ -179,6 +179,10 @@
     ]
   },
   {
+    "titulo": "Kyrie eleison-Gounod",
+    "archivo": "Kyrie_eleison_Gounod.xml"
+  },
+  {
     "titulo": "La Primera Navidad",
     "archivo": "La_Primera_Navidad.xml",
     "posiciones": "La_Primera_Navidad.pos.json",
