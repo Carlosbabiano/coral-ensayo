@@ -363,12 +363,26 @@ function compasesDePagina(img, s) {
 function limitesXml(parte) {
   const limites = [];
   const medidas = [...parte.matchAll(/<measure [^>]*>([\s\S]*?)<\/measure>/g)];
+  // Cifra y armadura vigentes: solo cuenta un cambio de verdad (el escáner repite la misma en muchos compases).
+  // Ojo: <time-modification> (tresillos) no es una cifra de compás
+  const vigente = { time: null, key: null };
+  const cambia = cuerpo => {
+    let si = false;
+    for (const et of ['time', 'key']) {
+      const m = cuerpo.match(new RegExp(`<${et}(?:\\s[^>]*)?>([\\s\\S]*?)</${et}>`));
+      if (!m) continue;
+      const v = m[1].replace(/\s+/g, '');
+      if (vigente[et] !== null && vigente[et] !== v) si = true;
+      vigente[et] = v;
+    }
+    return si;
+  };
   medidas.forEach((m, i) => {
     const barras = [...m[1].matchAll(/<barline\b([^>]*)>([\s\S]*?)<\/barline>/g)].filter(b => !/location="left"/.test(b[1]));
     const estilos = barras.map(b => (b[2].match(/<bar-style>([^<]*)/) || [, ''])[1]);
     const tipo = estilos.some(e => /heavy/.test(e)) ? 'final' : estilos.some(e => e === 'light-light') ? 'doble' : null;
     if (tipo && i < medidas.length - 1) limites.push({ i, tipo });
-    if (i > 0 && i < medidas.length - 1 && /<(time|key)\b/.test(m[1]) && !limites.some(l => l.i === i - 1)) limites.push({ i: i - 1, tipo: 'blando' });
+    if (cambia(m[1]) && i > 0 && i < medidas.length - 1 && !limites.some(l => l.i === i - 1)) limites.push({ i: i - 1, tipo: 'blando' });
   });
   limites.sort((a, b) => a.i - b.i);
   return { n: medidas.length, limites };
