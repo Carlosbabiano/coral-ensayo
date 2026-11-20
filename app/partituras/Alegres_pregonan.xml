@@ -1127,6 +1127,7 @@
           <text>as.</text>
         </lyric>
       </note>
+      <direction placement="above"><direction-type><words>To Coda</words></direction-type></direction>
       <barline location="right">
         <bar-style>light-light</bar-style>
       </barline>
@@ -2155,11 +2156,13 @@
           <text>da.</text>
         </lyric>
       </note>
+      <direction placement="above"><direction-type><words>D.C. al Coda</words></direction-type></direction>
       <barline location="right">
         <bar-style>light-light</bar-style>
       </barline>
     </measure>
     <measure number="41">
+      <direction placement="above"><direction-type><coda/></direction-type></direction>
       <attributes>
       </attributes>
       <note>
