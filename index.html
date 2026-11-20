@@ -590,6 +590,16 @@ async function cargarEnOsmd(fuente) {
   const texto = fuente.trimStart().startsWith('<') ? fuente : await (await fetch(fuente)).text();
   await osmd.load(texto);
   arreglarCasillas(texto);
+  arreglarDaCapo(texto);
+}
+// Con un «D.C. al Coda», OSMD se inventa además una repetición de la obra entera (del primer compás al último) y la
+// tocaba dos veces. Si el último compás no tiene barra de repetición en el XML, esa repetición sobra.
+function arreglarDaCapo(texto) {
+  if (!/<words[^>]*>\s*D\.\s?[CS]\./i.test(texto)) return;
+  const finales = texto.split(/<part id=/).slice(1).map(p => { const m = p.match(/<measure\b[\s\S]*?<\/measure>/g) || []; return m[m.length - 1] || ''; });
+  if (finales.some(m => /<repeat direction="backward"/.test(m))) return;
+  const n = osmd.Sheet.SourceMeasures.length;
+  for (const rep of osmd.Sheet.Repetitions) if (rep.StartIndex === 0 && rep.EndIndex === n - 1) rep.UserNumberOfRepetitions = 1;
 }
 // OSMD solo se queda con el primer número de una casilla ("1, 2" → 1) y no cuenta las estrofas, así que una
 // repetición con casillas "1, 2" y "3" la tocaría dos veces en vez de tres. Leemos los números del XML y
