@@ -458,6 +458,8 @@ function publicarBorrador(id) {
     paso('git');
     if (obra.guardarEnGit((existia ? 'Actualizar obra: ' : 'Añadir obra: ') + b.entrada.titulo)) registrar('Guardado en el repositorio.');
     else registrar('(No se ha guardado en git: no hay cambios o no hay repositorio.)');
+    const apartados = apartarDeEntrada(b);
+    if (apartados.length) registrar(`Quitado de la carpeta Entrada (está en «Entrada/ya publicadas»): ${apartados.join(', ')}.`);
   } catch (e) { publicando = false; throw e; }
   subirAInternet(() => { fs.rmSync(dirDe(id), { recursive: true, force: true }); });
   return idPub;
@@ -594,6 +596,32 @@ async function comprobarEnInternet() {
 const DIR_ENTRADA = path.join(obra.RAIZ, 'Entrada');
 const DIR_PENDIENTES = path.join(DIR_ENTRADA, 'pendientes');
 fs.mkdirSync(DIR_ENTRADA, { recursive: true });
+// Al arrastrar un archivo al gestor, el navegador manda una copia y no dice de qué carpeta viene: si era de Entrada/,
+// el original se quedaba allí para siempre. Se busca en Entrada/ (y en pendientes/) uno con el mismo nombre y el
+// mismo contenido y, al publicar la obra, se aparta a Entrada/ya publicadas (no se borra nada).
+const DIR_YA_PUBLICADAS = path.join(DIR_ENTRADA, 'ya publicadas');
+function originalEnEntrada(nombre, contenido) {
+  for (const dir of [DIR_ENTRADA, DIR_PENDIENTES]) {
+    const f = path.join(dir, nombre);
+    try { if (fs.statSync(f).size === contenido.length && fs.readFileSync(f).equals(contenido)) return path.relative(DIR_ENTRADA, f); } catch {}
+  }
+  return null;
+}
+function apartarDeEntrada(b) {
+  const apartados = [];
+  for (const rel of b.enEntrada || []) {
+    const origen = path.join(DIR_ENTRADA, rel);
+    if (!fs.existsSync(origen)) continue;
+    try {
+      fs.mkdirSync(DIR_YA_PUBLICADAS, { recursive: true });
+      let destino = path.join(DIR_YA_PUBLICADAS, path.basename(rel));
+      if (fs.existsSync(destino)) destino = destino.replace(/(\.[^.]+)$/, ` (${new Date().toISOString().slice(0, 10)})$1`);
+      try { fs.renameSync(origen, destino); } catch { fs.copyFileSync(origen, destino); fs.unlinkSync(origen); }
+      apartados.push(path.basename(rel));
+    } catch (e) { console.warn('No se pudo apartar de Entrada', rel, e.message); }
+  }
+  return apartados;
+}
 const listarArchivos = dir => { try { return fs.readdirSync(dir).filter(n => /.(xml|musicxml|pdf)$/i.test(n) && !n.startsWith('~') && !n.startsWith('.')); } catch { return []; } };
 function listarEntrada() {
   const nombres = listarArchivos(DIR_ENTRADA);
@@ -686,7 +714,10 @@ const servidor = http.createServer(async (req, res) => {
       if (!/\.(xml|musicxml|pdf)$/i.test(nombre)) return json(res, { error: 'Solo se admiten archivos .xml / .musicxml del escáner y .pdf' }, 400);
       const cuerpo = await leerCuerpo(req);
       fs.writeFileSync(path.join(dirDe(id), 'entrada', nombre), cuerpo);
-      b.archivos = [...new Set([...b.archivos, nombre])]; guardarBorrador(b);
+      b.archivos = [...new Set([...b.archivos, nombre])];
+      const original = originalEnEntrada(nombre, cuerpo);
+      if (original) b.enEntrada = [...new Set([...(b.enEntrada || []), original])];
+      guardarBorrador(b);
       return json(res, resumen(b));
     }
     if ((m = ruta.match(/^\/api\/borradores\/([^/]+)\/preparar$/)) && req.method === 'POST') {
