@@ -10,5 +10,8 @@ En el Gestor de obras aparece lo que hay aquí con un botón por obra: "Cargar" 
 "Preparar…" (PDF solo). Al pulsarlo se crea el borrador (con PDF solo, el gestor pregunta antes si
 las notas las lee Audiveris o la IA), se prepara la obra y queda lista para revisar y publicar. Los archivos salen de aquí al cargarlos: pasan a la carpeta "borradores".
 
+Si en vez de "Cargar" arrastras los archivos al cuadro del gestor, al publicar la obra sus originales se apartan
+a la subcarpeta "ya publicadas" (no se borra nada).
+
 La subcarpeta "pendientes" sirve para aparcar PDF de obras para más adelante: el gestor los
 enseña aparte, también con su botón "Preparar…".
