@@ -1,6 +1,6 @@
 # Cuentas de la coral
 
-App de contabilidad de la Coral Villa de Mengíbar: libro de ingresos y gastos, justificantes, tesorería (caja y bancos), presupuestos, facturas y recibos firmados.
+App de contabilidad de la Coral Villa de Mengíbar: libro de ingresos y gastos, justificantes, tesorería (caja y bancos), presupuestos, facturas, recibos firmados, subvenciones y memoria económica anual.
 
 **Modo de pruebas** hasta el 1 de enero: el administrador puede borrar todos los datos de prueba desde Ajustes; «Empezar de verdad» lo desactiva para siempre.
 
@@ -15,6 +15,7 @@ App de contabilidad de la Coral Villa de Mengíbar: libro de ingresos y gastos, 
 - `supabase/001_base.sql`: tablas, permisos y almacén de justificantes.
 - `supabase/002_facturas.sql`: clientes, presupuestos, facturas y rectificativas (numeración, cobro, bloqueo de facturas emitidas).
 - `supabase/003_modo_pruebas.sql`: borrado de datos de prueba y paso a uso real.
+- `supabase/005_subvenciones.sql`: subvenciones (cobros enlazados, gastos justificados, documentos) y textos de la memoria anual.
 - `supabase/004_recibos.sql`: recibos de pago y de cobro firmados en pantalla (se apuntan solos en el libro; no se modifican, se anulan).
 - `supabase/functions/usuarios/`: alta de usuarios y contraseñas (necesita permisos de servidor).
 - `.github/workflows/latido.yml`: cada 3 días llama a la base de datos para que el plan gratuito no se pause.

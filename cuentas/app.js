@@ -301,8 +301,11 @@ const PESTANAS = [
   { ruta: 'libro', nombre: 'Libro', ico: 'libro' },
   { ruta: 'tesoreria', nombre: 'Tesorería', ico: 'banco' },
   { ruta: 'facturas', nombre: 'Facturas', ico: 'factura' },
-  { ruta: 'ajustes', nombre: 'Ajustes', ico: 'ajustes' },
+  { ruta: 'subvenciones', nombre: 'Subvenciones', ico: 'subvencion' },
 ];
+// Vistas sin pestaña propia: a qué pestaña pertenecen y qué título llevan
+const SECCION_DE = { subvencion: 'subvenciones', memoria: 'inicio' };
+const TITULOS = { ajustes: 'Ajustes', historial: 'Historial de cambios', subvencion: 'Subvención', memoria: 'Memoria anual' };
 
 function pintarMarco() {
   app.innerHTML = `
@@ -310,6 +313,7 @@ function pintarMarco() {
       <a class="marca" href="#inicio" style="color:inherit;text-decoration:none">${ico('musica')}<span>Cuentas de la coral</span></a>
       <label class="sr" for="sel-ejercicio">Año</label>
       <select id="sel-ejercicio" class="no-imprimir"></select>
+      <a class="btn btn-icono boton-ajustes no-imprimir" href="#ajustes" aria-label="Ajustes">${ico('ajustes')}</a>
     </header>
     <div class="aviso aviso-aviso banda-conexion" id="banda-red" role="status" hidden>${ico('sin-red')}
       <p>Sin conexión. Puedes consultar lo que ya está cargado, pero no guardar cambios hasta que vuelva.</p></div>
@@ -329,16 +333,19 @@ function pintarSelectorEjercicio() {
   sel.innerHTML = E.ejercicios.map(a => `<option value="${a}" ${a === E.ejercicio ? 'selected' : ''}>${a}</option>`).join('');
 }
 
-const VISTAS = { inicio: vistaInicio, libro: vistaLibro, tesoreria: vistaTesoreria, facturas: vistaFacturas, ajustes: vistaAjustes, historial: vistaHistorial };
+const VISTAS = { inicio: vistaInicio, libro: vistaLibro, tesoreria: vistaTesoreria, facturas: vistaFacturas, subvenciones: vistaSubvenciones,
+  subvencion: vistaSubvencion, memoria: vistaMemoria, ajustes: vistaAjustes, historial: vistaHistorial };
 let rutaAnterior = null;
 function enrutar() {
   const [ruta, qs] = location.hash.slice(1).split('?');
   const nombre = VISTAS[ruta] ? ruta : 'inicio';
-  const pestana = nombre === 'historial' ? 'ajustes' : nombre;
+  const pestana = SECCION_DE[nombre] || nombre;
   $$('.pestanas a').forEach(a => {
     if (a.dataset.ruta === pestana) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
-  document.title = `${PESTANAS.find(p => p.ruta === pestana)?.nombre} · Cuentas de la coral`;
+  const enAjustes = nombre === 'ajustes' || nombre === 'historial';
+  $('.boton-ajustes')?.toggleAttribute('aria-current', enAjustes);
+  document.title = `${TITULOS[nombre] || PESTANAS.find(p => p.ruta === pestana)?.nombre} · Cuentas de la coral`;
   if (rutaAnterior !== null && rutaAnterior !== nombre) { scrollTo(0, 0); $('#vista').focus({ preventScroll: true }); }
   rutaAnterior = nombre;
   VISTAS[nombre](new URLSearchParams(qs || ''));
@@ -419,10 +426,12 @@ function tablaCategorias(tipo, movs) {
 async function vistaInicio() {
   const v = $('#vista');
   v.innerHTML = esqueleto(3);
-  let pendientes = [];
+  let pendientes = [], plazos = [];
   try {
-    [, , pendientes] = await Promise.all([cargarSaldos(), cargarMovs(),
-      q(sb.from('documentos').select('id, total').eq('tipo', 'factura').eq('estado', 'emitida'))]);
+    [, , pendientes, plazos] = await Promise.all([cargarSaldos(), cargarMovs(),
+      q(sb.from('documentos').select('id, total').eq('tipo', 'factura').eq('estado', 'emitida')),
+      q(sb.from('subvenciones').select('id, convocatoria, plazo_justificacion, estado').eq('estado', 'concedida')
+        .not('plazo_justificacion', 'is', null).lte('plazo_justificacion', sumarDias(hoy(), 30)).order('plazo_justificacion'))]);
   } catch (e) { return errorVista(v, e, vistaInicio); }
   const activas = E.cuentas.filter(c => c.activa);
   const total = activas.reduce((s, c) => s + Number(c.saldo), 0);
@@ -431,7 +440,12 @@ async function vistaInicio() {
   const hayBanco = E.cuentas.some(c => c.tipo === 'banco');
 
   v.innerHTML = `
-    <div class="encabezado-vista"><h1>Resumen ${E.ejercicio}</h1></div>
+    <div class="encabezado-vista"><h1>Resumen ${E.ejercicio}</h1>
+      <a class="btn btn-texto" href="#memoria">${ico('grafico', 'ico-s')} Memoria del año</a></div>
+    ${plazos.map(s => { const dd = diasHasta(s.plazo_justificacion); return `<div class="aviso ${dd < 0 ? 'aviso-error' : 'aviso-aviso'}" style="margin-bottom:var(--space-3)">${ico('alerta')}
+      <p>${dd < 0 ? `Se pasó el plazo para justificar «${esc(s.convocatoria)}» (${fecha(s.plazo_justificacion)}).`
+        : `Quedan ${dd} ${dd === 1 ? 'día' : 'días'} para justificar «${esc(s.convocatoria)}» (hasta el ${fecha(s.plazo_justificacion)}).`}</p>
+      <a class="btn btn-texto acciones" href="#subvencion?id=${s.id}">Ver subvención</a></div>`; }).join('')}
     ${puedeEditar() ? `<div class="accion-principal">
       <button type="button" class="btn btn-primario btn-grande" data-a="nuevo" data-tipo="gasto">${ico('mas')} Apuntar gasto</button>
       <button type="button" class="btn btn-grande" data-a="nuevo" data-tipo="ingreso">${ico('mas')} Apuntar ingreso</button>
@@ -609,6 +623,17 @@ async function abrirDetalle(id) {
     $('#b-ver-fac', d).onclick = () => { d.close(); abrirDocumento(fac.id); };
     const an = $('#b-anular', d);
     if (an) an.outerHTML = `<p class="muted pequeno izquierda" style="max-width:32ch">Es el cobro de la factura ${esc(fac.codigo)}: para anularlo, usa «Deshacer cobro» en la factura.</p>`;
+  });
+  // Subvención: si es un cobro de subvención o un gasto que la justifica
+  Promise.all([
+    m.subvencion_id ? sb.from('subvenciones').select('id, convocatoria').eq('id', m.subvencion_id).maybeSingle().then(r => r.data) : null,
+    sb.from('subvencion_gastos').select('importe, subvenciones(id, convocatoria)').eq('movimiento_id', m.id).then(r => r.data || []),
+  ]).then(([cobroDe, justifica]) => {
+    if (!d.open) return;
+    const enlaces = [...(cobroDe ? [[cobroDe, 'Cobro de']] : []), ...justifica.map(j => [j.subvenciones, `Justifica (${eur(j.importe)})`])];
+    if (!enlaces.length) return;
+    $('.datos', d).insertAdjacentHTML('beforeend', `<dt>Subvención</dt><dd>${enlaces.map(([s, t]) =>
+      `<a href="#subvencion?id=${s.id}" data-cerrar>${esc(t)} «${esc(s.convocatoria)}»</a>`).join('<br>')}</dd>`);
   });
   // Si tiene recibo firmado: enlace a él; si el apunte nació del recibo, se anula desde el recibo
   sb.from('recibos').select('id, codigo, documento_id').eq('movimiento_id', m.id).eq('anulado', false).maybeSingle().then(({ data: rec }) => {
@@ -1283,7 +1308,7 @@ function gestionarUsuario(p) {
 
 async function copiaSeguridad() {
   try {
-    const tablas = ['ajustes', 'cuentas', 'categorias', 'movimientos', 'justificantes', 'conciliaciones', 'clientes', 'documentos', 'recibos', 'perfiles', 'historial'];
+    const tablas = ['ajustes', 'cuentas', 'categorias', 'movimientos', 'justificantes', 'conciliaciones', 'clientes', 'documentos', 'recibos', 'subvenciones', 'subvencion_gastos', 'subvencion_documentos', 'memorias', 'perfiles', 'historial'];
     const datos = {};
     for (const t of tablas) datos[t] = await q(sb.from(t).select('*').limit(100000));
     descargar(`copia-cuentas-coral-${hoy()}.json`, JSON.stringify({ fecha: new Date().toISOString(), version: 1, datos }, null, 1), 'application/json');
@@ -1296,8 +1321,10 @@ async function copiaSeguridad() {
 // ======================================================================
 const CAMPOS = { fecha: 'fecha', tipo: 'tipo', concepto: 'concepto', tercero: 'persona', categoria_id: 'categoría', cuenta_id: 'cuenta',
   cuenta_destino_id: 'cuenta destino', importe: 'importe', notas: 'notas', conciliado: 'comprobado', anulado: 'anulado',
-  nombre: 'nombre', detalle: 'detalle', saldo_inicial: 'saldo inicial', fecha_inicial: 'fecha del saldo', activa: 'en uso', rol: 'permiso', activo: 'acceso' };
+  nombre: 'nombre', detalle: 'detalle', saldo_inicial: 'saldo inicial', fecha_inicial: 'fecha del saldo', activa: 'en uso', rol: 'permiso', activo: 'acceso',
+  subvencion_id: 'subvención' };
 function valorLegible(k, v) {
+  if (k === 'subvencion_id') return v ? 'enlazada' : 'ninguna';
   if (v === null || v === undefined || v === '') return '—';
   if (k === 'importe' || k === 'saldo_inicial') return eur(v);
   if (k === 'categoria_id') return categoria(v)?.nombre || '?';
@@ -1322,6 +1349,15 @@ function describir(h) {
   if (h.tabla === 'conciliaciones') return `Cuadró ${cuenta(d.cuenta_id)?.nombre || 'una cuenta'} a ${fecha(d.fecha)}: real ${eur(d.saldo_extracto)}, apuntado ${eur(d.saldo_app)}`;
   if (h.tabla === 'ajustes') return 'Cambió los ajustes de la coral';
   if (h.tabla === 'documentos') return describirDocumento(h);
+  if (h.tabla === 'subvenciones') {
+    const x = h.despues || h.antes || {};
+    if (h.accion === 'alta') return `Añadió la subvención «${x.convocatoria}» (${x.organismo})`;
+    if (h.accion === 'baja') return `Borró la subvención «${x.convocatoria}»`;
+    if (h.antes?.estado !== h.despues?.estado) return `Subvención «${x.convocatoria}»: ${ESTADOS_SUB[h.antes.estado][0].toLowerCase()} → ${ESTADOS_SUB[x.estado][0].toLowerCase()}`;
+    return `Modificó la subvención «${x.convocatoria}»`;
+  }
+  if (h.tabla === 'subvencion_gastos') return h.accion === 'baja' ? `Quitó un gasto de ${eur(h.antes.importe)} de una subvención` : `Asignó un gasto de ${eur((h.despues || {}).importe)} a una subvención`;
+  if (h.tabla === 'subvencion_documentos') return h.accion === 'baja' ? `Quitó el documento «${h.antes.nombre}» de una subvención` : `Añadió el documento «${h.despues.nombre}» a una subvención`;
   if (h.tabla === 'recibos') {
     const x = h.despues || h.antes || {};
     if (h.accion === 'alta') return `Hizo el recibo ${x.codigo} (${x.tipo === 'pago' ? 'pago a' : 'cobro de'} ${x.persona}, ${eur(x.importe)})`;
@@ -2301,6 +2337,548 @@ async function abrirRecibo(id) {
       d.close(); if (location.hash.startsWith('#facturas')) enrutar(); tostada(`Recibo ${r.codigo} anulado`); abrirRecibo(r.id);
     } catch (err) { tostada(mensajeError(err), { error: true }); }
   });
+}
+
+// ======================================================================
+// Subvenciones (tanda 4)
+// ======================================================================
+const ESTADOS_SUB = { solicitada: ['Solicitada', ''], concedida: ['Concedida', 'etiqueta-ok'], denegada: ['Denegada', 'etiqueta-error'], justificada: ['Justificada', 'etiqueta-ok'] };
+const ORGANISMOS = ['Ayuntamiento de Mengíbar', 'Diputación Provincial de Jaén', 'Junta de Andalucía', 'Ministerio de Cultura'];
+const diasHasta = iso => Math.round((new Date(iso + 'T12:00:00') - new Date(hoy() + 'T12:00:00')) / 864e5);
+function avisoPlazo(s) {
+  if (s.estado !== 'concedida' || !s.plazo_justificacion) return '';
+  const d = diasHasta(s.plazo_justificacion);
+  if (d < 0) return `<span class="etiqueta etiqueta-error">${ico('alerta', 'ico-s')} Plazo de justificación vencido</span>`;
+  if (d <= 30) return `<span class="etiqueta etiqueta-aviso">${ico('alerta', 'ico-s')} Justificar ${d === 0 ? 'hoy' : `en ${d} ${d === 1 ? 'día' : 'días'}`}</span>`;
+  return '';
+}
+const chipSub = s => `<span class="etiqueta ${ESTADOS_SUB[s.estado][1]}">${ESTADOS_SUB[s.estado][0]}</span>${avisoPlazo(s)}`;
+function barra(valor, total, etiqueta) {
+  const pct = total > 0 ? Math.min(100, Math.round((valor / total) * 100)) : 0;
+  return `<div class="progreso"><div class="progreso-txt"><span class="muted pequeno">${etiqueta}</span>
+      <span class="num"><strong>${eur(valor)}</strong>${total > 0 ? ` de ${eur(total)} (${pct} %)` : ''}</span></div>
+    <div class="barra" role="progressbar" aria-label="${etiqueta}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></div></div>`;
+}
+async function datosSubvenciones() {
+  const [cobros, gastos] = await Promise.all([
+    q(sb.from('movimientos').select('id, subvencion_id, importe, fecha, numero, ejercicio, concepto, cuenta_id').not('subvencion_id', 'is', null).eq('anulado', false)),
+    q(sb.from('subvencion_gastos').select('id, subvencion_id, importe, movimiento_id, movimientos(numero, ejercicio, fecha, concepto, tercero, importe, anulado, cuenta_id)')),
+  ]);
+  const cobrado = id => cobros.filter(c => c.subvencion_id === id).reduce((a, c) => a + Number(c.importe), 0);
+  const justificado = id => gastos.filter(g => g.subvencion_id === id && !g.movimientos?.anulado).reduce((a, g) => a + Number(g.importe), 0);
+  return { cobros, gastos, cobrado, justificado };
+}
+
+async function vistaSubvenciones() {
+  const v = $('#vista');
+  v.innerHTML = esqueleto(3);
+  let subs, ex;
+  try { [subs, ex] = await Promise.all([q(sb.from('subvenciones').select('*').eq('ejercicio', E.ejercicio).order('creado_en', { ascending: false })), datosSubvenciones()]); }
+  catch (e) { return errorVista(v, e, vistaSubvenciones); }
+  const vivas = subs.filter(s => ['concedida', 'justificada'].includes(s.estado));
+  const tConc = vivas.reduce((a, s) => a + Number(s.concedido || 0), 0), tCob = subs.reduce((a, s) => a + ex.cobrado(s.id), 0);
+  v.innerHTML = `
+    <div class="encabezado-vista"><h1>Subvenciones ${E.ejercicio}</h1>
+      ${puedeEditar() ? `<button type="button" class="btn btn-primario" data-sub-nueva>${ico('mas')} Nueva subvención</button>` : ''}</div>
+    ${subs.length ? `<div class="resumen-libro"><span>Concedido <strong class="num">${eur(tConc)}</strong></span>
+        <span>Cobrado <strong class="num">${eur(tCob)}</strong></span><span>Pendiente de cobro <strong class="num">${eur(Math.max(0, tConc - tCob))}</strong></span></div>
+      <ul class="lista-apuntes">${subs.map(s => `<li><a class="fila" href="#subvencion?id=${s.id}">
+        <span class="concepto">${esc(s.convocatoria)}</span>
+        <span class="importe num">${s.concedido != null ? eur(s.concedido) : s.solicitado != null ? eur(s.solicitado) : '—'}</span>
+        <span class="meta"><span>${esc(s.organismo)}</span>
+          ${['concedida', 'justificada'].includes(s.estado) ? `<span>Cobrado ${eur(ex.cobrado(s.id))} · Justificado ${eur(ex.justificado(s.id))}</span>` : s.estado === 'solicitada' ? '<span>Importe solicitado</span>' : ''}
+          ${chipSub(s)}</span></a></li>`).join('')}</ul>`
+    : `<div class="vacio">${ico('subvencion')}<h2>No hay subvenciones de ${E.ejercicio}</h2>
+        <p>Apunta cada subvención que solicitéis: la app os recordará el plazo de justificación y qué gastos la justifican.</p>
+        ${puedeEditar() ? `<button type="button" class="btn btn-primario" data-sub-nueva>${ico('mas')} Añadir la primera</button>` : ''}</div>`}`;
+  $$('[data-sub-nueva]', v).forEach(b => b.addEventListener('click', () => formSubvencion()));
+}
+
+function formSubvencion(s = null) {
+  const campoFecha = (id, et, val) => `<div class="campo"><label for="s-${id}">${et}</label><input id="s-${id}" type="date" value="${val || ''}"></div>`;
+  const campoImporte = (id, et, val, ayuda) => `<div class="campo"><label for="s-${id}">${et}</label>
+    <input id="s-${id}" inputmode="decimal" class="num" placeholder="0,00" value="${val != null ? numInput(val) : ''}" aria-describedby="s-${id}-err${ayuda ? ` s-${id}-ayuda` : ''}">
+    ${ayuda ? `<p class="ayuda" id="s-${id}-ayuda">${ayuda}</p>` : ''}<p class="error" id="s-${id}-err" hidden></p></div>`;
+  const d = dialogo({
+    titulo: s ? 'Editar subvención' : 'Nueva subvención', cerrarFuera: false,
+    cuerpo: `<form class="formulario" id="f-sub" novalidate>
+      <div class="campo"><label for="s-organismo">Organismo</label>
+        <input id="s-organismo" list="dl-organismos" required maxlength="120" autocomplete="off" value="${esc(s?.organismo || '')}" placeholder="Ej.: Ayuntamiento de Mengíbar" aria-describedby="s-organismo-err">
+        <datalist id="dl-organismos">${ORGANISMOS.map(o => `<option value="${esc(o)}"></option>`).join('')}</datalist><p class="error" id="s-organismo-err" hidden></p></div>
+      <div class="campo"><label for="s-convocatoria">Convocatoria o nombre</label>
+        <input id="s-convocatoria" required maxlength="200" autocomplete="off" value="${esc(s?.convocatoria || '')}" placeholder="Ej.: Subvenciones a asociaciones culturales 2027" aria-describedby="s-convocatoria-err"><p class="error" id="s-convocatoria-err" hidden></p></div>
+      <div class="fila-campos">
+        <div class="campo"><label for="s-ejercicio">Año</label><input id="s-ejercicio" type="number" inputmode="numeric" min="2000" max="2100" required value="${s?.ejercicio || E.ejercicio}"></div>
+        <div class="campo"><label for="s-estado">Estado</label><select id="s-estado">${Object.entries(ESTADOS_SUB).map(([k, [t]]) => `<option value="${k}" ${(s?.estado || 'solicitada') === k ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+      </div>
+      <div class="fila-campos">${campoImporte('solicitado', 'Importe solicitado (€)', s?.solicitado)}${campoImporte('concedido', 'Importe concedido (€)', s?.concedido, 'Cuando os lo comuniquen.')}</div>
+      <div class="fila-campos">${campoFecha('fecha_solicitud', 'Fecha de solicitud', s?.fecha_solicitud)}${campoFecha('fecha_resolucion', 'Fecha de resolución', s?.fecha_resolucion)}</div>
+      <div class="fila-campos">${campoFecha('plazo_justificacion', 'Plazo de justificación', s?.plazo_justificacion)}${campoFecha('fecha_justificada', 'Justificada el', s?.fecha_justificada)}</div>
+      <div class="campo"><label for="s-notas">Notas</label><textarea id="s-notas" maxlength="1000" aria-describedby="s-notas-ayuda">${esc(s?.notas || '')}</textarea>
+        <p class="ayuda" id="s-notas-ayuda">Opcional. Por ejemplo, qué gastos admite o a quién hay que entregar la justificación.</p></div>
+      <div class="aviso aviso-error" id="s-error" role="alert" hidden></div></form>`,
+    pie: `${s ? `<button type="button" class="btn btn-texto izquierda" id="b-sub-borrar">${ico('papelera', 'ico-s')} Borrar</button>` : ''}
+      <button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" form="f-sub" class="btn btn-primario">${s ? 'Guardar cambios' : 'Guardar subvención'}</button>`,
+  });
+  const f = $('#f-sub', d);
+  $('#s-estado', f).addEventListener('change', e => { if (e.target.value === 'justificada' && !$('#s-fecha_justificada', f).value) $('#s-fecha_justificada', f).value = hoy(); });
+  f.addEventListener('submit', async e => {
+    e.preventDefault();
+    const org = $('#s-organismo', f), conv = $('#s-convocatoria', f);
+    mostrarError(org, org.value.trim() ? '' : 'Escribe el organismo que la convoca.');
+    mostrarError(conv, conv.value.trim() ? '' : 'Escribe el nombre de la convocatoria.');
+    const importe = id => { const el = $(`#s-${id}`, f), n = el.value.trim() ? parseImporte(el.value) : null; mostrarError(el, n !== null && !(n >= 0) ? 'Escribe el importe con números, por ejemplo 2.000,00.' : ''); return n; };
+    const datos = {
+      organismo: org.value.trim(), convocatoria: conv.value.trim(), ejercicio: Number($('#s-ejercicio', f).value), estado: $('#s-estado', f).value,
+      solicitado: importe('solicitado'), concedido: importe('concedido'), notas: $('#s-notas', f).value.trim() || null,
+      ...Object.fromEntries(['fecha_solicitud', 'fecha_resolucion', 'plazo_justificacion', 'fecha_justificada'].map(k => [k, $(`#s-${k}`, f).value || null])),
+    };
+    const malo = f.querySelector('[aria-invalid="true"]'); if (malo) return malo.focus();
+    if (!(datos.ejercicio >= 2000 && datos.ejercicio <= 2100)) { tostada('Revisa el año.', { error: true }); return $('#s-ejercicio', f).focus(); }
+    await conBoton(d.querySelector('[type=submit]'), async () => {
+      try {
+        const res = s ? await q(sb.from('subvenciones').update(datos).eq('id', s.id).select().single()) : await q(sb.from('subvenciones').insert(datos).select().single());
+        d.close(); tostada(s ? 'Subvención actualizada' : 'Subvención guardada'); irA(`subvencion?id=${res.id}`);
+      } catch (err) { const box = $('#s-error', f); box.innerHTML = `${ico('alerta')}<p>${esc(mensajeError(err))}</p>`; box.hidden = false; }
+    });
+  });
+  $('#b-sub-borrar', d)?.addEventListener('click', async () => {
+    if (!await confirmar({ titulo: '¿Borrar esta subvención?', texto: 'Se borrará la ficha con sus gastos asignados y documentos. Los apuntes del libro no se tocan. Si ya tiene cobros, primero desenlázalos.', boton: 'Borrar subvención', peligro: true })) return;
+    try {
+      const docs = await q(sb.from('subvencion_documentos').select('ruta').eq('subvencion_id', s.id));
+      await q(sb.from('subvenciones').delete().eq('id', s.id));
+      if (docs.length) await sb.storage.from('justificantes').remove(docs.map(x => x.ruta));
+      d.close(); tostada('Subvención borrada'); irA('subvenciones');
+    } catch (err) {
+      tostada(err?.code === '23503' ? 'Tiene cobros enlazados en el libro: desenlázalos primero desde la ficha.' : mensajeError(err), { error: true });
+    }
+  });
+  setTimeout(() => $('#s-organismo', f).focus(), 50);
+}
+
+async function vistaSubvencion(params) {
+  const id = params.get('id'), v = $('#vista');
+  v.innerHTML = esqueleto(5);
+  let s, ex, docs;
+  try {
+    [s, ex, docs] = await Promise.all([q(sb.from('subvenciones').select('*').eq('id', id).single()), datosSubvenciones(),
+      q(sb.from('subvencion_documentos').select('*').eq('subvencion_id', id).order('subido_en'))]);
+  } catch (e) { return errorVista(v, e, () => vistaSubvencion(params)); }
+  const cobros = ex.cobros.filter(c => c.subvencion_id === id).sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const gastos = ex.gastos.filter(g => g.subvencion_id === id).sort((a, b) => a.movimientos.fecha.localeCompare(b.movimientos.fecha));
+  const concedido = Number(s.concedido || 0), tCob = ex.cobrado(id), tJus = ex.justificado(id);
+  const ed = puedeEditar();
+  const fechas = [['Solicitada el', s.fecha_solicitud], ['Resolución', s.fecha_resolucion], ['Plazo de justificación', s.plazo_justificacion], ['Justificada el', s.fecha_justificada]].filter(x => x[1]);
+  v.innerHTML = `
+    <div class="encabezado-vista"><a class="btn btn-texto" href="#subvenciones">← Subvenciones</a></div>
+    <div class="encabezado-vista"><h1>${esc(s.convocatoria)}</h1>${ed ? `<button type="button" class="btn" id="b-sub-editar">${ico('lapiz')} Editar</button>` : ''}</div>
+    <p class="muted">${esc(s.organismo)} · ${s.ejercicio}</p>
+    <div class="cabecera-doc" style="margin-top:var(--space-2)">${chipSub(s)}</div>
+    <div class="rejilla rejilla-3 seccion">
+      <section class="tarjeta kpi"><span class="muted pequeno">Concedido</span><span class="cifra num">${s.concedido != null ? eur(s.concedido) : '—'}</span>
+        <span class="muted pequeno">Solicitado: ${s.solicitado != null ? eur(s.solicitado) : '—'}</span></section>
+      <section class="tarjeta">${barra(tCob, concedido, 'Cobrado')}</section>
+      <section class="tarjeta">${barra(tJus, concedido, 'Justificado con gastos')}</section>
+    </div>
+    ${fechas.length || s.notas ? `<dl class="datos seccion">${fechas.map(([t, f]) => `<dt>${t}</dt><dd>${fecha(f)}</dd>`).join('')}${s.notas ? `<dt>Notas</dt><dd>${esc(s.notas)}</dd>` : ''}</dl>` : ''}
+
+    <section class="seccion" aria-labelledby="t-cobros"><div class="encabezado-vista"><h2 id="t-cobros">Cobros</h2>
+      ${ed && s.estado !== 'denegada' ? `<button type="button" class="btn btn-texto" id="b-sub-enlazar">Enlazar un ingreso ya apuntado</button>
+        <button type="button" class="btn" id="b-sub-cobro">${ico('caja')} Registrar cobro</button>` : ''}</div>
+      ${cobros.length ? `<ul class="lista-apuntes">${cobros.map(c => `<li class="fila-con-accion"><button type="button" class="fila" data-mov="${c.id}">
+          <span class="concepto">${esc(c.concepto)}</span><span class="importe num positivo">+${eur(c.importe)}</span>
+          <span class="meta"><span class="num">Nº ${c.numero}/${c.ejercicio}</span><span>${fecha(c.fecha)}</span><span>${esc(cuenta(c.cuenta_id)?.nombre || '')}</span></span></button>
+          ${ed ? `<button type="button" class="btn btn-icono" data-desenlazar="${c.id}" aria-label="Desenlazar este ingreso de la subvención">${ico('x', 'ico-s')}</button>` : ''}</li>`).join('')}</ul>`
+        : '<p class="muted">Aún no se ha cobrado nada de esta subvención.</p>'}
+    </section>
+
+    <section class="seccion" aria-labelledby="t-gastos"><div class="encabezado-vista"><h2 id="t-gastos">Gastos que la justifican</h2>
+      ${gastos.length ? `<button type="button" class="btn btn-texto" id="b-sub-csv">${ico('descargar', 'ico-s')} Excel</button>
+        <button type="button" class="btn btn-texto" id="b-sub-pdf">${ico('descargar', 'ico-s')} Relación en PDF</button>` : ''}
+      ${ed ? `<button type="button" class="btn" id="b-sub-gastos">${ico('mas')} Añadir gastos</button>` : ''}</div>
+      ${concedido > 0 && tJus < concedido && s.estado === 'concedida' ? `<p class="muted pequeno" style="margin-bottom:var(--space-2)">Faltan <strong class="num">${eur(concedido - tJus)}</strong> por justificar.</p>` : ''}
+      ${gastos.length ? `<ul class="lista-apuntes">${gastos.map(g => { const m = g.movimientos; return `<li class="fila-con-accion">
+          <button type="button" class="fila ${m.anulado ? 'anulada' : ''}" data-mov="${g.movimiento_id}">
+            <span class="concepto">${esc(m.concepto)}</span><span class="importe num">${eur(g.importe)}</span>
+            <span class="meta"><span class="num">Nº ${m.numero}/${m.ejercicio}</span><span>${fecha(m.fecha)}</span>${m.tercero ? `<span>${esc(m.tercero)}</span>` : ''}
+              ${Number(g.importe) < Number(m.importe) ? `<span>Parte de un gasto de ${eur(m.importe)}</span>` : ''}${m.anulado ? '<span class="etiqueta etiqueta-error">Gasto anulado: no cuenta</span>' : ''}</span></button>
+          ${ed ? `<button type="button" class="btn btn-icono" data-quitar-gasto="${g.id}" aria-label="Quitar este gasto de la subvención">${ico('x', 'ico-s')}</button>` : ''}</li>`; }).join('')}</ul>`
+        : '<p class="muted">Añade los gastos del libro que justifican esta subvención: músicos, partituras, desplazamientos…</p>'}
+    </section>
+
+    <section class="seccion" aria-labelledby="t-docs"><div class="encabezado-vista"><h2 id="t-docs">Documentos</h2>
+      ${ed ? `<label class="btn" for="sd-archivo">${ico('clip')} Añadir documento</label><input type="file" id="sd-archivo" class="sr" accept="image/*,application/pdf" multiple>` : ''}</div>
+      ${docs.length ? `<ul class="lista-simple">${docs.map(x => `<li>${ico(x.tipo_mime === 'application/pdf' ? 'archivo' : 'camara', 'ico-s')}
+          <span class="crece">${esc(x.nombre)}<br><span class="muted pequeno">${fecha(x.subido_en)}</span></span>
+          <button type="button" class="btn btn-texto" data-ver-doc="${x.id}">Ver</button>
+          ${ed ? `<button type="button" class="btn btn-icono" data-quitar-doc="${x.id}" aria-label="Quitar ${esc(x.nombre)}">${ico('papelera', 'ico-s')}</button>` : ''}</li>`).join('')}</ul>`
+        : '<p class="muted">Guarda aquí las bases, la resolución y la justificación entregada.</p>'}
+      <p class="archivos-elegidos" id="sd-estado" role="status"></p>
+    </section>`;
+
+  const recargar = () => vistaSubvencion(params);
+  $('#b-sub-editar')?.addEventListener('click', () => formSubvencion(s));
+  $('#b-sub-cobro')?.addEventListener('click', () => formCobroSubvencion(s, Math.max(0, concedido - tCob), recargar));
+  $('#b-sub-enlazar')?.addEventListener('click', () => enlazarIngreso(s, recargar));
+  $('#b-sub-gastos')?.addEventListener('click', () => asignarGastos(s, ex, recargar));
+  $$('[data-desenlazar]', v).forEach(b => b.addEventListener('click', async () => {
+    try {
+      await q(sb.from('movimientos').update({ subvencion_id: null }).eq('id', b.dataset.desenlazar));
+      recargar(); tostada('Ingreso desenlazado. Sigue en el libro.', { deshacer: async () => { await q(sb.from('movimientos').update({ subvencion_id: s.id }).eq('id', b.dataset.desenlazar)); recargar(); } });
+    } catch (err) { tostada(mensajeError(err), { error: true }); }
+  }));
+  $$('[data-quitar-gasto]', v).forEach(b => b.addEventListener('click', async () => {
+    const g = gastos.find(x => x.id === b.dataset.quitarGasto);
+    try {
+      await q(sb.from('subvencion_gastos').delete().eq('id', g.id));
+      recargar(); tostada('Gasto quitado de la subvención', { deshacer: async () => { await q(sb.from('subvencion_gastos').insert({ subvencion_id: s.id, movimiento_id: g.movimiento_id, importe: g.importe })); recargar(); } });
+    } catch (err) { tostada(mensajeError(err), { error: true }); }
+  }));
+  $$('[data-ver-doc]', v).forEach(b => b.addEventListener('click', async () => {
+    const x = docs.find(y => y.id === b.dataset.verDoc), ventana = window.open('', '_blank');
+    try { const { signedUrl } = await q(sb.storage.from('justificantes').createSignedUrl(x.ruta, 300)); if (ventana) ventana.location = signedUrl; else location.href = signedUrl; }
+    catch (err) { ventana?.close(); tostada(mensajeError(err), { error: true }); }
+  }));
+  $$('[data-quitar-doc]', v).forEach(b => b.addEventListener('click', async () => {
+    const x = docs.find(y => y.id === b.dataset.quitarDoc);
+    if (!await confirmar({ titulo: '¿Quitar este documento?', texto: `Se borrará «${esc(x.nombre)}».`, boton: 'Quitar documento', peligro: true })) return;
+    try { await q(sb.from('subvencion_documentos').delete().eq('id', x.id)); await sb.storage.from('justificantes').remove([x.ruta]); recargar(); tostada('Documento quitado'); }
+    catch (err) { tostada(mensajeError(err), { error: true }); }
+  }));
+  $('#sd-archivo')?.addEventListener('change', async e => {
+    const archivos = [...e.target.files]; e.target.value = '';
+    $('#sd-estado').textContent = archivos.length === 1 ? 'Subiendo el documento…' : `Subiendo ${archivos.length} documentos…`;
+    try {
+      for (const a of archivos) {
+        let blob = a, nombre = a.name || 'documento', tipo = a.type;
+        if (tipo.startsWith('image/')) { blob = await comprimirImagen(a); tipo = 'image/jpeg'; nombre = nombre.replace(/\.[^.]+$/, '') + '.jpg'; }
+        else if (tipo !== 'application/pdf') throw new ErrorHumano(`«${nombre}» no es una foto ni un PDF.`);
+        if (blob.size > 10 * 1024 * 1024) throw new ErrorHumano(`«${nombre}» ocupa más de 10 MB.`);
+        const ruta = `subvenciones/${s.id}/${crypto.randomUUID().slice(0, 8)}-${slug(nombre)}`;
+        await q(sb.storage.from('justificantes').upload(ruta, blob, { contentType: tipo }));
+        try { await q(sb.from('subvencion_documentos').insert({ subvencion_id: s.id, ruta, nombre, tipo_mime: tipo, tamano: blob.size })); }
+        catch (err) { await sb.storage.from('justificantes').remove([ruta]); throw err; }
+      }
+      recargar(); tostada(archivos.length === 1 ? 'Documento guardado' : 'Documentos guardados');
+    } catch (err) { $('#sd-estado').textContent = ''; tostada(mensajeError(err), { error: true }); }
+  });
+  const filasRelacion = () => gastos.filter(g => !g.movimientos.anulado).map(g => ({ ...g.movimientos, imputado: Number(g.importe) }));
+  $('#b-sub-csv')?.addEventListener('click', () => {
+    const filas = filasRelacion().map(m => [`${m.numero}/${m.ejercicio}`, m.fecha.split('-').reverse().join('/'), m.tercero || '', m.concepto, csvNum(m.importe), csvNum(m.imputado)]);
+    const total = filasRelacion().reduce((a, m) => a + m.imputado, 0);
+    descargar(`justificacion-${slug(s.convocatoria)}.csv`, csv([[`${s.convocatoria} · ${s.organismo}`], ['Nº apunte', 'Fecha', 'Proveedor o perceptor', 'Concepto', 'Importe del gasto', 'Importe imputado'], ...filas, ['', '', '', 'TOTAL', '', csvNum(total)]]), 'text/csv;charset=utf-8');
+  });
+  $('#b-sub-pdf')?.addEventListener('click', e => conBoton(e.currentTarget, async () => {
+    try { descargar(`justificacion-${slug(s.convocatoria)}.pdf`, await pdfRelacionGastos(s, filasRelacion(), tCob), 'application/pdf'); }
+    catch (err) { tostada('No se pudo crear el PDF. ' + mensajeError(err), { error: true }); }
+  }));
+}
+
+function formCobroSubvencion(s, pendiente, alTerminar) {
+  const activas = E.cuentas.filter(c => c.activa), cats = E.categorias.filter(c => c.tipo === 'ingreso' && c.activa);
+  const catDef = (cats.find(c => /subvenci/i.test(c.nombre)) || cats[0])?.id;
+  const d = dialogo({
+    titulo: 'Registrar cobro de la subvención', cerrarFuera: false,
+    cuerpo: `<form class="formulario" id="f-cs" novalidate>
+      <p>Se apuntará en el libro un ingreso de ${esc(s.organismo)} enlazado a esta subvención. Si os la pagan en varias veces, registra cada pago por separado.</p>
+      <div class="fila-campos">
+        <div class="campo"><label for="cs-importe">Importe (€)</label><input id="cs-importe" class="input-importe" inputmode="decimal" value="${pendiente > 0 ? numInput(pendiente) : ''}" placeholder="0,00" aria-describedby="cs-importe-err"><p class="error" id="cs-importe-err" hidden></p></div>
+        <div class="campo"><label for="cs-fecha">Fecha del cobro</label><input id="cs-fecha" type="date" value="${hoy()}"></div>
+      </div>
+      <div class="fila-campos">
+        <div class="campo"><label for="cs-cuenta">Cobrado en</label><select id="cs-cuenta">${activas.map(c => `<option value="${c.id}" ${c.tipo === 'banco' ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></div>
+        <div class="campo"><label for="cs-cat">Categoría</label><select id="cs-cat">${cats.map(c => `<option value="${c.id}" ${c.id === catDef ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></div>
+      </div>
+      <div class="aviso aviso-error" id="cs-error" role="alert" hidden></div></form>`,
+    pie: `<button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" form="f-cs" class="btn btn-primario">Registrar cobro</button>`,
+  });
+  $('#f-cs', d).addEventListener('submit', async e => {
+    e.preventDefault();
+    const imp = $('#cs-importe', d), n = parseImporte(imp.value);
+    mostrarError(imp, n > 0 ? '' : 'Escribe un importe mayor que cero.');
+    if (!(n > 0)) return imp.focus();
+    await conBoton(d.querySelector('[type=submit]'), async () => {
+      try {
+        const mov = await q(sb.from('movimientos').insert({ tipo: 'ingreso', fecha: $('#cs-fecha', d).value, importe: n, concepto: `Subvención: ${s.convocatoria}`,
+          tercero: s.organismo, categoria_id: $('#cs-cat', d).value, cuenta_id: $('#cs-cuenta', d).value, subvencion_id: s.id }).select().single());
+        d.close(); alTerminar();
+        tostada(`Cobro apuntado en el libro (nº ${mov.numero})`, { deshacer: async () => { await q(sb.from('movimientos').update({ anulado: true, motivo_anulacion: 'Cobro de subvención deshecho' }).eq('id', mov.id)); alTerminar(); } });
+      } catch (err) { const box = $('#cs-error', d); box.innerHTML = `${ico('alerta')}<p>${esc(mensajeError(err))}</p>`; box.hidden = false; }
+    });
+  });
+}
+
+async function enlazarIngreso(s, alTerminar) {
+  let ingresos;
+  try {
+    ingresos = await q(sb.from('movimientos').select('id, numero, ejercicio, fecha, concepto, tercero, importe').eq('tipo', 'ingreso').eq('anulado', false)
+      .is('subvencion_id', null).in('ejercicio', [s.ejercicio, s.ejercicio + 1]).order('fecha', { ascending: false }));
+  } catch (e) { return tostada(mensajeError(e), { error: true }); }
+  const d = dialogo({
+    titulo: 'Enlazar un ingreso ya apuntado',
+    cuerpo: ingresos.length ? `<p style="margin-bottom:var(--space-3)">Elige el ingreso del libro que corresponde a esta subvención.</p>
+      <ul class="lista-apuntes">${ingresos.map(m => `<li><button type="button" class="fila" data-enlazar="${m.id}">
+        <span class="concepto">${esc(m.concepto)}</span><span class="importe num positivo">+${eur(m.importe)}</span>
+        <span class="meta"><span class="num">Nº ${m.numero}/${m.ejercicio}</span><span>${fecha(m.fecha)}</span>${m.tercero ? `<span>${esc(m.tercero)}</span>` : ''}</span></button></li>`).join('')}</ul>`
+      : `<div class="vacio">${ico('libro')}<p>No hay ingresos de ${s.ejercicio} o ${s.ejercicio + 1} sin enlazar. Usa «Registrar cobro» para apuntarlo.</p></div>`,
+  });
+  $$('[data-enlazar]', d).forEach(b => b.addEventListener('click', async () => {
+    try { await q(sb.from('movimientos').update({ subvencion_id: s.id }).eq('id', b.dataset.enlazar)); d.close(); alTerminar(); tostada('Ingreso enlazado a la subvención'); }
+    catch (err) { tostada(mensajeError(err), { error: true }); }
+  }));
+}
+
+async function asignarGastos(s, ex, alTerminar) {
+  let gastos;
+  try {
+    gastos = await q(sb.from('movimientos').select('id, numero, ejercicio, fecha, concepto, tercero, importe, categoria_id').eq('tipo', 'gasto').eq('anulado', false)
+      .in('ejercicio', [s.ejercicio, s.ejercicio + 1]).order('fecha', { ascending: false }));
+  } catch (e) { return tostada(mensajeError(e), { error: true }); }
+  const yaAqui = new Set(ex.gastos.filter(g => g.subvencion_id === s.id).map(g => g.movimiento_id));
+  const asignado = id => ex.gastos.filter(g => g.movimiento_id === id && g.subvencion_id !== s.id).reduce((a, g) => a + Number(g.importe), 0);
+  const filas = gastos.filter(m => !yaAqui.has(m.id)).map(m => ({ ...m, libre: redondear(Number(m.importe) - asignado(m.id)) }));
+  const falta = Math.max(0, Number(s.concedido || 0) - ex.justificado(s.id));
+  const d = dialogo({
+    titulo: 'Añadir gastos a la subvención', cerrarFuera: false,
+    cuerpo: filas.length ? `<form class="formulario" id="f-ag" novalidate>
+      <div class="campo"><label for="ag-q">Buscar</label><input id="ag-q" type="search" autocomplete="off" placeholder="Concepto, proveedor o nº"></div>
+      <p class="pequeno" id="ag-total" aria-live="polite"></p>
+      <ul class="lista-asignar">${filas.map(m => `<li data-texto="${esc(`${m.numero} ${m.concepto} ${m.tercero || ''} ${categoria(m.categoria_id)?.nombre || ''}`.toLowerCase())}">
+        <label class="casilla"><input type="checkbox" data-gasto="${m.id}" ${m.libre <= 0 ? 'disabled' : ''}>
+          <span><strong>${esc(m.concepto)}</strong><br><span class="muted pequeno">Nº ${m.numero}/${m.ejercicio} · ${fecha(m.fecha)}${m.tercero ? ` · ${esc(m.tercero)}` : ''} · ${eur(m.importe)}
+            ${m.libre < Number(m.importe) ? (m.libre > 0 ? ` · libres ${eur(m.libre)} (el resto está en otra subvención)` : ' · ya asignado entero a otra subvención') : ''}</span></span></label>
+        <div class="campo importe-asignar"><label class="sr" for="ag-i-${m.id}">Importe a asignar</label>
+          <input id="ag-i-${m.id}" inputmode="decimal" class="num" value="${m.libre > 0 ? numInput(m.libre) : ''}" ${m.libre <= 0 ? 'disabled' : ''}></div></li>`).join('')}</ul>
+      <div class="aviso aviso-error" id="ag-error" role="alert" hidden></div></form>`
+      : `<div class="vacio">${ico('libro')}<p>No hay gastos de ${s.ejercicio} o ${s.ejercicio + 1} disponibles. Apunta primero los gastos en el libro.</p></div>`,
+    pie: filas.length ? `<button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" form="f-ag" class="btn btn-primario">Añadir los marcados</button>` : '<button type="button" class="btn" data-cerrar>Cerrar</button>',
+  });
+  const f = $('#f-ag', d); if (!f) return;
+  const total = () => {
+    const t = $$('[data-gasto]:checked', f).reduce((a, c) => a + (parseImporte($(`#ag-i-${c.dataset.gasto}`, f).value) || 0), 0);
+    $('#ag-total', f).innerHTML = `Marcado: <strong class="num">${eur(t)}</strong>${falta > 0 ? ` · faltaban <span class="num">${eur(falta)}</span> por justificar` : ''}`;
+  };
+  f.addEventListener('input', e => {
+    if (e.target.id === 'ag-q') { const t = e.target.value.trim().toLowerCase(); $$('.lista-asignar li', f).forEach(li => { li.hidden = t && !li.dataset.texto.includes(t); }); }
+    total();
+  });
+  f.addEventListener('change', total); total();
+  f.addEventListener('submit', async e => {
+    e.preventDefault();
+    const marcados = $$('[data-gasto]:checked', f).map(c => ({ movimiento_id: c.dataset.gasto, importe: parseImporte($(`#ag-i-${c.dataset.gasto}`, f).value), libre: filas.find(m => m.id === c.dataset.gasto).libre }));
+    const caja = $('#ag-error', f);
+    const malo = marcados.find(m => !(m.importe > 0) || m.importe > m.libre);
+    if (!marcados.length || malo) { caja.innerHTML = `${ico('alerta')}<p>${!marcados.length ? 'Marca al menos un gasto.' : `Revisa los importes: cada uno debe ser mayor que cero y no superar lo que queda libre del gasto.`}</p>`; caja.hidden = false; return; }
+    await conBoton(d.querySelector('[type=submit]'), async () => {
+      try {
+        await q(sb.from('subvencion_gastos').insert(marcados.map(m => ({ subvencion_id: s.id, movimiento_id: m.movimiento_id, importe: m.importe }))));
+        d.close(); alTerminar(); tostada(marcados.length === 1 ? 'Gasto añadido a la subvención' : `${marcados.length} gastos añadidos a la subvención`);
+      } catch (err) { caja.innerHTML = `${ico('alerta')}<p>${esc(mensajeError(err))}</p>`; caja.hidden = false; }
+    });
+  });
+}
+
+// ---------- PDF: utilidades comunes para listados ----------
+async function nuevoPdfListado(titulo, subtitulo) {
+  if (!moduloPdf) moduloPdf = await import('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/+esm');
+  const JsPDF = moduloPdf.jsPDF || moduloPdf.default;
+  const aj = E.ajustes || {};
+  const pdf = new JsPDF({ unit: 'mm', format: 'a4' });
+  const M = 16, AN = 210, AL = 297, ancho = AN - 2 * M;
+  const TINTA = [29, 29, 27], GRIS = [97, 97, 92], AZUL = [36, 64, 122], LINEA = [220, 220, 214];
+  const limpio = s => String(s ?? '').replace(/[  ]/g, ' ').replace(/−/g, '-');
+  const txt = (t, x, y, o = {}) => { pdf.setFont('helvetica', o.b ? 'bold' : 'normal'); pdf.setFontSize(o.s || 9.5); pdf.setTextColor(...(o.c || TINTA)); pdf.text(limpio(t), x, y, { align: o.a || 'left' }); };
+  const c = { pdf, M, AN, AL, ancho, y: M, txt, limpio, GRIS, AZUL };
+  let xDatos = M;
+  try { const logo = await logoActual(); if (logo) { const h = 14, w = Math.min(30, h * logo.ratio); pdf.addImage(logo.data, logo.formato, M, M, w, h, undefined, 'FAST'); xDatos = M + w + 5; } } catch {}
+  txt(aj.nombre || '', xDatos, M + 5, { b: true, s: 11 });
+  if (aj.cif) txt(`CIF ${aj.cif}`, xDatos, M + 10, { s: 8.5, c: GRIS });
+  c.y = M + 24;
+  txt(titulo, M, c.y, { b: true, s: 15, c: AZUL }); c.y += 6;
+  if (subtitulo) { pdf.setFontSize(9.5); pdf.splitTextToSize(limpio(subtitulo), ancho).forEach(l => { txt(l, M, c.y, { c: GRIS }); c.y += 4.6; }); }
+  c.y += 4;
+  c.saltoSi = alto => { if (c.y + alto > AL - 18) { pdf.addPage(); c.y = M; return true; } return false; };
+  c.seccion = t => { c.saltoSi(20); c.y += 3; txt(t, M, c.y, { b: true, s: 11.5 }); c.y += 5; };
+  c.parrafo = (t, o = {}) => { pdf.setFontSize(o.s || 9.5); pdf.splitTextToSize(limpio(t), ancho).forEach(l => { c.saltoSi(6); txt(l, M, c.y, o); c.y += (o.s || 9.5) * 0.48; }); c.y += 2; };
+  // Tabla: columnas [{t: título, w: ancho mm, a: 'left'|'right'}], filas de textos; la última fila puede ir en negrita
+  c.tabla = (cols, filas, { totalUltima = false } = {}) => {
+    const cab = () => {
+      pdf.setFillColor(...AZUL); pdf.rect(M, c.y, ancho, 7, 'F');
+      let x = M; cols.forEach(col => { txt(col.t, col.a === 'right' ? x + col.w - 2 : x + 2, c.y + 4.8, { s: 8.5, b: true, c: [255, 255, 255], a: col.a }); x += col.w; });
+      c.y += 7;
+    };
+    cab();
+    filas.forEach((f, i) => {
+      const ult = totalUltima && i === filas.length - 1;
+      pdf.setFontSize(9);
+      const partes = f.map((v, j) => pdf.splitTextToSize(limpio(v), cols[j].w - 4));
+      const alto = 3 + Math.max(...partes.map(p => p.length)) * 4.2;
+      if (c.saltoSi(alto + 2)) cab();
+      let x = M;
+      partes.forEach((p, j) => { p.forEach((l, k) => txt(l, cols[j].a === 'right' ? x + cols[j].w - 2 : x + 2, c.y + 4.6 + k * 4.2, { s: 9, b: ult, a: cols[j].a })); x += cols[j].w; });
+      c.y += alto; pdf.setDrawColor(...(ult ? AZUL : LINEA)); pdf.line(M, c.y, M + ancho, c.y);
+    });
+    c.y += 4;
+  };
+  c.cerrar = () => {
+    const n = pdf.getNumberOfPages();
+    for (let i = 1; i <= n; i++) { pdf.setPage(i); txt(`${aj.nombre || ''} · ${titulo}`, M, AL - 8, { s: 7.5, c: GRIS }); txt(`Página ${i} de ${n}`, AN - M, AL - 8, { s: 7.5, c: GRIS, a: 'right' }); }
+    return pdf.output('blob');
+  };
+  return c;
+}
+
+async function pdfRelacionGastos(s, filas, cobrado) {
+  const total = filas.reduce((a, m) => a + m.imputado, 0);
+  const c = await nuevoPdfListado('Relación de gastos justificativos',
+    `${s.convocatoria} · ${s.organismo} · ${s.ejercicio}. Concedido: ${s.concedido != null ? eur(s.concedido) : '—'}. Cobrado: ${eur(cobrado)}. Total justificado: ${eur(total)}.`);
+  c.tabla([{ t: 'Nº', w: 18 }, { t: 'Fecha', w: 22 }, { t: 'Proveedor o perceptor', w: 42 }, { t: 'Concepto', w: 56 }, { t: 'Gasto', w: 20, a: 'right' }, { t: 'Imputado', w: 20, a: 'right' }],
+    [...filas.map(m => [`${m.numero}/${m.ejercicio}`, fecha(m.fecha), m.tercero || '', m.concepto, eur(m.importe), eur(m.imputado)]), ['', '', '', 'TOTAL', '', eur(total)]], { totalUltima: true });
+  c.parrafo(`Documento generado el ${fechaLarga(hoy())}. Los justificantes de cada gasto están en el libro de la coral con el número de apunte indicado.`, { s: 8.5, c: c.GRIS });
+  return c.cerrar();
+}
+
+// ======================================================================
+// Memoria económica anual (tanda 4)
+// ======================================================================
+async function datosMemoria(anio) {
+  const [movs, movsAnt, subs, ex, docs, memo] = await Promise.all([
+    q(sb.from('movimientos').select('tipo, importe, categoria_id').eq('ejercicio', anio).eq('anulado', false).limit(50000)),
+    q(sb.from('movimientos').select('tipo, importe, categoria_id').eq('ejercicio', anio - 1).eq('anulado', false).limit(50000)),
+    q(sb.from('subvenciones').select('*').eq('ejercicio', anio).order('organismo')),
+    datosSubvenciones(),
+    q(sb.from('documentos').select('tipo, estado, total').eq('ejercicio', anio).neq('tipo', 'presupuesto')),
+    q(sb.from('memorias').select('*').eq('ejercicio', anio).maybeSingle()),
+  ]);
+  const finAnt = `${anio - 1}-12-31`, fin = `${anio}-12-31`;
+  const cuentas = E.cuentas.filter(c => c.fecha_inicial <= fin);
+  const saldos = await Promise.all(cuentas.map(async c => ({
+    nombre: c.nombre,
+    inicio: c.fecha_inicial > finAnt ? Number(c.saldo_inicial) : Number(await q(sb.rpc('saldo_a_fecha', { p_cuenta: c.id, p_fecha: finAnt }))),
+    abierta: c.fecha_inicial > finAnt ? c.fecha_inicial : null,
+    fin: Number(await q(sb.rpc('saldo_a_fecha', { p_cuenta: c.id, p_fecha: fin }))),
+  })));
+  const porCategoria = (lista, tipo) => { const m = new Map(); lista.filter(x => x.tipo === tipo).forEach(x => m.set(x.categoria_id, (m.get(x.categoria_id) || 0) + Number(x.importe))); return m; };
+  const tabla = tipo => {
+    const a = porCategoria(movs, tipo), b = porCategoria(movsAnt, tipo);
+    const ids = [...new Set([...a.keys(), ...b.keys()])];
+    const filas = ids.map(id => ({ nombre: categoria(id)?.nombre || 'Sin categoría', actual: a.get(id) || 0, anterior: b.get(id) || 0 })).sort((x, y) => y.actual - x.actual || y.anterior - x.anterior);
+    return { filas, actual: filas.reduce((s, f) => s + f.actual, 0), anterior: filas.reduce((s, f) => s + f.anterior, 0) };
+  };
+  const facturas = docs.filter(d => d.tipo === 'factura' && d.estado !== 'rectificada');
+  return {
+    anio, ingresos: tabla('ingreso'), gastos: tabla('gasto'), saldos, memo,
+    subs: subs.map(s => ({ ...s, cobrado: ex.cobrado(s.id), justificado: ex.justificado(s.id) })),
+    facturacion: { emitidas: facturas.length, total: facturas.reduce((a, d) => a + Number(d.total), 0),
+      pendiente: facturas.filter(d => d.estado === 'emitida').reduce((a, d) => a + Number(d.total), 0) },
+    provisional: hoy() <= fin,
+  };
+}
+const variacion = (a, b) => (b ? `${a >= b ? '+' : ''}${Math.round(((a - b) / Math.abs(b)) * 100)} %` : '—');
+
+async function vistaMemoria() {
+  const v = $('#vista'), anio = E.ejercicio;
+  v.innerHTML = esqueleto(6);
+  let D;
+  try { D = await datosMemoria(anio); } catch (e) { return errorVista(v, e, vistaMemoria); }
+  const ed = puedeEditar();
+  const presidente = D.memo?.presidente ?? E.perfiles.find(p => p.rol === 'admin' && p.activo)?.nombre ?? '';
+  const tesorero = D.memo?.tesorero ?? E.perfiles.find(p => p.rol === 'tesorero' && p.activo)?.nombre ?? '';
+  const tablaCat = (t, titulo) => `<table class="tabla-memoria"><caption class="sr">${titulo}</caption>
+    <thead><tr><th scope="col">${titulo}</th><th scope="col">${anio}</th><th scope="col">${anio - 1}</th><th scope="col">Variación</th></tr></thead>
+    <tbody>${t.filas.length ? t.filas.map(f => `<tr><td>${esc(f.nombre)}</td><td class="num">${eur(f.actual)}</td><td class="num muted">${eur(f.anterior)}</td><td class="num muted">${variacion(f.actual, f.anterior)}</td></tr>`).join('')
+      : '<tr><td colspan="4" class="muted">Sin apuntes</td></tr>'}</tbody>
+    <tfoot><tr><th scope="row">Total</th><td class="num"><strong>${eur(t.actual)}</strong></td><td class="num muted">${eur(t.anterior)}</td><td class="num muted">${variacion(t.actual, t.anterior)}</td></tr></tfoot></table>`;
+  const res = D.ingresos.actual - D.gastos.actual, resAnt = D.ingresos.anterior - D.gastos.anterior;
+  v.innerHTML = `
+    <div class="encabezado-vista no-imprimir"><a class="btn btn-texto" href="#inicio">← Inicio</a></div>
+    <div class="encabezado-vista"><h1>Memoria económica ${anio}</h1>
+      <button type="button" class="btn btn-icono no-imprimir" id="b-mem-imprimir" aria-label="Imprimir la memoria">${ico('imprimir')}</button>
+      <button type="button" class="btn btn-primario no-imprimir" id="b-mem-pdf">${ico('descargar')} Descargar PDF</button></div>
+    <p class="muted">${esc(E.ajustes?.nombre || '')}${D.provisional ? ` · Datos provisionales a ${fecha(hoy())}: el año aún no ha terminado.` : ''}</p>
+
+    <section class="seccion" aria-labelledby="m-res"><h2 id="m-res">1. Resultado del año</h2>
+      <div class="rejilla rejilla-3" style="margin-top:var(--space-3)">
+        <div class="tarjeta kpi"><span class="muted pequeno">Ingresos</span><span class="cifra num positivo">${eur(D.ingresos.actual)}</span><span class="muted pequeno">${anio - 1}: ${eur(D.ingresos.anterior)}</span></div>
+        <div class="tarjeta kpi"><span class="muted pequeno">Gastos</span><span class="cifra num negativo">${eur(D.gastos.actual)}</span><span class="muted pequeno">${anio - 1}: ${eur(D.gastos.anterior)}</span></div>
+        <div class="tarjeta kpi"><span class="muted pequeno">${res >= 0 ? 'Superávit' : 'Déficit'}</span><span class="cifra num ${res >= 0 ? 'positivo' : 'negativo'}">${eur(res)}</span><span class="muted pequeno">${anio - 1}: ${eur(resAnt)}</span></div>
+      </div></section>
+    <section class="seccion" aria-labelledby="m-ing"><h2 id="m-ing">2. Ingresos por categoría</h2>${tablaCat(D.ingresos, 'Ingresos')}</section>
+    <section class="seccion" aria-labelledby="m-gas"><h2 id="m-gas">3. Gastos por categoría</h2>${tablaCat(D.gastos, 'Gastos')}</section>
+    <section class="seccion" aria-labelledby="m-tes"><h2 id="m-tes">4. Tesorería</h2>
+      <table class="tabla-memoria"><caption class="sr">Saldos de caja y bancos</caption>
+        <thead><tr><th scope="col">Cuenta</th><th scope="col">1 de enero</th><th scope="col">31 de diciembre</th><th scope="col">Diferencia</th></tr></thead>
+        <tbody>${D.saldos.map(s => `<tr><td>${esc(s.nombre)}${s.abierta ? `<br><span class="muted pequeno">Saldo inicial a ${fecha(s.abierta)}</span>` : ''}</td><td class="num">${eur(s.inicio)}</td><td class="num">${eur(s.fin)}</td><td class="num muted">${eur(s.fin - s.inicio)}</td></tr>`).join('')}</tbody>
+        <tfoot><tr><th scope="row">Total</th><td class="num"><strong>${eur(D.saldos.reduce((a, s) => a + s.inicio, 0))}</strong></td><td class="num"><strong>${eur(D.saldos.reduce((a, s) => a + s.fin, 0))}</strong></td>
+          <td class="num muted">${eur(D.saldos.reduce((a, s) => a + s.fin - s.inicio, 0))}</td></tr></tfoot></table></section>
+    <section class="seccion" aria-labelledby="m-sub"><h2 id="m-sub">5. Subvenciones</h2>
+      ${D.subs.length ? `<table class="tabla-memoria"><caption class="sr">Subvenciones del año</caption>
+        <thead><tr><th scope="col">Subvención</th><th scope="col">Concedido</th><th scope="col">Cobrado</th><th scope="col">Estado</th></tr></thead>
+        <tbody>${D.subs.map(s => `<tr><td>${esc(s.convocatoria)}<br><span class="muted pequeno">${esc(s.organismo)}</span></td><td class="num">${s.concedido != null ? eur(s.concedido) : '—'}</td>
+          <td class="num">${eur(s.cobrado)}</td><td>${ESTADOS_SUB[s.estado][0]}</td></tr>`).join('')}</tbody></table>` : `<p class="muted">No hay subvenciones de ${anio}.</p>`}</section>
+    <section class="seccion" aria-labelledby="m-fac"><h2 id="m-fac">6. Facturación</h2>
+      <p>${D.facturacion.emitidas ? `${D.facturacion.emitidas} ${D.facturacion.emitidas === 1 ? 'factura emitida' : 'facturas emitidas'} por <strong class="num">${eur(D.facturacion.total)}</strong>${D.facturacion.pendiente ? `, de las que quedan <strong class="num">${eur(D.facturacion.pendiente)}</strong> pendientes de cobro` : ', todas cobradas'}.` : `No se emitieron facturas en ${anio}.`}</p></section>
+    <form class="seccion" id="f-mem" aria-labelledby="m-com" novalidate><h2 id="m-com">7. Comentarios</h2>
+      <div class="campo" style="margin-top:var(--space-3)"><label for="m-comentarios">Comentarios para la asamblea</label>
+        <textarea id="m-comentarios" rows="6" maxlength="4000" ${ed ? '' : 'readonly'} aria-describedby="m-comentarios-ayuda">${esc(D.memo?.comentarios || '')}</textarea>
+        <p class="ayuda" id="m-comentarios-ayuda">Por ejemplo: actividades del año, por qué subió algún gasto, previsiones para el próximo año…</p></div>
+      <div class="fila-campos" style="margin-top:var(--space-3)">
+        <div class="campo"><label for="m-presidente">Presidente</label><input id="m-presidente" maxlength="100" value="${esc(presidente)}" ${ed ? '' : 'readonly'}></div>
+        <div class="campo"><label for="m-tesorero">Tesorero</label><input id="m-tesorero" maxlength="100" value="${esc(tesorero)}" ${ed ? '' : 'readonly'}></div>
+      </div>
+      ${ed ? `<div style="margin-top:var(--space-3)"><button type="submit" class="btn no-imprimir">Guardar comentarios</button></div>` : ''}
+    </form>`;
+  const leer = () => ({ ejercicio: anio, comentarios: $('#m-comentarios').value.trim() || null, presidente: $('#m-presidente').value.trim() || null, tesorero: $('#m-tesorero').value.trim() || null });
+  const guardar = async () => { await q(sb.from('memorias').upsert({ ...leer(), actualizado_en: new Date().toISOString() })); };
+  $('#f-mem').addEventListener('submit', async e => {
+    e.preventDefault();
+    await conBoton(e.submitter, async () => { try { await guardar(); tostada('Comentarios guardados'); } catch (err) { tostada(mensajeError(err), { error: true }); } });
+  });
+  $('#b-mem-imprimir').addEventListener('click', () => print());
+  $('#b-mem-pdf').addEventListener('click', e => conBoton(e.currentTarget, async () => {
+    try {
+      if (ed) await guardar().catch(() => {});
+      descargar(`memoria-economica-${anio}.pdf`, await pdfMemoria({ ...D, memo: leer() }), 'application/pdf');
+    } catch (err) { tostada('No se pudo crear el PDF. ' + mensajeError(err), { error: true }); }
+  }));
+}
+
+async function pdfMemoria(D) {
+  const anio = D.anio;
+  const c = await nuevoPdfListado(`Memoria económica ${anio}`, D.provisional ? `Datos provisionales a ${fechaLarga(hoy())}.` : `Ejercicio del 1 de enero al 31 de diciembre de ${anio}.`);
+  const res = D.ingresos.actual - D.gastos.actual, resAnt = D.ingresos.anterior - D.gastos.anterior;
+  const cols4 = t => [{ t, w: 82 }, { t: String(anio), w: 34, a: 'right' }, { t: String(anio - 1), w: 34, a: 'right' }, { t: 'Variación', w: 28, a: 'right' }];
+  c.seccion('1. Resultado del año');
+  c.tabla(cols4('Concepto'), [
+    ['Ingresos', eur(D.ingresos.actual), eur(D.ingresos.anterior), variacion(D.ingresos.actual, D.ingresos.anterior)],
+    ['Gastos', eur(D.gastos.actual), eur(D.gastos.anterior), variacion(D.gastos.actual, D.gastos.anterior)],
+    [res >= 0 ? 'Superávit' : 'Déficit', eur(res), eur(resAnt), ''],
+  ], { totalUltima: true });
+  const cat = t => [...t.filas.map(f => [f.nombre, eur(f.actual), eur(f.anterior), variacion(f.actual, f.anterior)]), ['Total', eur(t.actual), eur(t.anterior), variacion(t.actual, t.anterior)]];
+  c.seccion('2. Ingresos por categoría'); c.tabla(cols4('Categoría'), cat(D.ingresos), { totalUltima: true });
+  c.seccion('3. Gastos por categoría'); c.tabla(cols4('Categoría'), cat(D.gastos), { totalUltima: true });
+  c.seccion('4. Tesorería');
+  const tIni = D.saldos.reduce((a, s) => a + s.inicio, 0), tFin = D.saldos.reduce((a, s) => a + s.fin, 0);
+  c.tabla([{ t: 'Cuenta', w: 82 }, { t: '1 de enero', w: 34, a: 'right' }, { t: '31 de diciembre', w: 34, a: 'right' }, { t: 'Diferencia', w: 28, a: 'right' }],
+    [...D.saldos.map(s => [s.nombre + (s.abierta ? ` (saldo inicial a ${fecha(s.abierta)})` : ''), eur(s.inicio), eur(s.fin), eur(s.fin - s.inicio)]), ['Total', eur(tIni), eur(tFin), eur(tFin - tIni)]], { totalUltima: true });
+  c.seccion('5. Subvenciones');
+  if (D.subs.length) c.tabla([{ t: 'Subvención', w: 92 }, { t: 'Concedido', w: 30, a: 'right' }, { t: 'Cobrado', w: 30, a: 'right' }, { t: 'Estado', w: 26 }],
+    D.subs.map(s => [`${s.convocatoria} (${s.organismo})`, s.concedido != null ? eur(s.concedido) : '—', eur(s.cobrado), ESTADOS_SUB[s.estado][0]]));
+  else c.parrafo(`No hay subvenciones de ${anio}.`);
+  c.seccion('6. Facturación');
+  c.parrafo(D.facturacion.emitidas ? `${D.facturacion.emitidas} ${D.facturacion.emitidas === 1 ? 'factura emitida' : 'facturas emitidas'} por ${eur(D.facturacion.total)}${D.facturacion.pendiente ? `, de las que quedan ${eur(D.facturacion.pendiente)} pendientes de cobro` : ', todas cobradas'}.` : `No se emitieron facturas en ${anio}.`);
+  if (D.memo?.comentarios) { c.seccion('7. Comentarios'); c.parrafo(D.memo.comentarios); }
+  c.saltoSi(45); c.y += 18;
+  const w = (c.ancho - 20) / 2;
+  [[D.memo?.presidente, 'El presidente'], [D.memo?.tesorero, 'El tesorero']].forEach(([nombre, cargo], i) => {
+    const x = c.M + i * (w + 20);
+    c.pdf.setDrawColor(150, 150, 145); c.pdf.line(x, c.y, x + w, c.y);
+    c.txt(cargo, x + w / 2, c.y + 5, { s: 9, c: c.GRIS, a: 'center' });
+    if (nombre) c.txt(nombre, x + w / 2, c.y + 10, { s: 10, a: 'center' });
+  });
+  c.y += 16;
+  c.txt(`En ${E.ajustes?.localidad || '…'}, a ${fechaLarga(hoy())}.`, c.AN - c.M, c.y, { a: 'right', s: 9.5 });
+  return c.cerrar();
 }
 
 // Modo de pruebas: borrar todo y empezar limpio (solo administrador)

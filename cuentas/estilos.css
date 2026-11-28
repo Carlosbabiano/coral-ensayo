@@ -388,6 +388,32 @@ details > summary { cursor: pointer; min-height: var(--tap); display: flex; alig
 .sello-anulado { position: absolute; inset: 0; display: grid; place-items: center; transform: rotate(-18deg); pointer-events: none;
   font-size: clamp(40px, 12vw, 80px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: rgba(179, 38, 30, .55); }
 
+/* ---------- Subvenciones y memoria ---------- */
+.datos.seccion { margin-top: var(--space-6); }
+@media (max-width: 419px) { .pestanas a { font-size: 11.5px; letter-spacing: -0.01em; padding: 0 2px; } }
+.boton-ajustes { color: var(--color-fg-muted); }
+.boton-ajustes[aria-current] { color: var(--color-primary); background: var(--color-primary-soft); }
+a.fila { color: inherit; text-decoration: none; }
+.fila-con-accion { display: flex; align-items: center; padding-right: var(--space-2); }
+.fila-con-accion > .fila { flex: 1; min-width: 0; }
+.progreso { display: grid; gap: var(--space-2); }
+.progreso-txt { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-1) var(--space-3); }
+.barra { height: 10px; border-radius: var(--radius-pill); background: var(--color-surface-2); border: 1px solid var(--color-border); overflow: hidden; }
+.barra > span { display: block; height: 100%; background: var(--color-primary); border-radius: inherit; transition: width var(--dur) var(--ease); }
+.lista-asignar { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); max-height: 50dvh; overflow-y: auto; }
+.lista-asignar li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border); border-radius: var(--radius-s); }
+.lista-asignar .casilla { flex: 1 1 220px; align-items: flex-start; }
+.lista-asignar .casilla input { margin-top: 3px; }
+.importe-asignar { width: 120px; }
+.tabla-memoria { width: 100%; border-collapse: collapse; margin-top: var(--space-3); background: var(--color-surface);
+  border: 1px solid var(--color-border); border-radius: var(--radius-m); overflow: hidden; }
+.tabla-memoria th, .tabla-memoria td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); text-align: right; vertical-align: top; }
+.tabla-memoria :is(th, td):first-child { text-align: left; }
+.tabla-memoria thead th { background: var(--color-surface-2); font-size: var(--font-s); color: var(--color-fg-muted); }
+.tabla-memoria tfoot :is(th, td) { border-bottom: 0; border-top: 2px solid var(--color-border-control); }
+@media (max-width: 599px) { .tabla-memoria :is(th, td):nth-child(4) { display: none; } .tabla-memoria th, .tabla-memoria td { padding: var(--space-2); } }
+
 /* ---------- Impresión ---------- */
 @media print {
   .cabecera, .pestanas, .tostadas, .no-imprimir, .accion-principal { display: none !important; }
