@@ -16,6 +16,12 @@
       "port": 5173
     },
     {
+      "name": "cuentas",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "http-server", "cuentas", "-p", "5190", "-c-1", "--silent"],
+      "port": 5190
+    },
+    {
       "name": "gestor",
       "runtimeExecutable": "node",
       "runtimeArgs": [

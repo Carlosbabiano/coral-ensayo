@@ -1,0 +1,26 @@
+# Mantiene despierto el proyecto gratuito de Supabase (se pausa tras 7 días sin uso)
+# y, una vez al mes, hace un commit para que GitHub no desactive esta tarea por inactividad.
+name: Latido de la base de datos
+on:
+  schedule:
+    - cron: '17 6 */3 * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  latido:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Llamar a la base de datos
+        run: |
+          curl -sf -X POST "https://bwemeufrpgilidcqdayj.supabase.co/rest/v1/rpc/latido" \
+            -H "apikey: sb_publishable_gPsIEZP9CC-sLaZCIbuG4w_EQ4SXGzl" -H "Content-Type: application/json" -d '{}'
+      - uses: actions/checkout@v4
+        if: ${{ github.event_name == 'workflow_dispatch' || startsWith(format('{0}', github.event.schedule), '17 6') }}
+      - name: Commit mensual para que GitHub no apague la tarea
+        run: |
+          if [ "$(date +%d)" -le 3 ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            date -u +%Y-%m-%dT%H:%MZ > latido.txt
+            git config user.name "latido" && git config user.email "actions@users.noreply.github.com"
+            git add latido.txt && git commit -m "Latido mensual" && git push || true
+          fi
