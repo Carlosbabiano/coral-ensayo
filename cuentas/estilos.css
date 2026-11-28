@@ -369,6 +369,25 @@ details > summary { cursor: pointer; min-height: var(--tap); display: flex; alig
 .papel-pie { text-align: center; color: var(--tinta-suave); font-size: var(--font-xs); margin-top: var(--space-6) !important; }
 @media (min-width: 600px) { dialog:has(.papel), dialog:has(#f-doc) { width: min(760px, 100vw); } }
 
+/* ---------- Recibos firmados ---------- */
+.lienzo-firma { display: block; width: 100%; height: 180px; background: #ffffff; touch-action: none; cursor: crosshair;
+  border: 2px dashed var(--color-border-control); border-radius: var(--radius-s); }
+.lienzo-firma:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+.firma-pie { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
+#r-firmas { display: grid; gap: var(--space-4); }
+.texto-recibo { background: var(--color-surface-2); border-radius: var(--radius-s); padding: var(--space-3) var(--space-4); }
+.texto-recibo p { max-width: 65ch; }
+.papel-recibo { position: relative; overflow: hidden; }
+.papel-importe { display: inline-block; margin-top: var(--space-2) !important; padding: var(--space-1) var(--space-3); background: #eef2fa;
+  border-radius: var(--radius-s); font-size: var(--font-l); font-weight: 700; color: var(--tinta); }
+.papel-texto { font-size: var(--font-m); line-height: 1.6; margin: var(--space-4) 0 !important; }
+.papel-lugar { text-align: right; }
+.papel-firmas { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-6); margin-top: var(--space-6); }
+.papel-firma { text-align: center; }
+.papel-firma img, .papel-firma > span { display: block; height: 80px; max-width: 100%; margin: 0 auto; object-fit: contain; border-bottom: 1px solid var(--raya); width: 100%; }
+.sello-anulado { position: absolute; inset: 0; display: grid; place-items: center; transform: rotate(-18deg); pointer-events: none;
+  font-size: clamp(40px, 12vw, 80px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: rgba(179, 38, 30, .55); }
+
 /* ---------- Impresión ---------- */
 @media print {
   .cabecera, .pestanas, .tostadas, .no-imprimir, .accion-principal { display: none !important; }

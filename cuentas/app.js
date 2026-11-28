@@ -363,6 +363,7 @@ document.addEventListener('click', e => {
     const a = b.dataset.a;
     if (a === 'nuevo') formMovimiento({ tipo: b.dataset.tipo || 'gasto' });
     else if (a === 'traspaso') formMovimiento({ tipo: 'traspaso' });
+    else if (a === 'recibo') formRecibo();
     return;
   }
   const fila = e.target.closest('[data-mov]');
@@ -434,6 +435,7 @@ async function vistaInicio() {
     ${puedeEditar() ? `<div class="accion-principal">
       <button type="button" class="btn btn-primario btn-grande" data-a="nuevo" data-tipo="gasto">${ico('mas')} Apuntar gasto</button>
       <button type="button" class="btn btn-grande" data-a="nuevo" data-tipo="ingreso">${ico('mas')} Apuntar ingreso</button>
+      <button type="button" class="btn btn-grande" data-a="recibo">${ico('lapiz')} Recibo firmado</button>
     </div>` : ''}
     ${puedeEditar() && !hayBanco ? `<div class="aviso aviso-info" style="margin-bottom:var(--space-4)">${ico('info')}
       <p>Para empezar, añade la cuenta del banco con el saldo que tiene hoy y cuenta el efectivo de la caja.</p>
@@ -607,6 +609,14 @@ async function abrirDetalle(id) {
     $('#b-ver-fac', d).onclick = () => { d.close(); abrirDocumento(fac.id); };
     const an = $('#b-anular', d);
     if (an) an.outerHTML = `<p class="muted pequeno izquierda" style="max-width:32ch">Es el cobro de la factura ${esc(fac.codigo)}: para anularlo, usa «Deshacer cobro» en la factura.</p>`;
+  });
+  // Si tiene recibo firmado: enlace a él; si el apunte nació del recibo, se anula desde el recibo
+  sb.from('recibos').select('id, codigo, documento_id').eq('movimiento_id', m.id).eq('anulado', false).maybeSingle().then(({ data: rec }) => {
+    if (!rec || !d.open) return;
+    $('.datos', d).insertAdjacentHTML('beforeend', `<dt>Recibo</dt><dd><button type="button" class="btn btn-texto" id="b-ver-rec" style="padding:0">${ico('lapiz', 'ico-s')} ${esc(rec.codigo)}</button></dd>`);
+    $('#b-ver-rec', d).onclick = () => { d.close(); abrirRecibo(rec.id); };
+    const an = $('#b-anular', d);
+    if (an && !rec.documento_id) an.outerHTML = `<p class="muted pequeno izquierda" style="max-width:32ch">Es el recibo ${esc(rec.codigo)}: para anularlo, usa «Anular recibo».</p>`;
   });
 
   $('#b-editar', d)?.addEventListener('click', () => { d.close(); formMovimiento({ mov: m }); });
@@ -1081,6 +1091,7 @@ async function vistaAjustes() {
         ${campoAj('email', 'Correo electrónico', a.email, 'type="email" maxlength="120"')}
         ${campoAj('telefono', 'Teléfono', a.telefono, 'type="tel" maxlength="20"')}
         ${campoAj('iban', 'IBAN para cobros', a.iban, 'maxlength="34" autocomplete="off"')}
+        ${campoAj('localidad', 'Localidad (para los recibos)', a.localidad, 'maxlength="60" autocomplete="address-level2"')}
       </div>
       ${ed ? '<div><button type="submit" class="btn btn-primario">Guardar datos</button></div>' : ''}
     </form>
@@ -1106,7 +1117,7 @@ async function vistaAjustes() {
   $$('[data-usu]').forEach(b => b.addEventListener('click', () => gestionarUsuario(E.perfiles.find(p => p.id === b.dataset.usu))));
   $('#f-ajustes').addEventListener('submit', async e => {
     e.preventDefault();
-    const datos = Object.fromEntries(['nombre', 'cif', 'direccion', 'email', 'telefono', 'iban'].map(k => [k, $('#aj-' + k).value.trim() || null]));
+    const datos = Object.fromEntries(['nombre', 'cif', 'direccion', 'email', 'telefono', 'iban', 'localidad'].map(k => [k, $('#aj-' + k).value.trim() || null]));
     if (!datos.nombre) { tostada('El nombre de la coral no puede quedar vacío.', { error: true }); return $('#aj-nombre').focus(); }
     await conBoton(e.submitter, async () => {
       try { await q(sb.from('ajustes').update({ ...datos, actualizado_en: new Date().toISOString() }).eq('id', 1)); tostada('Datos de la coral guardados'); }
@@ -1272,7 +1283,7 @@ function gestionarUsuario(p) {
 
 async function copiaSeguridad() {
   try {
-    const tablas = ['ajustes', 'cuentas', 'categorias', 'movimientos', 'justificantes', 'conciliaciones', 'clientes', 'documentos', 'perfiles', 'historial'];
+    const tablas = ['ajustes', 'cuentas', 'categorias', 'movimientos', 'justificantes', 'conciliaciones', 'clientes', 'documentos', 'recibos', 'perfiles', 'historial'];
     const datos = {};
     for (const t of tablas) datos[t] = await q(sb.from(t).select('*').limit(100000));
     descargar(`copia-cuentas-coral-${hoy()}.json`, JSON.stringify({ fecha: new Date().toISOString(), version: 1, datos }, null, 1), 'application/json');
@@ -1311,6 +1322,12 @@ function describir(h) {
   if (h.tabla === 'conciliaciones') return `Cuadró ${cuenta(d.cuenta_id)?.nombre || 'una cuenta'} a ${fecha(d.fecha)}: real ${eur(d.saldo_extracto)}, apuntado ${eur(d.saldo_app)}`;
   if (h.tabla === 'ajustes') return 'Cambió los ajustes de la coral';
   if (h.tabla === 'documentos') return describirDocumento(h);
+  if (h.tabla === 'recibos') {
+    const x = h.despues || h.antes || {};
+    if (h.accion === 'alta') return `Hizo el recibo ${x.codigo} (${x.tipo === 'pago' ? 'pago a' : 'cobro de'} ${x.persona}, ${eur(x.importe)})`;
+    if (h.antes && !h.antes.anulado && x.anulado) return `Anuló el recibo ${x.codigo}: ${x.motivo_anulacion || ''}`;
+    return `Completó el recibo ${x.codigo}`;
+  }
   const nombre = d.nombre || a.nombre || '';
   const que = { cuentas: 'la cuenta', categorias: 'la categoría', perfiles: 'el usuario', clientes: 'el cliente' }[h.tabla] || h.tabla;
   if (h.accion === 'alta') return `Creó ${que} «${nombre}»`;
@@ -1386,13 +1403,14 @@ function irA(ruta) { if (location.hash === '#' + ruta) enrutar(); else location.
 
 async function vistaFacturas(params) {
   const v = $('#vista');
-  const ver = ['presupuestos', 'facturas', 'clientes'].includes(params.get('ver')) ? params.get('ver') : 'presupuestos';
+  const ver = ['presupuestos', 'facturas', 'recibos', 'clientes'].includes(params.get('ver')) ? params.get('ver') : 'presupuestos';
   v.innerHTML = esqueleto(4);
-  let docs, clientes;
+  let docs, clientes, recibos;
   try {
-    [docs, clientes] = await Promise.all([
+    [docs, clientes, recibos] = await Promise.all([
       q(sb.from('documentos').select('*').eq('ejercicio', E.ejercicio).order('fecha', { ascending: false }).order('numero', { ascending: false })),
       q(sb.from('clientes').select('*').order('nombre')),
+      q(sb.from('recibos').select('*').eq('ejercicio', E.ejercicio).order('numero', { ascending: false })),
     ]);
   } catch (e) { return errorVista(v, e, () => vistaFacturas(params)); }
   E.docs = docs; E.clientes = clientes;
@@ -1420,6 +1438,16 @@ async function vistaFacturas(params) {
       <ul class="lista-apuntes">${facs.map(filaDoc).join('')}</ul>`
       : vacio('factura', `Aún no hay facturas en ${E.ejercicio}`, 'Las facturas se crean directamente o a partir de un presupuesto aceptado. Se numeran solas y en orden.',
         puedeEditar() ? `<button type="button" class="btn btn-primario" data-doc-nuevo="factura">${ico('mas')} Nueva factura</button>` : '');
+  } else if (ver === 'recibos') {
+    contenido = `${puedeEditar() && recibos.length ? `<div class="encabezado-vista"><span></span><button type="button" class="btn btn-primario" data-recibo-nuevo>${ico('lapiz')} Nuevo recibo firmado</button></div>` : ''}
+      ${recibos.length ? `<ul class="lista-apuntes">${recibos.map(r => `<li><button type="button" class="fila ${r.anulado ? 'anulada' : ''}" data-recibo="${r.id}">
+          <span class="concepto">${esc(r.persona)}</span>
+          <span class="importe num ${r.tipo === 'pago' ? 'negativo' : 'positivo'}"><span class="sr">${r.tipo === 'pago' ? 'Pago' : 'Cobro'} de </span>${r.tipo === 'pago' ? '−' : '+'}${eur(r.importe)}</span>
+          <span class="meta"><span class="num">${esc(r.codigo)}</span><span>${fecha(r.fecha)}</span><span>${esc(r.concepto)}</span>
+            <span class="etiqueta">${r.tipo === 'pago' ? 'Pago' : 'Cobro'}</span>${r.anulado ? '<span class="etiqueta etiqueta-error">Anulado</span>' : ''}</span>
+        </button></li>`).join('')}</ul>`
+      : vacio('lapiz', `Aún no hay recibos en ${E.ejercicio}`, 'Cuando la coral pague o cobre en mano, haz el recibo en el móvil y que la otra persona firme con el dedo. Se apunta solo en el libro.',
+        puedeEditar() ? `<button type="button" class="btn btn-primario" data-recibo-nuevo>${ico('lapiz')} Hacer el primero</button>` : '')}`;
   } else {
     contenido = `${puedeEditar() ? `<div class="encabezado-vista"><span></span><button type="button" class="btn" id="b-cli-nuevo">${ico('mas')} Añadir cliente</button></div>` : ''}
       ${clientes.length ? `<ul class="lista-apuntes">${clientes.map(c => `<li><button type="button" class="fila" data-cliente="${c.id}">
@@ -1434,8 +1462,10 @@ async function vistaFacturas(params) {
       ${puedeEditar() ? `<button type="button" class="btn" data-doc-nuevo="factura">${ico('mas')} Nueva factura</button>
         <button type="button" class="btn btn-primario" data-doc-nuevo="presupuesto">${ico('mas')} Nuevo presupuesto</button>` : ''}</div>
     <nav class="subpestanas" aria-label="Tipo de documento">
-      ${pestana('presupuestos', 'Presupuestos', pres.length)}${pestana('facturas', 'Facturas', facs.length)}${pestana('clientes', 'Clientes', clientes.length)}</nav>
+      ${pestana('presupuestos', 'Presupuestos', pres.length)}${pestana('facturas', 'Facturas', facs.length)}${pestana('recibos', 'Recibos', recibos.length)}${pestana('clientes', 'Clientes', clientes.length)}</nav>
     ${contenido}`;
+  $$('[data-recibo-nuevo]', v).forEach(b => b.addEventListener('click', () => formRecibo()));
+  $$('[data-recibo]', v).forEach(b => b.addEventListener('click', () => abrirRecibo(b.dataset.recibo)));
   $$('[data-doc-nuevo]', v).forEach(b => b.addEventListener('click', () => formDocumento({ tipo: b.dataset.docNuevo })));
   $$('[data-doc]', v).forEach(b => b.addEventListener('click', () => abrirDocumento(b.dataset.doc)));
   $$('[data-cliente]', v).forEach(b => b.addEventListener('click', () => formCliente(clientes.find(c => c.id === b.dataset.cliente))));
@@ -1694,7 +1724,7 @@ async function generarPdf(doc) {
   let y = M, xDatos = M;
   try {
     const logo = await logoActual();
-    if (logo) { const h = 20, w = Math.min(42, h * logo.ratio); pdf.addImage(logo.data, logo.formato, M, y, w, h); xDatos = M + w + 6; }
+    if (logo) { const h = 20, w = Math.min(42, h * logo.ratio); pdf.addImage(logo.data, logo.formato, M, y, w, h, undefined, 'FAST'); xDatos = M + w + 6; }
   } catch { /* sin logo si falla */ }
   txt(aj.nombre || '', xDatos, y + 5, { b: true, s: 13 });
   [aj.cif && `CIF ${aj.cif}`, aj.direccion, [aj.telefono, aj.email].filter(Boolean).join(' · ')].filter(Boolean)
@@ -1773,9 +1803,14 @@ async function abrirDocumento(id) {
   const esPres = doc.tipo === 'presupuesto';
   let cobroInfo = '';
   if (doc.estado === 'cobrada' && doc.movimiento_id) {
-    const mov = await sb.from('movimientos').select('numero, cuenta_id, fecha').eq('id', doc.movimiento_id).maybeSingle().then(r => r.data);
+    const [mov, rec] = await Promise.all([
+      sb.from('movimientos').select('numero, cuenta_id, fecha').eq('id', doc.movimiento_id).maybeSingle().then(r => r.data),
+      sb.from('recibos').select('id, codigo').eq('documento_id', doc.id).eq('anulado', false).maybeSingle().then(r => r.data)]);
+    const enCaja = mov && cuenta(mov.cuenta_id)?.tipo === 'caja';
     cobroInfo = `<div class="aviso aviso-info">${ico('ok')}<p>Cobrada el ${fecha(doc.cobrada_en)}${mov ? ` en «${esc(cuenta(mov.cuenta_id)?.nombre || '')}». Es el apunte nº ${mov.numero} del libro` : ''}.</p>
-      ${mov ? `<button type="button" class="btn btn-texto acciones" data-ver-mov="${doc.movimiento_id}">Ver apunte</button>` : ''}</div>`;
+      ${mov ? `<button type="button" class="btn btn-texto acciones" data-ver-mov="${doc.movimiento_id}">Ver apunte</button>` : ''}</div>
+      ${rec ? `<p><button type="button" class="btn btn-texto" data-ver-rec="${rec.id}">${ico('lapiz', 'ico-s')} Recibo firmado ${esc(rec.codigo)}</button></p>`
+        : puedeEditar() && enCaja ? `<p><button type="button" class="btn" data-hacer-recibo>${ico('lapiz')} Hacer recibo firmado del cobro</button></p>` : ''}`;
   }
   const relacion = rel.map(r => `<button type="button" class="btn btn-texto" data-ir-doc="${r.id}">${ico(r.tipo === 'presupuesto' ? 'archivo' : 'factura', 'ico-s')}
     ${r.tipo === 'presupuesto' ? 'Viene del presupuesto' : r.tipo === 'rectificativa' ? 'Rectificada por' : esPres ? 'Facturado en' : 'Rectifica a'} ${esc(r.codigo)}</button>`).join('');
@@ -1809,6 +1844,8 @@ async function abrirDocumento(id) {
 
   $$('[data-ir-doc]', d).forEach(b => b.addEventListener('click', () => { d.close(); abrirDocumento(b.dataset.irDoc); }));
   $('[data-ver-mov]', d)?.addEventListener('click', e => { d.close(); abrirDetalle(e.currentTarget.dataset.verMov); });
+  $('[data-ver-rec]', d)?.addEventListener('click', e => { d.close(); abrirRecibo(e.currentTarget.dataset.verRec); });
+  $('[data-hacer-recibo]', d)?.addEventListener('click', () => { d.close(); formRecibo({ documento: doc }); });
   $('#b-pdf', d).addEventListener('click', e => conBoton(e.currentTarget, async () => {
     try { descargar(nombrePdf(doc), await generarPdf(doc), 'application/pdf'); }
     catch (err) { tostada('No se pudo crear el PDF. ' + mensajeError(err), { error: true }); }
@@ -1909,6 +1946,360 @@ function formCobro(doc, alTerminar) {
         tostada(`Cobro registrado${mov ? `: apunte nº ${mov.numero} del libro` : ''}`, { deshacer: async () => { await q(sb.rpc('deshacer_cobro', { p_factura: doc.id })); if (location.hash.startsWith('#facturas')) enrutar(); } });
       } catch (err) { const box = $('#c-error', d); box.innerHTML = `${ico('alerta')}<p>${esc(mensajeError(err))}</p>`; box.hidden = false; }
     });
+  });
+}
+
+// ======================================================================
+// Recibos firmados (tanda 3)
+// ======================================================================
+function numeroALetras(importe) {
+  const U = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez', 'once', 'doce', 'trece', 'catorce', 'quince',
+    'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte', 'veintiuno', 'veintidós', 'veintitrés', 'veinticuatro', 'veinticinco',
+    'veintiséis', 'veintisiete', 'veintiocho', 'veintinueve'];
+  const D = ['', '', '', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
+  const C = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
+  const apocopar = s => s.replace(/veintiuno$/, 'veintiún').replace(/uno$/, 'un');
+  const menor100 = n => (n < 30 ? U[n] : D[Math.floor(n / 10)] + (n % 10 ? ' y ' + U[n % 10] : ''));
+  const menor1000 = n => (n === 100 ? 'cien' : `${C[Math.floor(n / 100)]} ${n % 100 ? menor100(n % 100) : ''}`.trim());
+  const entero = n => {
+    if (n === 0) return 'cero';
+    const mill = Math.floor(n / 1e6), miles = Math.floor((n % 1e6) / 1000), resto = n % 1000;
+    return [mill ? (mill === 1 ? 'un millón' : `${apocopar(entero(mill))} millones`) : '',
+      miles ? (miles === 1 ? 'mil' : `${apocopar(menor1000(miles))} mil`) : '', resto ? menor1000(resto) : ''].filter(Boolean).join(' ');
+  };
+  const cent = Math.round(Math.abs(importe) * 100), e = Math.floor(cent / 100), c = cent % 100;
+  return `${apocopar(entero(e))} ${e === 1 ? 'euro' : 'euros'}${c ? ` con ${apocopar(menor100(c))} ${c === 1 ? 'céntimo' : 'céntimos'}` : ''}`;
+}
+const fechaLarga = iso => new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso + 'T12:00:00'));
+function textoRecibo(r) {
+  const aj = E.ajustes || {};
+  const coral = `${aj.nombre || 'la coral'}${aj.cif ? ` (CIF ${aj.cif})` : ''}`;
+  const persona = `${r.persona || '…'}${r.dni ? `, con DNI ${r.dni},` : ''}`;
+  const cantidad = `la cantidad de ${eur(r.importe || 0)} (${numeroALetras(r.importe || 0)}) en concepto de ${r.concepto || '…'}`;
+  return r.tipo === 'pago' ? `${persona} declara haber recibido de ${coral} ${cantidad}.` : `${coral} declara haber recibido de ${persona} ${cantidad}.`;
+}
+const lugarFecha = r => `En ${E.ajustes?.localidad || '…'}, a ${fechaLarga(r.fecha)}.`;
+
+// Recuadro de firma con el dedo o el ratón
+function padFirma(canvas) {
+  const ctx = canvas.getContext('2d');
+  let trazos = 0, dibujando = false, ult = null;
+  const ajustar = () => {
+    const r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    Object.assign(ctx, { lineWidth: 2.4, lineCap: 'round', lineJoin: 'round', strokeStyle: '#1d1d1b', fillStyle: '#1d1d1b' });
+    trazos = 0;
+  };
+  const pos = e => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  canvas.addEventListener('pointerdown', e => {
+    e.preventDefault(); dibujando = true; canvas.setPointerCapture(e.pointerId); ult = pos(e);
+    ctx.beginPath(); ctx.arc(ult.x, ult.y, 1.2, 0, Math.PI * 2); ctx.fill();
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!dibujando) return;
+    const p = pos(e); ctx.beginPath(); ctx.moveTo(ult.x, ult.y); ctx.lineTo(p.x, p.y); ctx.stroke(); ult = p; trazos++;
+  });
+  const fin = () => { if (dibujando) { dibujando = false; canvas.dispatchEvent(new Event('firmado')); } };
+  canvas.addEventListener('pointerup', fin); canvas.addEventListener('pointercancel', fin);
+  ajustar();
+  // La firma se guarda a tamaño de pantalla (no a doble resolución): pesa poco y se ve nítida en el PDF
+  const png = () => {
+    const r = canvas.getBoundingClientRect();
+    const copia = Object.assign(document.createElement('canvas'), { width: Math.round(r.width), height: Math.round(r.height) });
+    copia.getContext('2d').drawImage(canvas, 0, 0, copia.width, copia.height);
+    return new Promise(ok => copia.toBlob(ok, 'image/png'));
+  };
+  return { vacia: () => trazos < 8, borrar: ajustar, ajustar, png };
+}
+const bloqueFirma = (id, etiqueta) => `<div class="campo firma" id="${id}-caja">
+  <span class="etiqueta-campo" id="${id}-et">${esc(etiqueta)}</span>
+  <canvas class="lienzo-firma" id="${id}" role="img" aria-labelledby="${id}-et" aria-describedby="${id}-ayuda ${id}-err"></canvas>
+  <div class="firma-pie"><span class="ayuda" id="${id}-ayuda">Firma con el dedo o con el ratón dentro del recuadro.</span>
+    <button type="button" class="btn btn-texto" data-borrar-firma="${id}">Borrar y repetir</button></div>
+  <p class="error" id="${id}-err" hidden></p></div>`;
+
+const cacheImagenes = new Map();
+async function imagenAlmacen(ruta) {
+  if (!ruta) return null;
+  if (cacheImagenes.has(ruta)) return cacheImagenes.get(ruta);
+  const { signedUrl } = await q(sb.storage.from('justificantes').createSignedUrl(ruta, 600));
+  const blob = await (await fetch(signedUrl)).blob();
+  const data = await new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(blob); });
+  const img = await new Promise((ok, mal) => { const i = new Image(); i.onload = () => ok(i); i.onerror = mal; i.src = data; });
+  const res = { data, ratio: img.naturalWidth / img.naturalHeight };
+  cacheImagenes.set(ruta, res);
+  return res;
+}
+
+function formRecibo({ tipo = 'pago', documento = null } = {}) {
+  const deFactura = !!documento;
+  const activas = E.cuentas.filter(c => c.activa);
+  const caja0 = (activas.find(c => c.tipo === 'caja') || activas[0])?.id;
+  const opcCat = t => E.categorias.filter(c => c.tipo === t && c.activa).map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
+  const d = dialogo({
+    titulo: deFactura ? `Recibo del cobro de ${documento.codigo}` : 'Nuevo recibo firmado', cerrarFuera: false,
+    cuerpo: `<form class="formulario" id="f-rec" novalidate>
+      ${deFactura ? '' : `<fieldset class="campo" style="border:0;padding:0;margin:0"><legend class="etiqueta-campo" style="margin-bottom:var(--space-1)">Tipo de recibo</legend>
+        <div class="segmentos">
+          <input type="radio" name="rtipo" id="r-pago" value="pago" ${tipo === 'pago' ? 'checked' : ''}><label for="r-pago">La coral paga</label>
+          <input type="radio" name="rtipo" id="r-cobro" value="cobro" ${tipo === 'cobro' ? 'checked' : ''}><label for="r-cobro">La coral cobra</label>
+        </div><p class="ayuda" id="r-tipo-ayuda"></p></fieldset>`}
+      <div class="fila-campos">
+        <div class="campo"><label for="r-persona" id="r-persona-et">Quién recibe el dinero</label>
+          <input id="r-persona" required maxlength="150" autocomplete="off" list="dl-terceros-rec" value="${esc(documento?.cliente?.nombre || '')}" aria-describedby="r-persona-err">
+          <datalist id="dl-terceros-rec">${[...new Set(E.movs.map(m => m.tercero).filter(Boolean))].slice(0, 200).map(t => `<option value="${esc(t)}"></option>`).join('')}</datalist>
+          <p class="error" id="r-persona-err" hidden></p></div>
+        <div class="campo"><label for="r-dni">DNI</label><input id="r-dni" maxlength="20" autocomplete="off" value="${esc(documento?.cliente?.nif || '')}" aria-describedby="r-dni-ayuda"><p class="ayuda" id="r-dni-ayuda">Opcional.</p></div>
+      </div>
+      <div class="fila-campos">
+        <div class="campo"><label for="r-importe">Importe (€)</label>
+          <input id="r-importe" class="input-importe" inputmode="decimal" required placeholder="0,00" ${deFactura ? `value="${numInput(documento.total)}" readonly` : ''} aria-describedby="r-importe-err"><p class="error" id="r-importe-err" hidden></p></div>
+        <div class="campo"><label for="r-fecha">Fecha</label><input id="r-fecha" type="date" required value="${deFactura ? documento.cobrada_en : hoy()}"></div>
+      </div>
+      <div class="campo"><label for="r-concepto">Concepto</label>
+        <input id="r-concepto" required maxlength="200" autocomplete="off" value="${deFactura ? `cobro en efectivo de la factura ${esc(documento.codigo)}` : ''}" placeholder="Ej.: acompañamiento al órgano en el concierto de Navidad" aria-describedby="r-concepto-err">
+        <p class="error" id="r-concepto-err" hidden></p></div>
+      ${deFactura ? '' : `<div class="fila-campos">
+        <div class="campo"><label for="r-cuenta" id="r-cuenta-et">Pagado con</label><select id="r-cuenta">${activas.map(c => `<option value="${c.id}" ${c.id === caja0 ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></div>
+        <div class="campo"><label for="r-cat">Categoría</label><select id="r-cat" aria-describedby="r-cat-err"></select><p class="error" id="r-cat-err" hidden></p></div>
+      </div>`}
+      <div class="campo"><label for="r-firmante">Firma por la coral</label><input id="r-firmante" maxlength="100" value="${esc(E.perfil.nombre)}" aria-describedby="r-firmante-ayuda">
+        <p class="ayuda" id="r-firmante-ayuda">Nombre de quien firma en nombre de la coral, si firma.</p></div>
+      <div class="texto-recibo" aria-live="polite"><p class="papel-etiqueta">Lo que se firma</p><p id="r-texto"></p><p id="r-lugar" class="muted pequeno"></p></div>
+      <div id="r-firmas"></div>
+      <label class="casilla" id="r-otra-caja"><input type="checkbox" id="r-otra"> <span id="r-otra-et"></span></label>
+      <div class="aviso aviso-error" id="r-error" role="alert" hidden></div>
+    </form>`,
+    pie: `<button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" form="f-rec" class="btn btn-primario">Guardar recibo firmado</button>`,
+  });
+  const f = $('#f-rec', d);
+  const tipoActual = () => (deFactura ? 'cobro' : $('input[name=rtipo]:checked', f).value);
+  const pads = {};
+  const activarPad = c => { pads[c.id] = padFirma(c); c.addEventListener('firmado', () => { $(`#${c.id}-err`, f).hidden = true; }); };
+  const segundaFirma = () => (tipoActual() === 'pago' ? ['fc', 'Firma por la coral'] : ['fp', 'Firma de quien paga']);
+  // Al cambiar de tipo se rehacen los recuadros; al marcar la segunda firma solo se añade o se quita esa, sin borrar la primera
+  const pintarFirmas = () => {
+    const t = tipoActual();
+    const principal = t === 'pago' ? ['fp', 'Firma de quien recibe el dinero'] : ['fc', 'Firma por la coral'];
+    $('#r-firmas', f).innerHTML = bloqueFirma(...principal);
+    $('#r-otra', f).checked = false;
+    $('#r-otra-et', f).textContent = t === 'pago' ? 'Firmar también por la coral' : 'Que firme también quien paga';
+    for (const k of Object.keys(pads)) delete pads[k];
+    activarPad($(`#${principal[0]}`, f));
+  };
+  const alternarSegunda = () => {
+    const [id, etiqueta] = segundaFirma();
+    if ($('#r-otra', f).checked) { $('#r-firmas', f).insertAdjacentHTML('beforeend', bloqueFirma(id, etiqueta)); activarPad($(`#${id}`, f)); }
+    else { $(`#${id}-caja`, f)?.remove(); delete pads[id]; }
+  };
+  const pintarTipo = () => {
+    const t = tipoActual();
+    if (!deFactura) {
+      $('#r-tipo-ayuda', f).textContent = t === 'pago' ? 'Para pagos en mano: firma quien recibe el dinero (un músico, un reembolso…). Se apunta como gasto.'
+        : 'Para cobros en mano: firma el tesorero en nombre de la coral. Se apunta como ingreso.';
+      $('#r-cuenta-et', f).textContent = t === 'pago' ? 'Pagado con' : 'Cobrado en';
+      const sel = $('#r-cat', f), previa = sel.value;
+      sel.innerHTML = `<option value="">Elige una categoría</option>${opcCat(t === 'pago' ? 'gasto' : 'ingreso')}`;
+      if ([...sel.options].some(o => o.value === previa)) sel.value = previa;
+    }
+    $('#r-persona-et', f).textContent = t === 'pago' ? 'Quién recibe el dinero' : 'Quién paga';
+    pintarFirmas(); pintarTexto();
+  };
+  const leer = () => ({ tipo: tipoActual(), persona: $('#r-persona', f).value.trim(), dni: $('#r-dni', f).value.trim(),
+    importe: parseImporte($('#r-importe', f).value), concepto: $('#r-concepto', f).value.trim(), fecha: $('#r-fecha', f).value });
+  const pintarTexto = () => {
+    const r = leer();
+    $('#r-texto', f).textContent = textoRecibo({ ...r, importe: r.importe > 0 ? r.importe : 0 });
+    $('#r-lugar', f).textContent = r.fecha ? lugarFecha(r) : '';
+  };
+  f.addEventListener('input', e => { if (!e.target.closest('.lienzo-firma')) pintarTexto(); });
+  $$('input[name=rtipo]', f).forEach(x => x.addEventListener('change', pintarTipo));
+  $('#r-otra', f).addEventListener('change', alternarSegunda);
+  f.addEventListener('click', e => { const b = e.target.closest('[data-borrar-firma]'); if (b) pads[b.dataset.borrarFirma]?.borrar(); });
+  const imp = $('#r-importe', f);
+  imp.addEventListener('blur', () => { const n = parseImporte(imp.value); if (n > 0) imp.value = numInput(n); pintarTexto(); });
+  addEventListener('resize', () => Object.values(pads).forEach(p => p.vacia() && p.ajustar()), { once: true });
+  pintarTipo();
+
+  f.addEventListener('submit', async e => {
+    e.preventDefault();
+    const r = leer(), t = r.tipo;
+    mostrarError($('#r-persona', f), r.persona ? '' : t === 'pago' ? 'Escribe quién recibe el dinero.' : 'Escribe quién paga.');
+    mostrarError(imp, r.importe > 0 ? '' : 'Escribe un importe mayor que cero.');
+    mostrarError($('#r-concepto', f), r.concepto ? '' : 'Escribe el concepto.');
+    if (!deFactura) mostrarError($('#r-cat', f), $('#r-cat', f).value ? '' : 'Elige una categoría.');
+    const obligatoria = t === 'pago' ? 'fp' : 'fc';
+    const faltaFirma = Object.entries(pads).filter(([id, p]) => p.vacia() && (id === obligatoria || $('#r-otra', f).checked));
+    faltaFirma.forEach(([id]) => { const el = $(`#${id}-err`, f); el.hidden = false; el.innerHTML = `${ico('alerta', 'ico-s')} Falta esta firma.`; });
+    const malo = f.querySelector('[aria-invalid="true"]');
+    if (malo) return malo.focus();
+    if (faltaFirma.length) return $(`#${faltaFirma[0][0]}`, f).scrollIntoView({ block: 'center' });
+    const caja = $('#r-error', f); caja.hidden = true;
+    await conBoton(d.querySelector('[type=submit]'), async () => {
+      try {
+        const rutas = {};
+        for (const [id, p] of Object.entries(pads)) {
+          if (p.vacia()) continue;
+          const ruta = `recibos/${crypto.randomUUID()}.png`;
+          await q(sb.storage.from('justificantes').upload(ruta, await p.png(), { contentType: 'image/png' }));
+          rutas[id] = ruta;
+        }
+        const res = await q(sb.rpc('crear_recibo', {
+          p_tipo: t, p_fecha: r.fecha, p_persona: r.persona, p_dni: r.dni || null, p_importe: r.importe, p_concepto: r.concepto,
+          p_cuenta: deFactura ? null : $('#r-cuenta', f).value, p_categoria: deFactura ? null : $('#r-cat', f).value,
+          p_firma_persona: rutas.fp || null, p_firma_coral: rutas.fc || null,
+          p_firmante_coral: rutas.fc ? $('#r-firmante', f).value.trim() || null : null, p_documento: documento?.id || null,
+        }));
+        d.close();
+        let aviso = '';
+        try { await adjuntarPdfRecibo(res.id); } catch (err) { aviso = ' El PDF no se pudo adjuntar al libro; puedes hacerlo desde el recibo.'; }
+        if (location.hash.startsWith('#facturas') || location.hash.startsWith('#inicio') || location.hash.startsWith('#libro') || !location.hash) enrutar();
+        tostada(`Recibo ${res.codigo} guardado y apuntado en el libro.${aviso}`, { error: !!aviso });
+        abrirRecibo(res.id);
+      } catch (err) { caja.innerHTML = `${ico('alerta')}<p>${esc(mensajeError(err))}</p>`; caja.hidden = false; }
+    });
+  });
+  setTimeout(() => $('#r-persona', f).focus(), 50);
+}
+
+// Genera el PDF firmado y lo deja como justificante del apunte
+async function adjuntarPdfRecibo(id) {
+  const r = await q(sb.from('recibos').select('*').eq('id', id).single());
+  if (r.pdf_ruta || !r.movimiento_id) return r;
+  const blob = await generarPdfRecibo(r);
+  const nombre = `${r.codigo} ${slug(r.persona)}.pdf`;
+  const ruta = `${r.ejercicio}/${r.movimiento_id}/${slug(nombre)}`;
+  await q(sb.storage.from('justificantes').upload(ruta, blob, { contentType: 'application/pdf', upsert: true }));
+  await q(sb.from('justificantes').insert({ movimiento_id: r.movimiento_id, ruta, nombre, tipo_mime: 'application/pdf', tamano: blob.size }));
+  await q(sb.from('recibos').update({ pdf_ruta: ruta }).eq('id', r.id));
+  return r;
+}
+
+async function generarPdfRecibo(r) {
+  if (!moduloPdf) moduloPdf = await import('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/+esm');
+  const JsPDF = moduloPdf.jsPDF || moduloPdf.default;
+  const aj = E.ajustes || {};
+  const pdf = new JsPDF({ unit: 'mm', format: 'a4' });
+  const M = 18, AN = 210, ancho = AN - 2 * M;
+  const TINTA = [29, 29, 27], GRIS = [97, 97, 92], AZUL = [36, 64, 122], LINEA = [200, 200, 194];
+  const limpio = s => String(s ?? '').replace(/[  ]/g, ' ');
+  const txt = (t, x, y, o = {}) => { pdf.setFont('helvetica', o.b ? 'bold' : 'normal'); pdf.setFontSize(o.s || 10); pdf.setTextColor(...(o.c || TINTA)); pdf.text(limpio(t), x, y, { align: o.a || 'left', angle: o.angle }); };
+  let y = M + 6, xDatos = M + 6;
+  try {
+    const logo = await logoActual();
+    if (logo) { const h = 16, w = Math.min(34, h * logo.ratio); pdf.addImage(logo.data, logo.formato, M + 6, y, w, h, undefined, 'FAST'); xDatos = M + 6 + w + 5; }
+  } catch {}
+  txt(aj.nombre || '', xDatos, y + 5, { b: true, s: 12 });
+  [aj.cif && `CIF ${aj.cif}`, aj.direccion].filter(Boolean).forEach((l, i) => txt(l, xDatos, y + 10 + i * 4.4, { s: 9, c: GRIS }));
+  txt(r.tipo === 'pago' ? 'RECIBO DE PAGO' : 'RECIBO DE COBRO', AN - M - 6, y + 5, { b: true, s: 13, a: 'right', c: AZUL });
+  txt(`Nº ${r.codigo}`, AN - M - 6, y + 11, { b: true, a: 'right' });
+  y += 26;
+  pdf.setFillColor(238, 242, 250); pdf.roundedRect(AN - M - 6 - 60, y, 60, 13, 2, 2, 'F');
+  txt(limpio(eur(r.importe)), AN - M - 9, y + 9, { b: true, s: 15, a: 'right' });
+  y += 22;
+  pdf.setFont('helvetica', 'normal'); pdf.setFontSize(11.5);
+  const lineas = pdf.splitTextToSize(limpio(textoRecibo(r)), ancho - 12);
+  lineas.forEach((l, i) => txt(l, M + 6, y + i * 6, { s: 11.5 }));
+  y += lineas.length * 6 + 6;
+  txt(lugarFecha(r), AN - M - 6, y, { a: 'right', s: 10.5 });
+  y += 10;
+  const firma = async (ruta, x, etiqueta, nombre) => {
+    const w = (ancho - 24) / 2, h = 30;
+    pdf.setDrawColor(...LINEA); pdf.line(x, y + h, x + w, y + h);
+    try { const im = await imagenAlmacen(ruta); if (im) { const iw = Math.min(w, h * im.ratio); pdf.addImage(im.data, 'PNG', x + (w - iw) / 2, y, iw, h, undefined, 'FAST'); } } catch {}
+    txt(etiqueta, x + w / 2, y + h + 5, { s: 8.5, c: GRIS, a: 'center' });
+    if (nombre) txt(nombre, x + w / 2, y + h + 9.5, { s: 9.5, a: 'center' });
+  };
+  const xIzq = M + 6, xDer = M + 6 + (ancho - 24) / 2 + 12;
+  if (r.tipo === 'pago') {
+    await firma(r.firma_persona, xIzq, 'Recibí (firma de quien recibe)', r.persona);
+    if (r.firma_coral) await firma(r.firma_coral, xDer, `Por ${aj.nombre || 'la coral'}`, r.firmante_coral);
+  } else {
+    await firma(r.firma_coral, xIzq, `Recibí, por ${aj.nombre || 'la coral'}`, r.firmante_coral);
+    if (r.firma_persona) await firma(r.firma_persona, xDer, 'Conforme (firma de quien paga)', r.persona);
+  }
+  y += 48;
+  pdf.setDrawColor(...LINEA); pdf.roundedRect(M, M, ancho, y - M, 3, 3, 'S');
+  if (r.anulado) {
+    txt('ANULADO', AN / 2, M + (y - M) / 2 + 18, { b: true, s: 54, c: [179, 38, 30], a: 'center', angle: 18 });
+    txt(`Anulado: ${r.motivo_anulacion || ''}`, M, y + 8, { s: 9, c: [179, 38, 30] });
+  }
+  return pdf.output('blob');
+}
+
+async function papelRecibo(r) {
+  const aj = E.ajustes || {};
+  const [fp, fc] = await Promise.all([imagenAlmacen(r.firma_persona).catch(() => null), imagenAlmacen(r.firma_coral).catch(() => null)]);
+  const caja = (img, etiqueta, nombre) => `<div class="papel-firma">${img ? `<img src="${img.data}" alt="Firma de ${esc(nombre || '')}">` : '<span></span>'}
+    <p class="papel-etiqueta">${esc(etiqueta)}</p>${nombre ? `<p>${esc(nombre)}</p>` : ''}</div>`;
+  const firmas = r.tipo === 'pago'
+    ? caja(fp, 'Recibí (firma de quien recibe)', r.persona) + (fc ? caja(fc, `Por ${aj.nombre || 'la coral'}`, r.firmante_coral) : '')
+    : caja(fc, `Recibí, por ${aj.nombre || 'la coral'}`, r.firmante_coral) + (fp ? caja(fp, 'Conforme (firma de quien paga)', r.persona) : '');
+  return `<article class="papel papel-recibo ${r.anulado ? 'anulado' : ''}" aria-label="Vista previa del recibo">
+    <header class="papel-cabecera"><div class="papel-emisor"><div><p><strong>${esc(aj.nombre || '')}</strong></p>${aj.cif ? `<p>CIF ${esc(aj.cif)}</p>` : ''}</div></div>
+      <div class="papel-titulo"><p class="papel-tipo">${r.tipo === 'pago' ? 'Recibo de pago' : 'Recibo de cobro'}</p><p><strong>Nº ${esc(r.codigo)}</strong></p>
+        <p class="papel-importe num">${eur(r.importe)}</p></div></header>
+    <p class="papel-texto">${esc(textoRecibo(r))}</p>
+    <p class="papel-lugar">${esc(lugarFecha(r))}</p>
+    <div class="papel-firmas">${firmas}</div>
+    ${r.anulado ? `<p class="sello-anulado" aria-hidden="true">Anulado</p>` : ''}
+  </article>`;
+}
+
+async function abrirRecibo(id) {
+  let r, fac = null, mov = null;
+  try {
+    r = await q(sb.from('recibos').select('*').eq('id', id).single());
+    if (r.documento_id) fac = await sb.from('documentos').select('id, codigo').eq('id', r.documento_id).maybeSingle().then(x => x.data);
+    if (r.movimiento_id) mov = await sb.from('movimientos').select('id, numero, ejercicio').eq('id', r.movimiento_id).maybeSingle().then(x => x.data);
+  } catch (e) { return tostada(mensajeError(e), { error: true }); }
+  const ed = puedeEditar();
+  const d = dialogo({
+    titulo: `Recibo ${r.codigo}`,
+    cuerpo: `<div class="cabecera-doc"><span class="etiqueta">${r.tipo === 'pago' ? 'Pago' : 'Cobro'}</span>
+        ${r.anulado ? '<span class="etiqueta etiqueta-error">Anulado</span>' : '<span class="etiqueta etiqueta-ok">Firmado</span>'}
+        ${mov ? `<button type="button" class="btn btn-texto" data-ver-mov="${mov.id}">${ico('libro', 'ico-s')} Apunte nº ${mov.numero} del libro</button>` : ''}
+        ${fac ? `<button type="button" class="btn btn-texto" data-ir-doc="${fac.id}">${ico('factura', 'ico-s')} Factura ${esc(fac.codigo)}</button>` : ''}</div>
+      ${r.anulado ? `<div class="aviso aviso-error">${ico('anular')}<p><strong>Anulado.</strong> ${esc(r.motivo_anulacion || '')}</p></div>` : ''}
+      ${!r.pdf_ruta && !r.anulado && ed ? `<div class="aviso aviso-aviso">${ico('alerta')}<p>El PDF firmado aún no está adjunto al apunte del libro.</p>
+        <button type="button" class="btn btn-texto acciones" id="b-adjuntar">Adjuntar ahora</button></div>` : ''}
+      <div class="acciones-doc">
+        <button type="button" class="btn" id="b-pdf-rec">${ico('descargar')} Descargar PDF</button>
+        ${navigator.share ? `<button type="button" class="btn" id="b-compartir-rec">${ico('compartir')} Compartir</button>` : ''}
+      </div>
+      <div id="rec-papel" aria-busy="true"><div class="esqueleto esq-bloque"></div></div>`,
+    pie: ed && !r.anulado ? `<button type="button" class="btn btn-texto izquierda" id="b-anular-rec">${ico('anular')} Anular recibo</button>
+      <button type="button" class="btn" data-cerrar>Cerrar</button>` : '<button type="button" class="btn" data-cerrar>Cerrar</button>',
+  });
+  papelRecibo(r).then(html => { const c = $('#rec-papel', d); if (c) { c.innerHTML = html; c.removeAttribute('aria-busy'); } });
+  const nombre = `${r.codigo} ${slug(r.persona)}.pdf`;
+  $('[data-ver-mov]', d)?.addEventListener('click', e => { d.close(); abrirDetalle(e.currentTarget.dataset.verMov); });
+  $('[data-ir-doc]', d)?.addEventListener('click', e => { d.close(); abrirDocumento(e.currentTarget.dataset.irDoc); });
+  $('#b-pdf-rec', d).addEventListener('click', e => conBoton(e.currentTarget, async () => {
+    try { descargar(nombre, await generarPdfRecibo(r), 'application/pdf'); } catch (err) { tostada('No se pudo crear el PDF. ' + mensajeError(err), { error: true }); }
+  }));
+  $('#b-compartir-rec', d)?.addEventListener('click', e => conBoton(e.currentTarget, async () => {
+    try {
+      const archivo = new File([await generarPdfRecibo(r)], nombre, { type: 'application/pdf' });
+      if (navigator.canShare?.({ files: [archivo] })) await navigator.share({ files: [archivo], title: `Recibo ${r.codigo}` });
+      else { descargar(nombre, archivo, 'application/pdf'); tostada('Este navegador no permite compartir archivos: se ha descargado el PDF.'); }
+    } catch (err) { if (err?.name !== 'AbortError') tostada(mensajeError(err), { error: true }); }
+  }));
+  $('#b-adjuntar', d)?.addEventListener('click', e => conBoton(e.currentTarget, async () => {
+    try { await adjuntarPdfRecibo(r.id); d.close(); abrirRecibo(r.id); tostada('PDF adjuntado al apunte'); } catch (err) { tostada(mensajeError(err), { error: true }); }
+  }));
+  $('#b-anular-rec', d)?.addEventListener('click', async () => {
+    const ok = await confirmar({
+      titulo: `¿Anular el recibo ${r.codigo}?`, boton: 'Anular recibo', peligro: true, motivo: 'Motivo de la anulación',
+      texto: r.documento_id ? 'El recibo quedará marcado como anulado. El cobro de la factura no cambia: si hace falta, deshazlo desde la factura.'
+        : 'El recibo quedará marcado como anulado y su apunte del libro también se anulará. Si había un error, después haz un recibo nuevo.',
+    });
+    if (!ok) return;
+    try {
+      await q(sb.rpc('anular_recibo', { p_recibo: r.id, p_motivo: ok.motivo }));
+      d.close(); if (location.hash.startsWith('#facturas')) enrutar(); tostada(`Recibo ${r.codigo} anulado`); abrirRecibo(r.id);
+    } catch (err) { tostada(mensajeError(err), { error: true }); }
   });
 }
 
