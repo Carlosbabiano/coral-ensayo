@@ -55,11 +55,64 @@ function mensajeError(e) {
   return 'Algo ha fallado. Vuelve a intentarlo en unos segundos.';
 }
 
-function descargar(nombre, contenido, tipo) {
-  const url = URL.createObjectURL(new Blob([contenido], { type: tipo }));
+// En iPhone/iPad con la app añadida a la pantalla de inicio, iOS no descarga: abre el archivo encima de la app,
+// sin botón «Atrás», y al cerrarlo se cierra la app. Ahí se usa el menú Compartir (Imprimir, Guardar en Archivos…).
+// En el ordenador con la app instalada (ventana propia de Edge o Chrome), al abrir el PDF descargado el navegador lo
+// muestra en la misma ventana de la app y al cerrarlo se cierra la app. Ahí el PDF se ve e imprime dentro de la app.
+const esIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const appInstalada = window.matchMedia?.('(display-mode: standalone)').matches || window.matchMedia?.('(display-mode: window-controls-overlay)').matches || navigator.standalone === true;
+const enIOSApp = esIOS && appInstalada;
+const enAppEscritorio = !esIOS && appInstalada && !/Android/.test(navigator.userAgent);
+const TXT_PDF = enIOSApp ? 'Guardar o imprimir PDF' : enAppEscritorio ? 'Ver e imprimir PDF' : 'Descargar PDF';
+
+function visorPdf(nombre, blob) {
+  const url = URL.createObjectURL(blob);
+  const d = dialogo({
+    titulo: nombre.replace(/\.pdf$/i, ''),
+    cuerpo: `<iframe class="visor-pdf" src="${url}" title="Vista previa de ${esc(nombre)}"></iframe>
+      <p class="muted pequeno" style="margin-top:var(--space-2)">También puedes usar los botones del propio visor para imprimir o guardar.</p>`,
+    pie: `<button type="button" class="btn" data-cerrar>Cerrar</button>
+      <button type="button" class="btn" id="b-visor-guardar">${ico('descargar')} Guardar en el ordenador</button>
+      <button type="button" class="btn btn-primario" id="b-visor-imprimir">${ico('imprimir')} Imprimir</button>`,
+  });
+  d.classList.add('dialogo-visor');
+  d.addEventListener('close', () => setTimeout(() => URL.revokeObjectURL(url), 1000));
+  $('#b-visor-imprimir', d).onclick = () => {
+    try { $('.visor-pdf', d).contentWindow.focus(); $('.visor-pdf', d).contentWindow.print(); }
+    catch { tostada('Usa el botón de imprimir del visor, arriba a la derecha.', { error: true }); }
+  };
+  $('#b-visor-guardar', d).onclick = () => { descargarDirecto(nombre, blob); tostada('Guardado en la carpeta de descargas. Ábrelo desde ahí, no desde la app.'); };
+}
+
+function descargarDirecto(nombre, blob) {
+  const url = URL.createObjectURL(blob);
   const a = Object.assign(document.createElement('a'), { href: url, download: nombre });
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+async function descargar(nombre, contenido, tipo) {
+  const blob = contenido instanceof Blob ? contenido : new Blob([contenido], { type: tipo });
+  if (enAppEscritorio && tipo === 'application/pdf') return visorPdf(nombre, blob);
+  if (!enIOSApp) return descargarDirecto(nombre, blob);
+  const archivo = new File([blob], nombre, { type: tipo });
+  if (!navigator.canShare?.({ files: [archivo] })) return descargarDirecto(nombre, blob);
+  try { await navigator.share({ files: [archivo] }); }
+  catch (e) {
+    if (e?.name === 'AbortError') return;          // la persona cerró el menú
+    dialogoArchivoListo(archivo);                    // iOS pide otro toque si preparar el archivo tardó
+  }
+}
+function dialogoArchivoListo(archivo) {
+  const d = dialogo({
+    titulo: 'El archivo está listo',
+    cuerpo: `<p>${ico(archivo.type === 'application/pdf' ? 'archivo' : 'descargar', 'ico-s')} ${esc(archivo.name)}</p>
+      <p class="muted pequeno" style="margin-top:var(--space-2)">Pulsa el botón para imprimirlo, guardarlo en Archivos o enviarlo.</p>`,
+    pie: `<button type="button" class="btn" data-cerrar>Cerrar</button><button type="button" class="btn btn-primario" id="b-compartir-listo">${ico('compartir')} Guardar o imprimir</button>`,
+  });
+  $('#b-compartir-listo', d).onclick = async () => {
+    try { await navigator.share({ files: [archivo] }); d.close(); }
+    catch (e) { if (e?.name !== 'AbortError') tostada('No se pudo abrir el menú de compartir.', { error: true }); }
+  };
 }
 const csvCelda = v => { const s = String(v ?? ''); return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
 const csv = filas => '﻿' + filas.map(f => f.map(csvCelda).join(';')).join('\r\n');
@@ -1897,8 +1950,8 @@ async function abrirDocumento(id) {
       ${cobroInfo}
       ${doc.tipo === 'factura' && doc.estado === 'rectificada' ? `<div class="aviso aviso-aviso">${ico('alerta')}<p>Esta factura está anulada por una rectificativa. Si se había cobrado y devolvisteis el dinero, apunta la devolución como gasto en el libro.</p></div>` : ''}
       <div class="acciones-doc">
-        <button type="button" class="btn" id="b-pdf">${ico('descargar')} Descargar PDF</button>
-        ${navigator.share ? `<button type="button" class="btn" id="b-compartir">${ico('compartir')} Compartir</button>` : ''}
+        <button type="button" class="btn" id="b-pdf">${ico('descargar')} ${TXT_PDF}</button>
+        ${navigator.share && !enIOSApp ? `<button type="button" class="btn" id="b-compartir">${ico('compartir')} Compartir</button>` : ''}
         ${ed && esPres ? `<button type="button" class="btn btn-texto" id="b-duplicar">${ico('copiar', 'ico-s')} Duplicar</button>` : ''}
       </div>
       <div id="doc-papel">${papel(doc)}</div>`,
@@ -2338,8 +2391,8 @@ async function abrirRecibo(id) {
       ${!r.pdf_ruta && !r.anulado && ed ? `<div class="aviso aviso-aviso">${ico('alerta')}<p>El PDF firmado aún no está adjunto al apunte del libro.</p>
         <button type="button" class="btn btn-texto acciones" id="b-adjuntar">Adjuntar ahora</button></div>` : ''}
       <div class="acciones-doc">
-        <button type="button" class="btn" id="b-pdf-rec">${ico('descargar')} Descargar PDF</button>
-        ${navigator.share ? `<button type="button" class="btn" id="b-compartir-rec">${ico('compartir')} Compartir</button>` : ''}
+        <button type="button" class="btn" id="b-pdf-rec">${ico('descargar')} ${TXT_PDF}</button>
+        ${navigator.share && !enIOSApp ? `<button type="button" class="btn" id="b-compartir-rec">${ico('compartir')} Compartir</button>` : ''}
       </div>
       <div id="rec-papel" aria-busy="true"><div class="esqueleto esq-bloque"></div></div>`,
     pie: ed && !r.anulado ? `<button type="button" class="btn btn-texto izquierda" id="b-anular-rec">${ico('anular')} Anular recibo</button>
@@ -2857,7 +2910,7 @@ async function vistaMemoria() {
     <div class="encabezado-vista no-imprimir"><a class="btn btn-texto" href="#inicio">← Inicio</a></div>
     <div class="encabezado-vista"><h1>Memoria económica ${anio}</h1>
       <button type="button" class="btn btn-icono no-imprimir" id="b-mem-imprimir" aria-label="Imprimir la memoria">${ico('imprimir')}</button>
-      <button type="button" class="btn btn-primario no-imprimir" id="b-mem-pdf">${ico('descargar')} Descargar PDF</button></div>
+      <button type="button" class="btn btn-primario no-imprimir" id="b-mem-pdf">${ico('descargar')} ${TXT_PDF}</button></div>
     <p class="muted">${esc(E.ajustes?.nombre || '')}${D.provisional ? ` · Datos provisionales a ${fecha(hoy())}: el año aún no ha terminado.` : ''}</p>
 
     <section class="seccion" aria-labelledby="m-res"><h2 id="m-res">1. Resultado del año</h2>
