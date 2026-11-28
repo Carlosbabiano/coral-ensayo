@@ -15,6 +15,7 @@ App de contabilidad de la Coral Villa de Mengíbar: libro de ingresos y gastos, 
 - `supabase/001_base.sql`: tablas, permisos y almacén de justificantes.
 - `supabase/002_facturas.sql`: clientes, presupuestos, facturas y rectificativas (numeración, cobro, bloqueo de facturas emitidas).
 - `supabase/003_modo_pruebas.sql`: borrado de datos de prueba y paso a uso real.
+- `supabase/006_presupuesto_anual.sql`: presupuesto por categorías para el año siguiente (sale en la memoria y, al año siguiente, su cumplimiento).
 - `supabase/005_subvenciones.sql`: subvenciones (cobros enlazados, gastos justificados, documentos) y textos de la memoria anual.
 - `supabase/004_recibos.sql`: recibos de pago y de cobro firmados en pantalla (se apuntan solos en el libro; no se modifican, se anulan).
 - `supabase/functions/usuarios/`: alta de usuarios y contraseñas (necesita permisos de servidor).

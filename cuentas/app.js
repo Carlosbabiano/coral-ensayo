@@ -1308,7 +1308,7 @@ function gestionarUsuario(p) {
 
 async function copiaSeguridad() {
   try {
-    const tablas = ['ajustes', 'cuentas', 'categorias', 'movimientos', 'justificantes', 'conciliaciones', 'clientes', 'documentos', 'recibos', 'subvenciones', 'subvencion_gastos', 'subvencion_documentos', 'memorias', 'perfiles', 'historial'];
+    const tablas = ['ajustes', 'cuentas', 'categorias', 'movimientos', 'justificantes', 'conciliaciones', 'clientes', 'documentos', 'recibos', 'subvenciones', 'subvencion_gastos', 'subvencion_documentos', 'memorias', 'presupuesto_lineas', 'perfiles', 'historial'];
     const datos = {};
     for (const t of tablas) datos[t] = await q(sb.from(t).select('*').limit(100000));
     descargar(`copia-cuentas-coral-${hoy()}.json`, JSON.stringify({ fecha: new Date().toISOString(), version: 1, datos }, null, 1), 'application/json');
@@ -2707,6 +2707,7 @@ async function nuevoPdfListado(titulo, subtitulo) {
       let x = M; cols.forEach(col => { txt(col.t, col.a === 'right' ? x + col.w - 2 : x + 2, c.y + 4.8, { s: 8.5, b: true, c: [255, 255, 255], a: col.a }); x += col.w; });
       c.y += 7;
     };
+    c.saltoSi(7 + 9 * Math.min(filas.length, 2));   // la cabecera nunca se queda sola al final de una página
     cab();
     filas.forEach((f, i) => {
       const ult = totalUltima && i === filas.length - 1;
@@ -2742,13 +2743,15 @@ async function pdfRelacionGastos(s, filas, cobrado) {
 // Memoria económica anual (tanda 4)
 // ======================================================================
 async function datosMemoria(anio) {
-  const [movs, movsAnt, subs, ex, docs, memo] = await Promise.all([
+  const [movs, movsAnt, subs, ex, docs, memo, presActual, presSig] = await Promise.all([
     q(sb.from('movimientos').select('tipo, importe, categoria_id').eq('ejercicio', anio).eq('anulado', false).limit(50000)),
     q(sb.from('movimientos').select('tipo, importe, categoria_id').eq('ejercicio', anio - 1).eq('anulado', false).limit(50000)),
     q(sb.from('subvenciones').select('*').eq('ejercicio', anio).order('organismo')),
     datosSubvenciones(),
     q(sb.from('documentos').select('tipo, estado, total').eq('ejercicio', anio).neq('tipo', 'presupuesto')),
     q(sb.from('memorias').select('*').eq('ejercicio', anio).maybeSingle()),
+    q(sb.from('presupuesto_lineas').select('categoria_id, importe').eq('ejercicio', anio)),
+    q(sb.from('presupuesto_lineas').select('categoria_id, importe').eq('ejercicio', anio + 1)),
   ]);
   const finAnt = `${anio - 1}-12-31`, fin = `${anio}-12-31`;
   const cuentas = E.cuentas.filter(c => c.fecha_inicial <= fin);
@@ -2766,8 +2769,11 @@ async function datosMemoria(anio) {
     return { filas, actual: filas.reduce((s, f) => s + f.actual, 0), anterior: filas.reduce((s, f) => s + f.anterior, 0) };
   };
   const facturas = docs.filter(d => d.tipo === 'factura' && d.estado !== 'rectificada');
+  const aMapa = filas => new Map(filas.map(f => [f.categoria_id, Number(f.importe)]));
+  const real = new Map([...porCategoria(movs, 'ingreso'), ...porCategoria(movs, 'gasto')]);
   return {
     anio, ingresos: tabla('ingreso'), gastos: tabla('gasto'), saldos, memo,
+    real, presActual: aMapa(presActual), presSig: aMapa(presSig),
     subs: subs.map(s => ({ ...s, cobrado: ex.cobrado(s.id), justificado: ex.justificado(s.id) })),
     facturacion: { emitidas: facturas.length, total: facturas.reduce((a, d) => a + Number(d.total), 0),
       pendiente: facturas.filter(d => d.estado === 'emitida').reduce((a, d) => a + Number(d.total), 0) },
@@ -2775,6 +2781,10 @@ async function datosMemoria(anio) {
   };
 }
 const variacion = (a, b) => (b ? `${a >= b ? '+' : ''}${Math.round(((a - b) / Math.abs(b)) * 100)} %` : '—');
+const pctCumplido = (real, previsto) => (previsto ? `${Math.round((real / previsto) * 100)} %` : '—');
+const filasEjecucion = (D, tipo) => E.categorias.filter(c => c.tipo === tipo && (D.presActual.has(c.id) || D.real.has(c.id)))
+  .map(c => ({ nombre: c.nombre, prev: D.presActual.get(c.id) || 0, real: D.real.get(c.id) || 0 }));
+const categoriasPresupuesto = (D, tipo) => E.categorias.filter(c => c.tipo === tipo && (c.activa || D.real.has(c.id) || D.presSig.has(c.id)));
 
 async function vistaMemoria() {
   const v = $('#vista'), anio = E.ejercicio;
@@ -2790,6 +2800,22 @@ async function vistaMemoria() {
       : '<tr><td colspan="4" class="muted">Sin apuntes</td></tr>'}</tbody>
     <tfoot><tr><th scope="row">Total</th><td class="num"><strong>${eur(t.actual)}</strong></td><td class="num muted">${eur(t.anterior)}</td><td class="num muted">${variacion(t.actual, t.anterior)}</td></tr></tfoot></table>`;
   const res = D.ingresos.actual - D.gastos.actual, resAnt = D.ingresos.anterior - D.gastos.anterior;
+  // Presupuesto: ejecución del de este año (si existe) y previsión del siguiente
+  const numEjec = 7, numPres = D.presActual.size ? 8 : 7, numCom = numPres + 1;
+  const tablaEjec = (tipo, titulo) => {
+    const filas = filasEjecucion(D, tipo);
+    const tp = filas.reduce((a, f) => a + f.prev, 0), tr = filas.reduce((a, f) => a + f.real, 0);
+    return `<table class="tabla-memoria tabla-ejecucion"><caption class="sr">${titulo}: previsto frente a real</caption>
+      <thead><tr><th scope="col">${titulo}</th><th scope="col">Previsto</th><th scope="col">Real</th><th scope="col">Cumplido</th></tr></thead>
+      <tbody>${filas.map(f => `<tr><td>${esc(f.nombre)}</td><td class="num">${eur(f.prev)}</td><td class="num">${eur(f.real)}</td><td class="num muted">${pctCumplido(f.real, f.prev)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><th scope="row">Total</th><td class="num"><strong>${eur(tp)}</strong></td><td class="num"><strong>${eur(tr)}</strong></td><td class="num muted">${pctCumplido(tr, tp)}</td></tr></tfoot></table>`;
+  };
+  const tablaPres = (tipo, titulo) => `<table class="tabla-memoria tabla-presupuesto"><caption class="sr">${titulo} previstos para ${anio + 1}</caption>
+    <thead><tr><th scope="col">${titulo}</th><th scope="col">Real ${anio}</th><th scope="col">Previsto ${anio + 1}</th></tr></thead>
+    <tbody>${categoriasPresupuesto(D, tipo).map(c => `<tr><td>${esc(c.nombre)}</td><td class="num muted">${eur(D.real.get(c.id) || 0)}</td>
+      <td><input class="input-tabla num" inputmode="decimal" data-pres="${c.id}" data-tipo="${tipo}" placeholder="—" aria-label="Previsto ${anio + 1}: ${esc(c.nombre)}"
+        value="${D.presSig.has(c.id) ? numInput(D.presSig.get(c.id)) : ''}" ${ed ? '' : 'readonly'}></td></tr>`).join('')}</tbody>
+    <tfoot><tr><th scope="row">Total</th><td class="num muted">${eur(tipo === 'ingreso' ? D.ingresos.actual : D.gastos.actual)}</td><td class="num"><strong data-total-pres="${tipo}"></strong></td></tr></tfoot></table>`;
   v.innerHTML = `
     <div class="encabezado-vista no-imprimir"><a class="btn btn-texto" href="#inicio">← Inicio</a></div>
     <div class="encabezado-vista"><h1>Memoria económica ${anio}</h1>
@@ -2806,11 +2832,11 @@ async function vistaMemoria() {
     <section class="seccion" aria-labelledby="m-ing"><h2 id="m-ing">2. Ingresos por categoría</h2>${tablaCat(D.ingresos, 'Ingresos')}</section>
     <section class="seccion" aria-labelledby="m-gas"><h2 id="m-gas">3. Gastos por categoría</h2>${tablaCat(D.gastos, 'Gastos')}</section>
     <section class="seccion" aria-labelledby="m-tes"><h2 id="m-tes">4. Tesorería</h2>
-      <table class="tabla-memoria"><caption class="sr">Saldos de caja y bancos</caption>
+      ${!D.saldos.length ? `<p class="muted">No hay cuentas de caja o banco con saldo en ${anio}. Se añaden en Tesorería con su saldo inicial.</p>` : `<table class="tabla-memoria"><caption class="sr">Saldos de caja y bancos</caption>
         <thead><tr><th scope="col">Cuenta</th><th scope="col">1 de enero</th><th scope="col">31 de diciembre</th><th scope="col">Diferencia</th></tr></thead>
         <tbody>${D.saldos.map(s => `<tr><td>${esc(s.nombre)}${s.abierta ? `<br><span class="muted pequeno">Saldo inicial a ${fecha(s.abierta)}</span>` : ''}</td><td class="num">${eur(s.inicio)}</td><td class="num">${eur(s.fin)}</td><td class="num muted">${eur(s.fin - s.inicio)}</td></tr>`).join('')}</tbody>
         <tfoot><tr><th scope="row">Total</th><td class="num"><strong>${eur(D.saldos.reduce((a, s) => a + s.inicio, 0))}</strong></td><td class="num"><strong>${eur(D.saldos.reduce((a, s) => a + s.fin, 0))}</strong></td>
-          <td class="num muted">${eur(D.saldos.reduce((a, s) => a + s.fin - s.inicio, 0))}</td></tr></tfoot></table></section>
+          <td class="num muted">${eur(D.saldos.reduce((a, s) => a + s.fin - s.inicio, 0))}</td></tr></tfoot></table>`}</section>
     <section class="seccion" aria-labelledby="m-sub"><h2 id="m-sub">5. Subvenciones</h2>
       ${D.subs.length ? `<table class="tabla-memoria"><caption class="sr">Subvenciones del año</caption>
         <thead><tr><th scope="col">Subvención</th><th scope="col">Concedido</th><th scope="col">Cobrado</th><th scope="col">Estado</th></tr></thead>
@@ -2818,7 +2844,18 @@ async function vistaMemoria() {
           <td class="num">${eur(s.cobrado)}</td><td>${ESTADOS_SUB[s.estado][0]}</td></tr>`).join('')}</tbody></table>` : `<p class="muted">No hay subvenciones de ${anio}.</p>`}</section>
     <section class="seccion" aria-labelledby="m-fac"><h2 id="m-fac">6. Facturación</h2>
       <p>${D.facturacion.emitidas ? `${D.facturacion.emitidas} ${D.facturacion.emitidas === 1 ? 'factura emitida' : 'facturas emitidas'} por <strong class="num">${eur(D.facturacion.total)}</strong>${D.facturacion.pendiente ? `, de las que quedan <strong class="num">${eur(D.facturacion.pendiente)}</strong> pendientes de cobro` : ', todas cobradas'}.` : `No se emitieron facturas en ${anio}.`}</p></section>
-    <form class="seccion" id="f-mem" aria-labelledby="m-com" novalidate><h2 id="m-com">7. Comentarios</h2>
+    ${D.presActual.size ? `<section class="seccion" aria-labelledby="m-ejec"><h2 id="m-ejec">${numEjec}. Presupuesto ${anio}: previsto frente a real</h2>
+      <p class="muted pequeno" style="margin-top:var(--space-1)">El presupuesto que aprobó la asamblea comparado con lo que se ha ingresado y gastado.</p>
+      ${tablaEjec('ingreso', 'Ingresos')}${tablaEjec('gasto', 'Gastos')}</section>` : ''}
+    <form class="seccion" id="f-pres" aria-labelledby="m-pres" novalidate><h2 id="m-pres">${numPres}. Presupuesto para ${anio + 1}</h2>
+      <p class="muted pequeno" style="margin:var(--space-1) 0 var(--space-2)">Previsión de ingresos y gastos para presentar a la asamblea. Deja en blanco lo que no se prevea.</p>
+      ${ed ? `<button type="button" class="btn btn-texto no-imprimir" id="b-pres-copiar">Partir de lo real de ${anio}</button>` : ''}
+      ${tablaPres('ingreso', 'Ingresos')}${tablaPres('gasto', 'Gastos')}
+      <dl class="totales" id="pres-totales" aria-live="polite" style="margin-top:var(--space-3)"></dl>
+      <p class="error" id="pres-err" role="alert" hidden></p>
+      ${ed ? `<div style="margin-top:var(--space-3)"><button type="submit" class="btn no-imprimir">Guardar presupuesto</button></div>` : ''}
+    </form>
+    <form class="seccion" id="f-mem" aria-labelledby="m-com" novalidate><h2 id="m-com">${numCom}. Comentarios</h2>
       <div class="campo" style="margin-top:var(--space-3)"><label for="m-comentarios">Comentarios para la asamblea</label>
         <textarea id="m-comentarios" rows="6" maxlength="4000" ${ed ? '' : 'readonly'} aria-describedby="m-comentarios-ayuda">${esc(D.memo?.comentarios || '')}</textarea>
         <p class="ayuda" id="m-comentarios-ayuda">Por ejemplo: actividades del año, por qué subió algún gasto, previsiones para el próximo año…</p></div>
@@ -2834,11 +2871,53 @@ async function vistaMemoria() {
     e.preventDefault();
     await conBoton(e.submitter, async () => { try { await guardar(); tostada('Comentarios guardados'); } catch (err) { tostada(mensajeError(err), { error: true }); } });
   });
+  // Presupuesto del año siguiente: totales en vivo, copiar lo real y guardar
+  const fp = $('#f-pres');
+  const leerPres = () => {
+    const mapa = new Map(); let malo = null;
+    $$('[data-pres]', fp).forEach(i => {
+      const t = i.value.trim(); if (!t) { i.removeAttribute('aria-invalid'); return; }
+      const n = parseImporte(t);
+      if (!(n >= 0)) { i.setAttribute('aria-invalid', 'true'); malo = malo || i; } else { i.removeAttribute('aria-invalid'); if (n > 0) mapa.set(i.dataset.pres, n); }
+    });
+    return { mapa, malo };
+  };
+  const totalesPres = () => {
+    const { mapa } = leerPres();
+    const suma = tipo => $$(`[data-pres][data-tipo="${tipo}"]`, fp).reduce((a, i) => a + (mapa.get(i.dataset.pres) || 0), 0);
+    const ti = suma('ingreso'), tg = suma('gasto');
+    $('[data-total-pres="ingreso"]', fp).textContent = eur(ti); $('[data-total-pres="gasto"]', fp).textContent = eur(tg);
+    $('#pres-totales', fp).innerHTML = `<dt>Ingresos previstos</dt><dd class="num">${eur(ti)}</dd><dt>Gastos previstos</dt><dd class="num">${eur(tg)}</dd>
+      <dt class="total">${ti - tg >= 0 ? 'Superávit previsto' : 'Déficit previsto'}</dt><dd class="num total ${ti - tg >= 0 ? 'positivo' : 'negativo'}">${eur(ti - tg)}</dd>`;
+  };
+  fp.addEventListener('input', totalesPres);
+  fp.addEventListener('focusout', e => { const i = e.target; if (i.dataset?.pres && i.value.trim()) { const n = parseImporte(i.value); if (n >= 0) i.value = numInput(n); } });
+  totalesPres();
+  $('#b-pres-copiar')?.addEventListener('click', async () => {
+    const hayDatos = $$('[data-pres]', fp).some(i => i.value.trim());
+    if (hayDatos && !await confirmar({ titulo: `¿Partir de lo real de ${anio}?`, texto: 'Se sustituirán los importes que ya hayas escrito por lo ingresado y gastado este año. Después puedes ajustarlos.', boton: 'Rellenar con lo real' })) return;
+    $$('[data-pres]', fp).forEach(i => { const r = D.real.get(i.dataset.pres); i.value = r ? numInput(r) : ''; });
+    totalesPres(); tostada('Rellenado con lo real. Ajusta lo que vaya a cambiar y guarda.');
+  });
+  fp.addEventListener('submit', async e => {
+    e.preventDefault();
+    const { mapa, malo } = leerPres(), err = $('#pres-err', fp);
+    err.hidden = !malo; err.innerHTML = malo ? `${ico('alerta', 'ico-s')} Revisa los importes marcados: escribe solo números, por ejemplo 1.500,00.` : '';
+    if (malo) return malo.focus();
+    await conBoton(e.submitter, async () => {
+      try {
+        const sobran = [...D.presSig.keys()].filter(id => !mapa.has(id));
+        if (mapa.size) await q(sb.from('presupuesto_lineas').upsert([...mapa].map(([categoria_id, importe]) => ({ ejercicio: anio + 1, categoria_id, importe, actualizado_en: new Date().toISOString() }))));
+        if (sobran.length) await q(sb.from('presupuesto_lineas').delete().eq('ejercicio', anio + 1).in('categoria_id', sobran));
+        D.presSig = mapa; tostada(`Presupuesto para ${anio + 1} guardado`);
+      } catch (er) { tostada(mensajeError(er), { error: true }); }
+    });
+  });
   $('#b-mem-imprimir').addEventListener('click', () => print());
   $('#b-mem-pdf').addEventListener('click', e => conBoton(e.currentTarget, async () => {
     try {
       if (ed) await guardar().catch(() => {});
-      descargar(`memoria-economica-${anio}.pdf`, await pdfMemoria({ ...D, memo: leer() }), 'application/pdf');
+      descargar(`memoria-economica-${anio}.pdf`, await pdfMemoria({ ...D, memo: leer(), presSig: leerPres().mapa }), 'application/pdf');
     } catch (err) { tostada('No se pudo crear el PDF. ' + mensajeError(err), { error: true }); }
   }));
 }
@@ -2859,7 +2938,8 @@ async function pdfMemoria(D) {
   c.seccion('3. Gastos por categoría'); c.tabla(cols4('Categoría'), cat(D.gastos), { totalUltima: true });
   c.seccion('4. Tesorería');
   const tIni = D.saldos.reduce((a, s) => a + s.inicio, 0), tFin = D.saldos.reduce((a, s) => a + s.fin, 0);
-  c.tabla([{ t: 'Cuenta', w: 82 }, { t: '1 de enero', w: 34, a: 'right' }, { t: '31 de diciembre', w: 34, a: 'right' }, { t: 'Diferencia', w: 28, a: 'right' }],
+  if (!D.saldos.length) c.parrafo(`No hay cuentas de caja o banco con saldo en ${anio}.`);
+  else c.tabla([{ t: 'Cuenta', w: 82 }, { t: '1 de enero', w: 34, a: 'right' }, { t: '31 de diciembre', w: 34, a: 'right' }, { t: 'Diferencia', w: 28, a: 'right' }],
     [...D.saldos.map(s => [s.nombre + (s.abierta ? ` (saldo inicial a ${fecha(s.abierta)})` : ''), eur(s.inicio), eur(s.fin), eur(s.fin - s.inicio)]), ['Total', eur(tIni), eur(tFin), eur(tFin - tIni)]], { totalUltima: true });
   c.seccion('5. Subvenciones');
   if (D.subs.length) c.tabla([{ t: 'Subvención', w: 92 }, { t: 'Concedido', w: 30, a: 'right' }, { t: 'Cobrado', w: 30, a: 'right' }, { t: 'Estado', w: 26 }],
@@ -2867,7 +2947,28 @@ async function pdfMemoria(D) {
   else c.parrafo(`No hay subvenciones de ${anio}.`);
   c.seccion('6. Facturación');
   c.parrafo(D.facturacion.emitidas ? `${D.facturacion.emitidas} ${D.facturacion.emitidas === 1 ? 'factura emitida' : 'facturas emitidas'} por ${eur(D.facturacion.total)}${D.facturacion.pendiente ? `, de las que quedan ${eur(D.facturacion.pendiente)} pendientes de cobro` : ', todas cobradas'}.` : `No se emitieron facturas en ${anio}.`);
-  if (D.memo?.comentarios) { c.seccion('7. Comentarios'); c.parrafo(D.memo.comentarios); }
+  let num = 7;
+  if (D.presActual.size) {
+    c.seccion(`${num++}. Presupuesto ${anio}: previsto frente a real`);
+    [['ingreso', 'Ingresos'], ['gasto', 'Gastos']].forEach(([tipo, titulo]) => {
+      const filas = filasEjecucion(D, tipo), tp = filas.reduce((a, f) => a + f.prev, 0), tr = filas.reduce((a, f) => a + f.real, 0);
+      c.tabla([{ t: titulo, w: 82 }, { t: 'Previsto', w: 34, a: 'right' }, { t: 'Real', w: 34, a: 'right' }, { t: 'Cumplido', w: 28, a: 'right' }],
+        [...filas.map(f => [f.nombre, eur(f.prev), eur(f.real), pctCumplido(f.real, f.prev)]), ['Total', eur(tp), eur(tr), pctCumplido(tr, tp)]], { totalUltima: true });
+    });
+  }
+  if (D.presSig.size) {
+    c.seccion(`${num++}. Presupuesto para ${anio + 1}`);
+    let ti = 0, tg = 0;
+    [['ingreso', 'Ingresos'], ['gasto', 'Gastos']].forEach(([tipo, titulo]) => {
+      const cats = categoriasPresupuesto(D, tipo).filter(x => D.presSig.has(x.id) || D.real.has(x.id));
+      const tp = cats.reduce((a, x) => a + (D.presSig.get(x.id) || 0), 0), tr = cats.reduce((a, x) => a + (D.real.get(x.id) || 0), 0);
+      if (tipo === 'ingreso') ti = tp; else tg = tp;
+      c.tabla([{ t: titulo, w: 98 }, { t: `Real ${anio}`, w: 40, a: 'right' }, { t: `Previsto ${anio + 1}`, w: 40, a: 'right' }],
+        [...cats.map(x => [x.nombre, eur(D.real.get(x.id) || 0), D.presSig.has(x.id) ? eur(D.presSig.get(x.id)) : '—']), ['Total', eur(tr), eur(tp)]], { totalUltima: true });
+    });
+    c.parrafo(`Ingresos previstos: ${eur(ti)}. Gastos previstos: ${eur(tg)}. ${ti - tg >= 0 ? 'Superávit' : 'Déficit'} previsto: ${eur(ti - tg)}.`, { b: true });
+  }
+  if (D.memo?.comentarios) { c.seccion(`${num++}. Comentarios`); c.parrafo(D.memo.comentarios); }
   c.saltoSi(45); c.y += 18;
   const w = (c.ancho - 20) / 2;
   [[D.memo?.presidente, 'El presidente'], [D.memo?.tesorero, 'El tesorero']].forEach(([nombre, cargo], i) => {

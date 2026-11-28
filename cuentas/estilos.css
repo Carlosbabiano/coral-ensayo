@@ -71,7 +71,8 @@
 
 /* ---------- Base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-padding-top: calc(var(--alto-cabecera) + var(--space-4)); }
+html { scroll-padding-top: calc(var(--alto-cabecera) + var(--space-4));
+  scroll-padding-bottom: calc(var(--alto-pestanas) + var(--space-4) + env(safe-area-inset-bottom)); }   /* la barra inferior fija no tapa el foco */
 body {
   margin: 0; background: var(--color-bg); color: var(--color-fg);
   font: var(--font-m)/var(--line-height) var(--font-family);
@@ -412,7 +413,13 @@ a.fila { color: inherit; text-decoration: none; }
 .tabla-memoria :is(th, td):first-child { text-align: left; }
 .tabla-memoria thead th { background: var(--color-surface-2); font-size: var(--font-s); color: var(--color-fg-muted); }
 .tabla-memoria tfoot :is(th, td) { border-bottom: 0; border-top: 2px solid var(--color-border-control); }
-@media (max-width: 599px) { .tabla-memoria :is(th, td):nth-child(4) { display: none; } .tabla-memoria th, .tabla-memoria td { padding: var(--space-2); } }
+.input-tabla { min-height: 40px !important; text-align: right; max-width: 150px; margin-left: auto; display: block; }
+.tabla-presupuesto td { vertical-align: middle; }
+@media (max-width: 599px) {
+  .tabla-memoria { font-size: var(--font-s); }
+  .tabla-ejecucion :is(th, td) { padding-left: var(--space-1) !important; padding-right: var(--space-1) !important; }
+  .tabla-ejecucion :is(th, td):first-child { padding-left: var(--space-2) !important; }
+  .tabla-memoria:not(.tabla-ejecucion) :is(th, td):nth-child(4) { display: none; } .tabla-memoria th, .tabla-memoria td { padding: var(--space-2); } }
 
 /* ---------- Impresión ---------- */
 @media print {
