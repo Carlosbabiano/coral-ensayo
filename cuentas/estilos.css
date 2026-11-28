@@ -8,10 +8,12 @@
   --color-fg-muted: #61615c;          /* 5.9:1 sobre el fondo */
   --color-border: #dcdcd6;
   --color-border-control: #8e8e87;    /* 3:1 sobre blanco */
-  --color-primary: #24407a;
-  --color-primary-hover: #1b3263;
+  --color-primary: #113055;            /* azul marino del logo */
+  --color-primary-hover: #0a213d;
   --color-on-primary: #ffffff;
-  --color-primary-soft: #e8edf7;
+  --color-primary-soft: #e7edf5;
+  --color-acento: #c2561a;             /* naranja de la lira, oscurecido para 3:1 sobre blanco */
+  --color-acento-suave: #fbeee3;
   --color-success: #1e6b3a;           /* ingresos */
   --color-success-soft: #e6f3ea;
   --color-danger: #b3261e;            /* gastos y errores */
@@ -19,7 +21,7 @@
   --color-on-danger: #ffffff;
   --color-warning: #8a5a00;
   --color-warning-soft: #fff4dc;
-  --color-info: #24407a;
+  --color-info: #113055;
   --color-info-soft: #e8edf7;
   --color-scrim: rgba(20, 20, 18, .45);
   --color-focus: #2f6fdf;
@@ -52,6 +54,8 @@
     --color-primary-hover: #b8c8f3;
     --color-on-primary: #0f1a33;
     --color-primary-soft: #263252;
+    --color-acento: #e8a04a;
+    --color-acento-suave: #3a2a18;
     --color-success: #7fd09a;
     --color-success-soft: #18301f;
     --color-danger: #f28b82;
@@ -136,6 +140,8 @@ a { color: var(--color-primary); }
   color: var(--color-fg-muted); text-decoration: none; font-size: var(--font-xs); font-weight: 600;
 }
 .pestanas a[aria-current="page"] { color: var(--color-primary); }
+.pestanas a { position: relative; }
+.pestanas a[aria-current="page"]::before { content: ""; position: absolute; top: 0; left: 25%; right: 25%; height: 3px; border-radius: 0 0 3px 3px; background: var(--color-acento); }
 .pestanas a:hover { color: var(--color-fg); }
 main {
   max-width: var(--ancho-max); margin: 0 auto;
@@ -148,7 +154,8 @@ main {
   }
   .pestanas a { flex-direction: row; gap: var(--space-2); font-size: var(--font-s); padding: var(--space-3) var(--space-3);
     border-bottom: 3px solid transparent; margin-bottom: -1px; }
-  .pestanas a[aria-current="page"] { border-bottom-color: var(--color-primary); }
+  .pestanas a[aria-current="page"] { border-bottom-color: var(--color-acento); }
+  .pestanas a[aria-current="page"]::before { display: none; }
   main { padding: var(--space-6) var(--space-6) var(--space-12); }
   html { scroll-padding-top: calc(var(--alto-cabecera) + 52px + var(--space-4)); }
 }
@@ -307,6 +314,11 @@ dialog[open] { animation: entrar var(--dur) var(--ease); }
 .subir input[type="file"] { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .archivos-elegidos { font-size: var(--font-s); color: var(--color-fg-muted); }
 
+/* ---------- Marca ---------- */
+.marca-lira { height: 30px; width: auto; flex: none; }
+.logo-acceso { background: #ffffff; border-radius: var(--radius-m); padding: var(--space-3) var(--space-4); }
+.logo-acceso img { display: block; width: 100%; height: auto; max-width: 300px; margin: 0 auto; }
+
 /* ---------- Modo de pruebas ---------- */
 .banda-pruebas { display: flex; align-items: center; justify-content: center; gap: var(--space-2); padding: var(--space-2) var(--space-4);
   background: var(--color-warning-soft); color: var(--color-fg); border-bottom: 1px solid var(--color-warning); font-size: var(--font-s); text-align: center; }
@@ -348,7 +360,7 @@ details > summary { cursor: pointer; min-height: var(--tap); display: flex; alig
 .logo-prev { min-width: 96px; min-height: 48px; display: flex; align-items: center; }
 .logo-prev img { max-height: 64px; max-width: 200px; }
 /* La vista previa es «papel»: siempre blanca con tinta oscura, también en modo oscuro */
-.papel { --papel: #ffffff; --tinta: #1d1d1b; --tinta-suave: #5c5c57; --raya: #dcdcd6; --acento: #24407a;
+.papel { --papel: #ffffff; --tinta: #1d1d1b; --tinta-suave: #5c5c57; --raya: #dcdcd6; --acento: #113055;
   background: var(--papel); color: var(--tinta); border: 1px solid var(--color-border); border-radius: var(--radius-s);
   padding: var(--space-6) var(--space-4); font-size: var(--font-s); box-shadow: var(--shadow-card); }
 .papel p { margin: 0; }

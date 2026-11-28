@@ -201,9 +201,11 @@ async function llamarUsuarios(cuerpo) {
   return data;
 }
 
+const logoAcceso = '<div class="logo-acceso"><img src="logo-documentos.jpg" alt="Coral Villa de Mengíbar" width="700" height="305"></div>';
+
 function pantallaSinConfigurar() {
   app.innerHTML = `<div class="acceso"><div class="tarjeta">
-    <div class="logo">${ico('musica')}<h1>Cuentas de la coral</h1></div>
+    ${logoAcceso}<h1>Cuentas de la coral</h1>
     <div class="aviso aviso-info">${ico('info')}<p>La app todavía no está conectada a su base de datos. Falta rellenar <code>config.js</code>.</p></div>
   </div></div>`;
 }
@@ -214,7 +216,7 @@ async function pantallaAcceso(mensaje) {
   if (!hayAdmin) return pantallaPrimerAdmin();
 
   app.innerHTML = `<main class="acceso"><form class="tarjeta" id="f-acceso" novalidate>
-    <div class="logo">${ico('musica')}<div><h1>Cuentas de la coral</h1><p class="muted pequeno">${esc(E.ajustes?.nombre || 'Coral Villa de Mengíbar')}</p></div></div>
+    ${logoAcceso}<h1>Cuentas de la coral</h1>
     ${mensaje ? `<div class="aviso aviso-info" role="status">${ico('info')}<p>${esc(mensaje)}</p></div>` : ''}
     <div class="campo"><label for="a-email">Correo electrónico</label>
       <input id="a-email" type="email" autocomplete="username" required aria-describedby="a-email-err">
@@ -245,7 +247,7 @@ async function pantallaAcceso(mensaje) {
 
 function pantallaPrimerAdmin() {
   app.innerHTML = `<main class="acceso"><form class="tarjeta" id="f-primero" novalidate>
-    <div class="logo">${ico('musica')}<h1>Configura las cuentas de la coral</h1></div>
+    ${logoAcceso}<h1>Configura las cuentas de la coral</h1>
     <p class="muted">Es la primera vez que se abre. Crea tu usuario de administrador; después podrás dar de alta al tesorero y a la junta.</p>
     <div class="campo"><label for="p-nombre">Tu nombre</label><input id="p-nombre" autocomplete="name" required aria-describedby="p-nombre-err"><p class="error" id="p-nombre-err" hidden></p></div>
     <div class="campo"><label for="p-email">Correo electrónico</label><input id="p-email" type="email" autocomplete="email" required aria-describedby="p-email-err"><p class="error" id="p-email-err" hidden></p></div>
@@ -310,7 +312,7 @@ const TITULOS = { ajustes: 'Ajustes', historial: 'Historial de cambios', subvenc
 function pintarMarco() {
   app.innerHTML = `
     <header class="cabecera">
-      <a class="marca" href="#inicio" style="color:inherit;text-decoration:none">${ico('musica')}<span>Cuentas de la coral</span></a>
+      <a class="marca" href="#inicio" style="color:inherit;text-decoration:none"><img src="lira.png" alt="" class="marca-lira" width="71" height="96"><span>Cuentas de la coral</span></a>
       <label class="sr" for="sel-ejercicio">Año</label>
       <select id="sel-ejercicio" class="no-imprimir"></select>
       <a class="btn btn-icono boton-ajustes no-imprimir" href="#ajustes" aria-label="Ajustes">${ico('ajustes')}</a>
@@ -1785,7 +1787,7 @@ async function generarPdf(doc) {
   const aj = E.ajustes || {}, cli = doc.cliente || {};
   const pdf = new JsPDF({ unit: 'mm', format: 'a4' });
   const M = 18, AN = 210, AL = 297, ancho = AN - 2 * M;
-  const TINTA = [29, 29, 27], GRIS = [97, 97, 92], AZUL = [36, 64, 122], BLANCO = [255, 255, 255], LINEA = [220, 220, 214];
+  const TINTA = [29, 29, 27], GRIS = [97, 97, 92], AZUL = [17, 48, 85], BLANCO = [255, 255, 255], LINEA = [220, 220, 214];
   const limpio = s => String(s ?? '').replace(/[  ]/g, ' ').replace(/−/g, '-');
   const euro = n => limpio(eur(n));
   const txt = (t, x, y, o = {}) => {
@@ -2253,7 +2255,7 @@ async function generarPdfRecibo(r) {
   const aj = E.ajustes || {};
   const pdf = new JsPDF({ unit: 'mm', format: 'a4' });
   const M = 18, AN = 210, ancho = AN - 2 * M;
-  const TINTA = [29, 29, 27], GRIS = [97, 97, 92], AZUL = [36, 64, 122], LINEA = [200, 200, 194];
+  const TINTA = [29, 29, 27], GRIS = [97, 97, 92], AZUL = [17, 48, 85], LINEA = [200, 200, 194];
   const limpio = s => String(s ?? '').replace(/[  ]/g, ' ');
   const txt = (t, x, y, o = {}) => { pdf.setFont('helvetica', o.b ? 'bold' : 'normal'); pdf.setFontSize(o.s || 10); pdf.setTextColor(...(o.c || TINTA)); pdf.text(limpio(t), x, y, { align: o.a || 'left', angle: o.angle }); };
   let y = M + 6, xDatos = M + 6;
@@ -2720,7 +2722,7 @@ async function nuevoPdfListado(titulo, subtitulo) {
   const aj = E.ajustes || {};
   const pdf = new JsPDF({ unit: 'mm', format: 'a4' });
   const M = 16, AN = 210, AL = 297, ancho = AN - 2 * M;
-  const TINTA = [29, 29, 27], GRIS = [97, 97, 92], AZUL = [36, 64, 122], LINEA = [220, 220, 214];
+  const TINTA = [29, 29, 27], GRIS = [97, 97, 92], AZUL = [17, 48, 85], LINEA = [220, 220, 214];
   const limpio = s => String(s ?? '').replace(/[  ]/g, ' ').replace(/−/g, '-');
   const txt = (t, x, y, o = {}) => { pdf.setFont('helvetica', o.b ? 'bold' : 'normal'); pdf.setFontSize(o.s || 9.5); pdf.setTextColor(...(o.c || TINTA)); pdf.text(limpio(t), x, y, { align: o.a || 'left' }); };
   const c = { pdf, M, AN, AL, ancho, y: M, txt, limpio, GRIS, AZUL };
