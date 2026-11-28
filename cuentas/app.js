@@ -1087,6 +1087,7 @@ async function vistaAjustes() {
           <dt>Nombre</dt><dd>${esc(E.perfil.nombre)}</dd><dt>Correo</dt><dd>${esc(E.perfil.email)}</dd>
           <dt>Permiso</dt><dd>${ROLES[E.perfil.rol].nombre}<br><span class="muted pequeno">${ROLES[E.perfil.rol].desc}</span></dd></dl>
         <div style="display:flex;flex-wrap:wrap;gap:var(--space-2)">
+          <button type="button" class="btn" id="b-nombre">${ico('lapiz')} Cambiar mi nombre</button>
           <button type="button" class="btn" id="b-pass">${ico('llave')} Cambiar mi contraseña</button>
           <button type="button" class="btn btn-texto" id="b-salir">${ico('salir')} Cerrar sesión</button></div>
       </section>
@@ -1131,6 +1132,7 @@ async function vistaAjustes() {
 
   $('#b-salir').onclick = async () => { await sb.auth.signOut(); E.perfil = null; location.hash = ''; pantallaAcceso('Has cerrado la sesión.'); };
   $('#b-pass').onclick = formContrasena;
+  $('#b-nombre').onclick = formMiNombre;
   $('#b-libro-todo').onclick = async e => conBoton(e.currentTarget, async () => {
     try {
       const todos = await q(sb.from('movimientos').select('*, justificantes(count)').order('ejercicio').order('numero').limit(50000));
@@ -1268,25 +1270,58 @@ function formUsuarioNuevo() {
   $('#u-nombre', f).focus();
 }
 
+function formMiNombre() {
+  const d = dialogo({
+    titulo: 'Cambiar mi nombre',
+    cuerpo: `<form class="formulario" id="f-minombre" novalidate>
+      <div class="campo"><label for="n-nombre">Nombre y apellidos</label>
+        <input id="n-nombre" required maxlength="80" autocomplete="name" value="${esc(E.perfil.nombre)}" aria-describedby="n-nombre-ayuda n-nombre-err">
+        <p class="ayuda" id="n-nombre-ayuda">Así aparecerás en el historial, en los recibos que firmes y en la memoria anual.</p>
+        <p class="error" id="n-nombre-err" hidden></p></div></form>`,
+    pie: `<button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" form="f-minombre" class="btn btn-primario">Guardar nombre</button>`,
+  });
+  const inp = $('#n-nombre', d);
+  $('#f-minombre', d).addEventListener('submit', async e => {
+    e.preventDefault();
+    const nombre = inp.value.trim();
+    mostrarError(inp, nombre ? '' : 'Escribe tu nombre.');
+    if (!nombre) return inp.focus();
+    await conBoton(d.querySelector('[type=submit]'), async () => {
+      try {
+        await q(sb.rpc('cambiar_mi_nombre', { p_nombre: nombre }));
+        E.perfil.nombre = nombre; d.close(); await vistaAjustes(); tostada('Nombre cambiado');
+      } catch (err) { mostrarError(inp, mensajeError(err)); }
+    });
+  });
+  inp.focus(); inp.select();
+}
+
 function gestionarUsuario(p) {
   const d = dialogo({
     titulo: p.nombre,
     cuerpo: `<form class="formulario" id="f-gest" novalidate>
       <p class="muted">${esc(p.email)}</p>
+      <div class="campo"><label for="g-nombre">Nombre y apellidos</label>
+        <input id="g-nombre" required maxlength="80" autocomplete="off" value="${esc(p.nombre)}" aria-describedby="g-nombre-err"><p class="error" id="g-nombre-err" hidden></p></div>
       ${radiosRol('g-rol', p.rol)}
       <div class="aviso aviso-error" id="g-error" role="alert" hidden></div>
     </form>`,
     pie: `<button type="button" class="btn btn-texto izquierda" id="g-activo">${p.activo ? 'Quitar el acceso' : 'Devolver el acceso'}</button>
       <button type="button" class="btn" id="g-pass">${ico('llave')} Nueva contraseña</button>
-      <button type="submit" form="f-gest" class="btn btn-primario">Guardar permiso</button>`,
+      <button type="submit" form="f-gest" class="btn btn-primario">Guardar cambios</button>`,
   });
   const err = x => { const box = $('#g-error', d); box.innerHTML = `${ico('alerta')}<p>${esc(mensajeError(x))}</p>`; box.hidden = false; };
   $('#f-gest', d).addEventListener('submit', async e => {
     e.preventDefault();
-    const rol = $('input[name="g-rol"]:checked', d).value;
+    const rol = $('input[name="g-rol"]:checked', d).value, nom = $('#g-nombre', d), nombre = nom.value.trim();
+    mostrarError(nom, nombre ? '' : 'Escribe su nombre.');
+    if (!nombre) return nom.focus();
     await conBoton(d.querySelector('[type=submit]'), async () => {
-      try { await llamarUsuarios({ accion: 'cambiar', id: p.id, rol }); d.close(); await vistaAjustes(); tostada(`${p.nombre} ahora es ${ROLES[rol].nombre.toLowerCase()}`); }
-      catch (x) { err(x); }
+      try {
+        await llamarUsuarios({ accion: 'cambiar', id: p.id, rol, nombre });
+        d.close(); await vistaAjustes();
+        tostada(rol !== p.rol ? `${nombre} ahora es ${ROLES[rol].nombre.toLowerCase()}` : 'Cambios guardados');
+      } catch (x) { err(x); }
     });
   });
   $('#g-activo', d).onclick = async () => {
