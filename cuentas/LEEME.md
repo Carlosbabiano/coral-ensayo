@@ -1,6 +1,8 @@
 # Cuentas de la coral
 
-App de contabilidad de la Coral Villa de Mengíbar: libro de ingresos y gastos, justificantes y tesorería (caja y bancos).
+App de contabilidad de la Coral Villa de Mengíbar: libro de ingresos y gastos, justificantes, tesorería (caja y bancos), presupuestos y facturas.
+
+**Modo de pruebas** hasta el 1 de enero: el administrador puede borrar todos los datos de prueba desde Ajustes; «Empezar de verdad» lo desactiva para siempre.
 
 - **Dirección:** https://carlosbabiano.github.io/coral-cuentas/
 - **Datos:** Supabase, organización gratuita «Coral Villa de Mengíbar», proyecto `bwemeufrpgilidcqdayj` (Fráncfort).
@@ -11,6 +13,8 @@ App de contabilidad de la Coral Villa de Mengíbar: libro de ingresos y gastos, 
 
 - `index.html`, `estilos.css`, `app.js`, `config.js`: la app (sin compilar, se publica tal cual).
 - `supabase/001_base.sql`: tablas, permisos y almacén de justificantes.
+- `supabase/002_facturas.sql`: clientes, presupuestos, facturas y rectificativas (numeración, cobro, bloqueo de facturas emitidas).
+- `supabase/003_modo_pruebas.sql`: borrado de datos de prueba y paso a uso real.
 - `supabase/functions/usuarios/`: alta de usuarios y contraseñas (necesita permisos de servidor).
 - `.github/workflows/latido.yml`: cada 3 días llama a la base de datos para que el plan gratuito no se pause.
 - `publicar.js`: publica la carpeta en GitHub Pages → `node cuentas/publicar.js`.

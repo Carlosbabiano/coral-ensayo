@@ -127,7 +127,7 @@ a { color: var(--color-primary); }
 .pestanas {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; height: calc(var(--alto-pestanas) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   background: var(--color-surface); border-top: 1px solid var(--color-border);
 }
 .pestanas a {
@@ -305,6 +305,69 @@ dialog[open] { animation: entrar var(--dur) var(--ease); }
 .subir { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .subir input[type="file"] { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .archivos-elegidos { font-size: var(--font-s); color: var(--color-fg-muted); }
+
+/* ---------- Modo de pruebas ---------- */
+.banda-pruebas { display: flex; align-items: center; justify-content: center; gap: var(--space-2); padding: var(--space-2) var(--space-4);
+  background: var(--color-warning-soft); color: var(--color-fg); border-bottom: 1px solid var(--color-warning); font-size: var(--font-s); text-align: center; }
+.banda-pruebas[hidden] { display: none; }
+.zona-pruebas { border-color: var(--color-warning); }
+
+/* ---------- Presupuestos y facturas ---------- */
+.subpestanas { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-4); }
+.subpestanas a { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--tap); padding: 0 var(--space-4);
+  border-radius: var(--radius-pill); border: 1px solid var(--color-border-control); color: var(--color-fg); text-decoration: none; font-weight: 600;
+  transition: background var(--dur) var(--ease); }
+.subpestanas a:hover { background: var(--color-surface-2); }
+.subpestanas a[aria-current="page"] { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary); }
+.contador { font-size: var(--font-xs); font-variant-numeric: tabular-nums; opacity: .85; }
+.grupo { border: 0; padding: 0; margin: 0; display: grid; gap: var(--space-3); }
+.grupo > legend { font-weight: 700; margin-bottom: var(--space-2); padding: 0; }
+.detalles-cliente { margin-top: var(--space-3); }
+details > summary { cursor: pointer; min-height: var(--tap); display: flex; align-items: center; color: var(--color-primary); font-weight: 600; }
+.lineas { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.linea { display: grid; gap: var(--space-2) var(--space-3); align-items: end; padding: var(--space-3);
+  grid-template-columns: 1fr 1fr auto; grid-template-areas: "concepto concepto concepto" "cant precio quitar" "importe importe importe";
+  border: 1px solid var(--color-border); border-radius: var(--radius-s); background: var(--color-surface-2); }
+.linea .concepto { grid-area: concepto; } .linea .cant { grid-area: cant; } .linea .precio { grid-area: precio; }
+.linea [data-quitar-linea] { grid-area: quitar; }
+.linea .importe-linea { grid-area: importe; text-align: right; font-weight: 600; margin: 0; }
+@media (min-width: 600px) {
+  .linea { grid-template-columns: 1fr 80px 110px 96px auto; grid-template-areas: "concepto cant precio importe quitar"; }
+  .linea .importe-linea { align-self: center; padding-top: var(--space-6); }
+}
+.totales { display: grid; grid-template-columns: 1fr auto; row-gap: var(--space-1); margin: 0 0 0 auto; width: min(100%, 320px); }
+.totales dt { text-align: right; color: var(--color-fg-muted); padding-right: var(--space-6); }
+.totales dd { margin: 0; text-align: right; }
+.totales .total { font-size: var(--font-l); font-weight: 700; color: var(--color-fg); border-top: 1px solid var(--color-border); padding-top: var(--space-1); }
+.cabecera-doc { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); }
+.select-compacto { width: auto !important; min-height: 36px !important; padding: 0 var(--space-8) 0 var(--space-3) !important; }
+.acciones-doc { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-3) 0; }
+.cuerpo > .aviso { margin-bottom: var(--space-3); }
+.logo-ajustes { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.logo-prev { min-width: 96px; min-height: 48px; display: flex; align-items: center; }
+.logo-prev img { max-height: 64px; max-width: 200px; }
+/* La vista previa es «papel»: siempre blanca con tinta oscura, también en modo oscuro */
+.papel { --papel: #ffffff; --tinta: #1d1d1b; --tinta-suave: #5c5c57; --raya: #dcdcd6; --acento: #24407a;
+  background: var(--papel); color: var(--tinta); border: 1px solid var(--color-border); border-radius: var(--radius-s);
+  padding: var(--space-6) var(--space-4); font-size: var(--font-s); box-shadow: var(--shadow-card); }
+.papel p { margin: 0; }
+.papel-cabecera { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); }
+.papel-emisor { display: flex; gap: var(--space-3); align-items: flex-start; }
+.papel-logo img { max-height: 56px; max-width: 120px; }
+.papel-emisor p:not(:first-child), .papel-cliente p:not(:nth-child(2)) { color: var(--tinta-suave); }
+.papel-titulo { text-align: right; margin-left: auto; }
+.papel-tipo { color: var(--acento); font-weight: 700; font-size: var(--font-l); text-transform: uppercase; }
+.papel-cliente { background: #f6f6f2; border: 1px solid var(--raya); border-radius: var(--radius-s); padding: var(--space-3); margin-bottom: var(--space-4); }
+.papel-etiqueta { font-size: var(--font-xs); font-weight: 700; color: var(--tinta-suave); text-transform: uppercase; margin-top: var(--space-3) !important; }
+.papel-lineas { width: 100%; border-collapse: collapse; margin-bottom: var(--space-3); }
+.papel-lineas th { background: var(--acento); color: #fff; text-align: right; padding: var(--space-2); font-size: var(--font-xs); }
+.papel-lineas th:first-child, .papel-lineas td:first-child { text-align: left; }
+.papel-lineas td { padding: var(--space-2); border-bottom: 1px solid var(--raya); text-align: right; vertical-align: top; }
+.papel .totales dt { color: var(--tinta-suave); }
+.papel .totales .total { color: var(--tinta); border-color: var(--acento); }
+.papel-nota { color: var(--tinta); font-size: var(--font-xs); margin-top: var(--space-2) !important; white-space: pre-line; }
+.papel-pie { text-align: center; color: var(--tinta-suave); font-size: var(--font-xs); margin-top: var(--space-6) !important; }
+@media (min-width: 600px) { dialog:has(.papel), dialog:has(#f-doc) { width: min(760px, 100vw); } }
 
 /* ---------- Impresión ---------- */
 @media print {

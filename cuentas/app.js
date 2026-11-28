@@ -103,6 +103,7 @@ async function cargarMaestros() {
   const actual = new Date().getFullYear();
   E.ejercicios = [...new Set([actual, ...ejercicios.map(Number)])].sort((a, b) => b - a);
   pintarSelectorEjercicio();
+  const banda = $('#banda-pruebas'); if (banda) banda.hidden = !E.ajustes?.modo_pruebas;
 }
 async function cargarSaldos() {
   E.cuentas = await q(sb.from('saldos_cuentas').select('*').order('orden').order('nombre'));
@@ -299,6 +300,7 @@ const PESTANAS = [
   { ruta: 'inicio', nombre: 'Inicio', ico: 'inicio' },
   { ruta: 'libro', nombre: 'Libro', ico: 'libro' },
   { ruta: 'tesoreria', nombre: 'Tesorería', ico: 'banco' },
+  { ruta: 'facturas', nombre: 'Facturas', ico: 'factura' },
   { ruta: 'ajustes', nombre: 'Ajustes', ico: 'ajustes' },
 ];
 
@@ -314,6 +316,8 @@ function pintarMarco() {
     <nav class="pestanas" aria-label="Secciones">
       ${PESTANAS.map(p => `<a href="#${p.ruta}" data-ruta="${p.ruta}">${ico(p.ico)}<span>${p.nombre}</span></a>`).join('')}
     </nav>
+    <div class="banda-pruebas" id="banda-pruebas" role="note" hidden>${ico('info', 'ico-s')}
+      <p><strong>Modo de pruebas.</strong> Lo que apuntéis ahora se podrá borrar antes de empezar de verdad.</p></div>
     <main id="vista" tabindex="-1"></main>`;
   $('#sel-ejercicio').addEventListener('change', e => { E.ejercicio = Number(e.target.value); enrutar(); });
   const red = () => { $('#banda-red').hidden = navigator.onLine; };
@@ -325,7 +329,7 @@ function pintarSelectorEjercicio() {
   sel.innerHTML = E.ejercicios.map(a => `<option value="${a}" ${a === E.ejercicio ? 'selected' : ''}>${a}</option>`).join('');
 }
 
-const VISTAS = { inicio: vistaInicio, libro: vistaLibro, tesoreria: vistaTesoreria, ajustes: vistaAjustes, historial: vistaHistorial };
+const VISTAS = { inicio: vistaInicio, libro: vistaLibro, tesoreria: vistaTesoreria, facturas: vistaFacturas, ajustes: vistaAjustes, historial: vistaHistorial };
 let rutaAnterior = null;
 function enrutar() {
   const [ruta, qs] = location.hash.slice(1).split('?');
@@ -414,7 +418,11 @@ function tablaCategorias(tipo, movs) {
 async function vistaInicio() {
   const v = $('#vista');
   v.innerHTML = esqueleto(3);
-  try { await Promise.all([cargarSaldos(), cargarMovs()]); } catch (e) { return errorVista(v, e, vistaInicio); }
+  let pendientes = [];
+  try {
+    [, , pendientes] = await Promise.all([cargarSaldos(), cargarMovs(),
+      q(sb.from('documentos').select('id, total').eq('tipo', 'factura').eq('estado', 'emitida'))]);
+  } catch (e) { return errorVista(v, e, vistaInicio); }
   const activas = E.cuentas.filter(c => c.activa);
   const total = activas.reduce((s, c) => s + Number(c.saldo), 0);
   const t = totales(E.movs);
@@ -448,6 +456,9 @@ async function vistaInicio() {
         </div>
       </section>
     </div>
+    ${pendientes.length ? `<div class="aviso aviso-info" style="margin-top:var(--space-4)">${ico('factura')}
+      <p>${pendientes.length === 1 ? 'Hay 1 factura pendiente' : `Hay ${pendientes.length} facturas pendientes`} de cobro: <strong class="num">${eur(pendientes.reduce((a, d) => a + Number(d.total), 0))}</strong>.</p>
+      <a class="btn btn-texto acciones" href="#facturas?ver=facturas">Ver facturas</a></div>` : ''}
     ${sinJust ? `<div class="aviso aviso-aviso" style="margin-top:var(--space-4)">${ico('alerta')}
       <p>${sinJust === 1 ? 'Hay 1 gasto' : `Hay ${sinJust} gastos`} sin justificante este año.</p>
       <a class="btn btn-texto acciones" href="#libro?sinjust=1">Ver cuáles</a></div>` : ''}
@@ -589,6 +600,14 @@ async function abrirDetalle(id) {
       <div id="det-just" aria-busy="true"><div class="esqueleto esq-bloque"></div></div>
     </section>`;
   pintarJustificantes(m, $('#det-just', d));
+  // Si es el cobro de una factura: enlace a ella, y no se anula desde aquí (se deshace el cobro en la factura)
+  sb.from('documentos').select('id, codigo').eq('movimiento_id', m.id).maybeSingle().then(({ data: fac }) => {
+    if (!fac || !d.open) return;
+    $('.datos', d).insertAdjacentHTML('beforeend', `<dt>Factura</dt><dd><button type="button" class="btn btn-texto" id="b-ver-fac" style="padding:0">${ico('factura', 'ico-s')} ${esc(fac.codigo)}</button></dd>`);
+    $('#b-ver-fac', d).onclick = () => { d.close(); abrirDocumento(fac.id); };
+    const an = $('#b-anular', d);
+    if (an) an.outerHTML = `<p class="muted pequeno izquierda" style="max-width:32ch">Es el cobro de la factura ${esc(fac.codigo)}: para anularlo, usa «Deshacer cobro» en la factura.</p>`;
+  });
 
   $('#b-editar', d)?.addEventListener('click', () => { d.close(); formMovimiento({ mov: m }); });
   $('#b-anular', d)?.addEventListener('click', async () => {
@@ -1065,6 +1084,8 @@ async function vistaAjustes() {
       </div>
       ${ed ? '<div><button type="submit" class="btn btn-primario">Guardar datos</button></div>' : ''}
     </form>
+    ${seccionAjustesFacturas(a, ed)}
+    ${esAdmin() ? seccionModoPruebas(a) : ''}
     <section class="seccion" aria-labelledby="t-cats"><h2 id="t-cats">Categorías</h2>
       <p class="muted pequeno" style="margin-bottom:var(--space-3)">Las categorías ocultas no aparecen al apuntar, pero los apuntes antiguos las conservan.</p>
       <div class="rejilla rejilla-2">
@@ -1092,6 +1113,8 @@ async function vistaAjustes() {
       catch (err) { tostada(mensajeError(err), { error: true }); }
     });
   });
+  conectarAjustesFacturas(a);
+  $$('[data-borrar-pruebas]').forEach(b => b.addEventListener('click', () => borrarDatosPrueba(b.dataset.borrarPruebas === 'empezar')));
   $$('[data-cat-nueva]').forEach(b => b.addEventListener('click', () => formCategoria({ tipo: b.dataset.catNueva })));
   $$('[data-cat-renombrar]').forEach(b => b.addEventListener('click', () => formCategoria({ cat: categoria(b.dataset.catRenombrar) })));
   $$('[data-cat-activa]').forEach(b => b.addEventListener('click', async () => {
@@ -1249,7 +1272,7 @@ function gestionarUsuario(p) {
 
 async function copiaSeguridad() {
   try {
-    const tablas = ['ajustes', 'cuentas', 'categorias', 'movimientos', 'justificantes', 'conciliaciones', 'perfiles', 'historial'];
+    const tablas = ['ajustes', 'cuentas', 'categorias', 'movimientos', 'justificantes', 'conciliaciones', 'clientes', 'documentos', 'perfiles', 'historial'];
     const datos = {};
     for (const t of tablas) datos[t] = await q(sb.from(t).select('*').limit(100000));
     descargar(`copia-cuentas-coral-${hoy()}.json`, JSON.stringify({ fecha: new Date().toISOString(), version: 1, datos }, null, 1), 'application/json');
@@ -1286,9 +1309,10 @@ function describir(h) {
   }
   if (h.tabla === 'justificantes') return h.accion === 'alta' ? `Añadió el justificante «${d.nombre}»` : `Quitó el justificante «${a.nombre}»`;
   if (h.tabla === 'conciliaciones') return `Cuadró ${cuenta(d.cuenta_id)?.nombre || 'una cuenta'} a ${fecha(d.fecha)}: real ${eur(d.saldo_extracto)}, apuntado ${eur(d.saldo_app)}`;
-  if (h.tabla === 'ajustes') return 'Cambió los datos de la coral';
+  if (h.tabla === 'ajustes') return 'Cambió los ajustes de la coral';
+  if (h.tabla === 'documentos') return describirDocumento(h);
   const nombre = d.nombre || a.nombre || '';
-  const que = { cuentas: 'la cuenta', categorias: 'la categoría', perfiles: 'el usuario' }[h.tabla] || h.tabla;
+  const que = { cuentas: 'la cuenta', categorias: 'la categoría', perfiles: 'el usuario', clientes: 'el cliente' }[h.tabla] || h.tabla;
   if (h.accion === 'alta') return `Creó ${que} «${nombre}»`;
   if (h.accion === 'baja') return `Borró ${que} «${nombre}»`;
   const cambios = Object.keys(CAMPOS).filter(k => k in d && JSON.stringify(a[k]) !== JSON.stringify(d[k]));
@@ -1327,6 +1351,679 @@ async function vistaHistorial() {
 // ======================================================================
 // Arranque
 // ======================================================================
+// ======================================================================
+// Presupuestos y facturas (tanda 2)
+// ======================================================================
+const TIPO_DOC = { presupuesto: 'Presupuesto', factura: 'Factura', rectificativa: 'Factura rectificativa' };
+const ESTADOS_DOC = {
+  borrador: ['Borrador', ''], enviado: ['Enviado', ''], aceptado: ['Aceptado', 'etiqueta-ok'], rechazado: ['Rechazado', 'etiqueta-error'],
+  facturado: ['Facturado', 'etiqueta-ok'], emitida: ['Pendiente de cobro', 'etiqueta-aviso'], cobrada: ['Cobrada', 'etiqueta-ok'],
+  rectificada: ['Rectificada', 'etiqueta-error'],
+};
+const IVAS = [[0, 'Exenta de IVA (0 %)'], [10, '10 %'], [21, '21 %']];
+const numCorto = n => Number(n).toLocaleString('es-ES', { maximumFractionDigits: 2, useGrouping: false });
+const redondear = n => Math.round(n * 100) / 100;
+const sumarDias = (iso, dias) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + Number(dias)); return d.toISOString().slice(0, 10); };
+const caducado = d => d.tipo === 'presupuesto' && ['borrador', 'enviado'].includes(d.estado) && d.validez_hasta && d.validez_hasta < hoy();
+const estadoTexto = d => (ESTADOS_DOC[d.estado]?.[0] || d.estado || '').toLowerCase();
+const articulo = tipo => (tipo === 'presupuesto' ? 'el' : 'la');
+function chipEstado(d) {
+  if (d.tipo === 'rectificativa') return '<span class="etiqueta">Rectificativa</span>';
+  if (caducado(d)) return '<span class="etiqueta etiqueta-aviso">Caducado</span>';
+  const [t, c] = ESTADOS_DOC[d.estado] || [d.estado, ''];
+  return `<span class="etiqueta ${c}">${t}</span>`;
+}
+const resumenLineas = d => { const c = d.lineas?.[0]?.concepto || ''; return d.lineas?.length > 1 ? `${c} y ${d.lineas.length - 1} más` : c; };
+function describirDocumento(h) {
+  const a = h.antes || {}, d = h.despues || {}, x = h.accion === 'baja' ? a : d;
+  const nombre = `${articulo(x.tipo)} ${(TIPO_DOC[x.tipo] || 'documento').toLowerCase()} ${x.codigo}`;
+  if (h.accion === 'alta') return `Creó ${nombre} para ${x.cliente?.nombre || '—'} (${eur(x.total)})`;
+  if (h.accion === 'baja') return `Borró ${nombre}`;
+  if (a.estado !== d.estado) return `${x.codigo}: ${estadoTexto(a)} → ${estadoTexto(d)}`;
+  return `Modificó ${nombre}`;
+}
+function irA(ruta) { if (location.hash === '#' + ruta) enrutar(); else location.hash = ruta; }
+
+async function vistaFacturas(params) {
+  const v = $('#vista');
+  const ver = ['presupuestos', 'facturas', 'clientes'].includes(params.get('ver')) ? params.get('ver') : 'presupuestos';
+  v.innerHTML = esqueleto(4);
+  let docs, clientes;
+  try {
+    [docs, clientes] = await Promise.all([
+      q(sb.from('documentos').select('*').eq('ejercicio', E.ejercicio).order('fecha', { ascending: false }).order('numero', { ascending: false })),
+      q(sb.from('clientes').select('*').order('nombre')),
+    ]);
+  } catch (e) { return errorVista(v, e, () => vistaFacturas(params)); }
+  E.docs = docs; E.clientes = clientes;
+  const pres = docs.filter(d => d.tipo === 'presupuesto'), facs = docs.filter(d => d.tipo !== 'presupuesto');
+  const pestana = (k, txt, n) => `<a href="#facturas?ver=${k}" ${ver === k ? 'aria-current="page"' : ''}>${txt} <span class="contador">${n}</span></a>`;
+  const filaDoc = d => `<li><button type="button" class="fila" data-doc="${d.id}">
+    <span class="concepto">${esc(d.cliente?.nombre || '')}</span>
+    <span class="importe num ${Number(d.total) < 0 ? 'negativo' : ''}">${eur(d.total)}</span>
+    <span class="meta"><span class="num">${esc(d.codigo)}</span><span>${fecha(d.fecha)}</span>
+      ${resumenLineas(d) ? `<span>${esc(resumenLineas(d))}</span>` : ''}${chipEstado(d)}</span></button></li>`;
+  const vacio = (icono, titulo, texto, boton) => `<div class="vacio">${ico(icono)}<h2>${titulo}</h2><p>${texto}</p>${boton || ''}</div>`;
+
+  let contenido;
+  if (ver === 'presupuestos') {
+    contenido = pres.length ? `<ul class="lista-apuntes">${pres.map(filaDoc).join('')}</ul>`
+      : vacio('archivo', `Aún no hay presupuestos en ${E.ejercicio}`, 'Prepara un presupuesto para una boda o un evento. Si lo aceptan, se convierte en factura con un botón.',
+        puedeEditar() ? `<button type="button" class="btn btn-primario" data-doc-nuevo="presupuesto">${ico('mas')} Hacer el primero</button>` : '');
+  } else if (ver === 'facturas') {
+    const pend = facs.filter(d => d.tipo === 'factura' && d.estado === 'emitida');
+    const facturado = facs.filter(d => d.estado !== 'rectificada' && d.tipo === 'factura').reduce((s, d) => s + Number(d.total), 0);
+    contenido = facs.length ? `
+      <div class="resumen-libro"><span>Facturado <strong class="num">${eur(facturado)}</strong></span>
+        <span>Pendiente de cobro <strong class="num">${eur(pend.reduce((s, d) => s + Number(d.total), 0))}</strong> (${pend.length})</span>
+        <button type="button" class="btn btn-texto" id="b-csv-fact">${ico('descargar', 'ico-s')} Listado para la gestoría</button></div>
+      <ul class="lista-apuntes">${facs.map(filaDoc).join('')}</ul>`
+      : vacio('factura', `Aún no hay facturas en ${E.ejercicio}`, 'Las facturas se crean directamente o a partir de un presupuesto aceptado. Se numeran solas y en orden.',
+        puedeEditar() ? `<button type="button" class="btn btn-primario" data-doc-nuevo="factura">${ico('mas')} Nueva factura</button>` : '');
+  } else {
+    contenido = `${puedeEditar() ? `<div class="encabezado-vista"><span></span><button type="button" class="btn" id="b-cli-nuevo">${ico('mas')} Añadir cliente</button></div>` : ''}
+      ${clientes.length ? `<ul class="lista-apuntes">${clientes.map(c => `<li><button type="button" class="fila" data-cliente="${c.id}">
+          <span class="concepto">${esc(c.nombre)}</span><span></span>
+          <span class="meta">${[c.nif, c.telefono, c.email].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('') || '<span>Sin datos de contacto</span>'}</span>
+        </button></li>`).join('')}</ul>`
+      : vacio('usuario', 'No hay clientes guardados', 'Se guardan solos al hacer un presupuesto o una factura, para no tener que escribir sus datos otra vez.')}`;
+  }
+
+  v.innerHTML = `
+    <div class="encabezado-vista"><h1>Presupuestos y facturas ${E.ejercicio}</h1>
+      ${puedeEditar() ? `<button type="button" class="btn" data-doc-nuevo="factura">${ico('mas')} Nueva factura</button>
+        <button type="button" class="btn btn-primario" data-doc-nuevo="presupuesto">${ico('mas')} Nuevo presupuesto</button>` : ''}</div>
+    <nav class="subpestanas" aria-label="Tipo de documento">
+      ${pestana('presupuestos', 'Presupuestos', pres.length)}${pestana('facturas', 'Facturas', facs.length)}${pestana('clientes', 'Clientes', clientes.length)}</nav>
+    ${contenido}`;
+  $$('[data-doc-nuevo]', v).forEach(b => b.addEventListener('click', () => formDocumento({ tipo: b.dataset.docNuevo })));
+  $$('[data-doc]', v).forEach(b => b.addEventListener('click', () => abrirDocumento(b.dataset.doc)));
+  $$('[data-cliente]', v).forEach(b => b.addEventListener('click', () => formCliente(clientes.find(c => c.id === b.dataset.cliente))));
+  $('#b-cli-nuevo')?.addEventListener('click', () => formCliente());
+  $('#b-csv-fact')?.addEventListener('click', () => {
+    const filas = [...facs].sort((a, b) => a.tipo.localeCompare(b.tipo) || a.numero - b.numero).map(d => [
+      d.codigo, d.fecha.split('-').reverse().join('/'), TIPO_DOC[d.tipo], d.cliente?.nombre || '', d.cliente?.nif || '',
+      csvNum(d.base), numCorto(d.iva_pct), csvNum(d.iva_importe), csvNum(d.total), ESTADOS_DOC[d.estado]?.[0] || d.estado,
+      d.cobrada_en ? d.cobrada_en.split('-').reverse().join('/') : '']);
+    descargar(`facturas-${E.ejercicio}.csv`, csv([['Número', 'Fecha', 'Tipo', 'Cliente', 'NIF', 'Base', 'IVA %', 'IVA', 'Total', 'Estado', 'Cobrada el'], ...filas]), 'text/csv;charset=utf-8');
+  });
+}
+
+function formCliente(c = null) {
+  const campo = (id, et, val, extra = '') => `<div class="campo"><label for="k-${id}">${et}</label><input id="k-${id}" value="${esc(val || '')}" ${puedeEditar() ? '' : 'readonly'} ${extra}></div>`;
+  const d = dialogo({
+    titulo: c ? c.nombre : 'Añadir cliente', cerrarFuera: !puedeEditar(),
+    cuerpo: `<form class="formulario" id="f-cli" novalidate>
+      <div class="campo"><label for="k-nombre">Nombre o razón social</label><input id="k-nombre" required maxlength="150" value="${esc(c?.nombre || '')}" ${puedeEditar() ? '' : 'readonly'} aria-describedby="k-nombre-err"><p class="error" id="k-nombre-err" hidden></p></div>
+      <div class="fila-campos">${campo('nif', 'NIF / CIF', c?.nif, 'maxlength="20" autocomplete="off"')}${campo('telefono', 'Teléfono', c?.telefono, 'type="tel" maxlength="20"')}</div>
+      ${campo('direccion', 'Dirección', c?.direccion, 'maxlength="200"')}
+      ${campo('email', 'Correo electrónico', c?.email, 'type="email" maxlength="120"')}
+      <div class="campo"><label for="k-notas">Notas internas</label><textarea id="k-notas" maxlength="500" ${puedeEditar() ? '' : 'readonly'}>${esc(c?.notas || '')}</textarea></div>
+      <p class="ayuda">Cambiar estos datos no modifica las facturas ya emitidas, que conservan los datos que tenían.</p>
+      <div class="aviso aviso-error" id="k-error" role="alert" hidden></div></form>`,
+    pie: puedeEditar() ? `<button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" form="f-cli" class="btn btn-primario">${c ? 'Guardar cambios' : 'Añadir cliente'}</button>`
+      : '<button type="button" class="btn" data-cerrar>Cerrar</button>',
+  });
+  $('#f-cli', d).addEventListener('submit', async e => {
+    e.preventDefault();
+    const nom = $('#k-nombre', d);
+    mostrarError(nom, nom.value.trim() ? '' : 'Escribe el nombre.');
+    if (!nom.value.trim()) return nom.focus();
+    const datos = Object.fromEntries(['nombre', 'nif', 'direccion', 'email', 'telefono', 'notas'].map(k => [k, $('#k-' + k, d).value.trim() || null]));
+    await conBoton(d.querySelector('[type=submit]'), async () => {
+      try {
+        if (c) await q(sb.from('clientes').update(datos).eq('id', c.id)); else await q(sb.from('clientes').insert(datos));
+        d.close(); irA('facturas?ver=clientes'); tostada(c ? 'Cliente actualizado' : 'Cliente añadido');
+      } catch (err) { const box = $('#k-error', d); box.innerHTML = `${ico('alerta')}<p>${esc(mensajeError(err))}</p>`; box.hidden = false; }
+    });
+  });
+}
+
+// Guarda o actualiza el cliente al hacer un documento; devuelve su id
+async function guardarCliente(cli) {
+  const existente = (E.clientes || []).find(c => c.nombre.trim().toLowerCase() === cli.nombre.toLowerCase());
+  if (existente) {
+    const cambios = Object.fromEntries(['nif', 'direccion', 'email', 'telefono'].filter(k => cli[k] && cli[k] !== existente[k]).map(k => [k, cli[k]]));
+    if (Object.keys(cambios).length) await q(sb.from('clientes').update(cambios).eq('id', existente.id));
+    return existente.id;
+  }
+  const nuevo = await q(sb.from('clientes').insert(cli).select('id').single());
+  return nuevo.id;
+}
+
+function formDocumento({ tipo, doc = null, base = null }) {
+  const src = doc || base;
+  const aj = E.ajustes || {};
+  const conceptos = [...new Set([...(aj.conceptos_frecuentes || '').split('\n').map(s => s.trim()).filter(Boolean),
+    ...(E.docs || []).flatMap(x => x.lineas.map(l => l.concepto))])].slice(0, 100);
+  const lineas0 = src?.lineas?.map(l => ({ ...l, cantidad: Math.abs(l.cantidad) })) || [{ concepto: '', cantidad: 1, precio: '' }];
+  const iva0 = Number(src?.iva_pct ?? aj.iva_pct ?? 0);
+  const fecha0 = doc?.fecha || hoy();
+  const cli = src?.cliente || {};
+  const d = dialogo({
+    titulo: doc ? `Editar ${doc.codigo}` : tipo === 'presupuesto' ? 'Nuevo presupuesto' : 'Nueva factura', cerrarFuera: false,
+    cuerpo: `<form class="formulario" id="f-doc" novalidate>
+      <fieldset class="grupo"><legend>Cliente</legend>
+        <div class="campo"><label for="d-cli">Nombre o razón social</label>
+          <input id="d-cli" list="dl-clientes" required maxlength="150" autocomplete="off" value="${esc(cli.nombre || '')}" aria-describedby="d-cli-ayuda d-cli-err">
+          <datalist id="dl-clientes">${(E.clientes || []).map(c => `<option value="${esc(c.nombre)}"></option>`).join('')}</datalist>
+          <p class="ayuda" id="d-cli-ayuda">Si ya está guardado, elígelo de la lista y se rellenan sus datos.</p><p class="error" id="d-cli-err" hidden></p></div>
+        <details id="d-cli-datos" ${cli.nif || cli.direccion ? 'open' : ''}><summary>NIF, dirección y contacto</summary>
+          <div class="formulario detalles-cliente">
+            <div class="fila-campos"><div class="campo"><label for="d-nif">NIF / CIF</label><input id="d-nif" maxlength="20" autocomplete="off" value="${esc(cli.nif || '')}"></div>
+              <div class="campo"><label for="d-tel">Teléfono</label><input id="d-tel" type="tel" maxlength="20" value="${esc(cli.telefono || '')}"></div></div>
+            <div class="campo"><label for="d-dir">Dirección</label><input id="d-dir" maxlength="200" value="${esc(cli.direccion || '')}"></div>
+            <div class="campo"><label for="d-email">Correo electrónico</label><input id="d-email" type="email" maxlength="120" value="${esc(cli.email || '')}"></div>
+          </div></details>
+      </fieldset>
+      <div class="fila-campos">
+        <div class="campo"><label for="d-fecha">Fecha</label><input id="d-fecha" type="date" required value="${fecha0}"></div>
+        ${tipo === 'presupuesto' ? `<div class="campo"><label for="d-validez">Válido hasta</label><input id="d-validez" type="date" value="${doc?.validez_hasta || sumarDias(fecha0, aj.validez_dias || 30)}"></div>` : ''}
+      </div>
+      <fieldset class="grupo"><legend>Conceptos</legend>
+        <datalist id="dl-conceptos-doc">${conceptos.map(c => `<option value="${esc(c)}"></option>`).join('')}</datalist>
+        <ol class="lineas" id="d-lineas"></ol>
+        <p class="error" id="d-lineas-err" role="alert" hidden></p>
+        <button type="button" class="btn btn-texto" id="d-mas">${ico('mas', 'ico-s')} Añadir otro concepto</button>
+      </fieldset>
+      <div class="campo"><label for="d-iva">IVA</label><select id="d-iva">
+        ${IVAS.map(([v, t]) => `<option value="${v}" ${v === iva0 ? 'selected' : ''}>${t}</option>`).join('')}
+        ${IVAS.some(([v]) => v === iva0) ? '' : `<option value="${iva0}" selected>${numCorto(iva0)} %</option>`}
+      </select><p class="ayuda" id="d-iva-texto"></p></div>
+      <div class="campo"><label for="d-notas">Observaciones</label>
+        <textarea id="d-notas" maxlength="1000" aria-describedby="d-notas-ayuda">${esc(src && src.tipo !== 'rectificativa' ? src.notas || '' : '')}</textarea>
+        <p class="ayuda" id="d-notas-ayuda">Opcional. Sale en el documento: fecha y lugar del evento, forma de pago…</p></div>
+      <dl class="totales" id="d-totales" aria-live="polite"></dl>
+      <div class="aviso aviso-error" id="d-error" role="alert" hidden></div>
+    </form>`,
+    pie: `<button type="button" class="btn" data-cerrar>Cancelar</button>
+      <button type="submit" form="f-doc" class="btn btn-primario">${tipo === 'presupuesto' ? (doc ? 'Guardar cambios' : 'Guardar presupuesto') : 'Revisar y emitir'}</button>`,
+  });
+  const f = $('#f-doc', d), ol = $('#d-lineas', f);
+  let n = 0, validezTocada = !!doc;
+  const filaLinea = (l, i) => `<li class="linea">
+    <div class="campo concepto"><label for="l-c-${i}">Concepto</label>
+      <input id="l-c-${i}" data-l="concepto" list="dl-conceptos-doc" maxlength="200" autocomplete="off" value="${esc(l.concepto || '')}"></div>
+    <div class="campo cant"><label for="l-q-${i}">Cantidad</label><input id="l-q-${i}" data-l="cantidad" inputmode="decimal" value="${numCorto(l.cantidad ?? 1)}"></div>
+    <div class="campo precio"><label for="l-p-${i}">Precio (€)</label><input id="l-p-${i}" data-l="precio" inputmode="decimal" placeholder="0,00" value="${l.precio === '' || l.precio == null ? '' : numInput(l.precio)}"></div>
+    <p class="importe-linea num" data-importe aria-label="Importe de la línea"></p>
+    <button type="button" class="btn btn-icono" data-quitar-linea aria-label="Quitar este concepto">${ico('papelera', 'ico-s')}</button></li>`;
+  const totalForm = () => {
+    let base = 0;
+    $$('.linea', ol).forEach(li => {
+      const c = parseImporte($('[data-l=cantidad]', li).value), p = parseImporte($('[data-l=precio]', li).value);
+      const imp = c > 0 && p >= 0 ? redondear(c * p) : 0;
+      base += imp; $('[data-importe]', li).textContent = eur(imp);
+    });
+    const pct = Number($('#d-iva', f).value), iva = redondear(base * pct / 100);
+    return { base: redondear(base), pct, iva, total: redondear(base + iva) };
+  };
+  const recalcular = () => {
+    const t = totalForm();
+    $('#d-totales', f).innerHTML = `<dt>Base imponible</dt><dd class="num">${eur(t.base)}</dd>
+      <dt>${t.pct ? `IVA ${numCorto(t.pct)} %` : 'IVA'}</dt><dd class="num">${t.pct ? eur(t.iva) : 'Exenta'}</dd>
+      <dt class="total">Total</dt><dd class="num total">${eur(t.total)}</dd>`;
+    $('#d-iva-texto', f).textContent = t.pct ? '' : aj.iva_texto || '';
+    const filas = $$('[data-quitar-linea]', ol); filas.forEach(b => { b.disabled = filas.length === 1; });
+  };
+  const anadir = l => { ol.insertAdjacentHTML('beforeend', filaLinea(l, n++)); recalcular(); };
+  lineas0.forEach(anadir);
+  ol.addEventListener('input', () => { recalcular(); $('#d-lineas-err', f).hidden = true; });
+  ol.addEventListener('click', e => { const b = e.target.closest('[data-quitar-linea]'); if (b && !b.disabled) { b.closest('li').remove(); recalcular(); } });
+  ol.addEventListener('focusout', e => {
+    const i = e.target;
+    if (i.dataset.l === 'precio' && i.value.trim()) { const v = parseImporte(i.value); if (v >= 0) i.value = numInput(v); }
+  });
+  $('#d-mas', f).onclick = () => { anadir({ concepto: '', cantidad: 1, precio: '' }); $$('[data-l=concepto]', ol).at(-1).focus(); };
+  $('#d-iva', f).onchange = recalcular;
+  $('#d-validez', f)?.addEventListener('change', () => { validezTocada = true; });
+  $('#d-fecha', f).addEventListener('change', e => {
+    if (!validezTocada && $('#d-validez', f) && e.target.value) $('#d-validez', f).value = sumarDias(e.target.value, aj.validez_dias || 30);
+  });
+  $('#d-cli', f).addEventListener('change', e => {
+    const c = (E.clientes || []).find(x => x.nombre.trim().toLowerCase() === e.target.value.trim().toLowerCase());
+    if (!c) return;
+    $('#d-nif', f).value = c.nif || ''; $('#d-tel', f).value = c.telefono || ''; $('#d-dir', f).value = c.direccion || ''; $('#d-email', f).value = c.email || '';
+    if (c.nif || c.direccion) $('#d-cli-datos', f).open = true;
+  });
+
+  f.addEventListener('submit', async e => {
+    e.preventDefault();
+    const cliN = $('#d-cli', f);
+    mostrarError(cliN, cliN.value.trim() ? '' : 'Escribe el nombre del cliente.');
+    const lineas = $$('.linea', ol).map(li => ({
+      concepto: $('[data-l=concepto]', li).value.trim(), cantidad: parseImporte($('[data-l=cantidad]', li).value), precio: parseImporte($('[data-l=precio]', li).value),
+      vacia: !$('[data-l=concepto]', li).value.trim() && !$('[data-l=precio]', li).value.trim(),
+    })).filter(l => !l.vacia);
+    const t = totalForm();
+    const errL = !lineas.length ? 'Añade al menos un concepto con su precio.'
+      : lineas.some(l => !l.concepto) ? 'Cada concepto necesita una descripción.'
+      : lineas.some(l => !(l.cantidad > 0)) ? 'La cantidad debe ser un número mayor que cero.'
+      : lineas.some(l => !(l.precio >= 0)) ? 'Escribe los precios con números, por ejemplo 150,00.'
+      : !(t.total > 0) ? 'El total tiene que ser mayor que cero.' : '';
+    const el = $('#d-lineas-err', f); el.hidden = !errL; el.innerHTML = errL ? `${ico('alerta', 'ico-s')} ${esc(errL)}` : '';
+    if (!cliN.value.trim()) return cliN.focus();
+    if (errL) return $('[data-l=concepto]', ol)?.focus();
+    const val = sel => $(sel, f).value.trim() || null;
+    const cliente = { nombre: cliN.value.trim(), nif: val('#d-nif'), direccion: val('#d-dir'), email: val('#d-email'), telefono: val('#d-tel') };
+    const datos = {
+      fecha: $('#d-fecha', f).value, cliente, iva_pct: t.pct, iva_texto: t.pct ? null : aj.iva_texto || null, notas: val('#d-notas'),
+      lineas: lineas.map(l => ({ concepto: l.concepto, cantidad: l.cantidad, precio: l.precio })),
+    };
+    if (!datos.fecha) { tostada('Elige la fecha.', { error: true }); return $('#d-fecha', f).focus(); }
+    if (tipo === 'presupuesto') datos.validez_hasta = $('#d-validez', f).value || null;
+    if (tipo === 'factura') {
+      const ok = await confirmar({
+        titulo: '¿Emitir la factura?', boton: 'Emitir factura',
+        texto: `Se emitirá a nombre de <strong>${esc(cliente.nombre)}</strong> por <strong>${eur(t.total)}</strong>, con el siguiente número de ${datos.fecha.slice(0, 4)}.<br><br>
+          Una vez emitida no se puede modificar ni borrar. Si hubiera un error, se corrige con una factura rectificativa.`,
+      });
+      if (!ok) return;
+    }
+    const caja = $('#d-error', f); caja.hidden = true;
+    await conBoton(d.querySelector('[type=submit]'), async () => {
+      try {
+        datos.cliente_id = await guardarCliente(cliente);
+        const res = doc
+          ? await q(sb.from('documentos').update(datos).eq('id', doc.id).select().single())
+          : await q(sb.from('documentos').insert({ ...datos, tipo, estado: tipo === 'presupuesto' ? 'borrador' : 'emitida' }).select().single());
+        d.close();
+        if (res.ejercicio !== E.ejercicio) { E.ejercicio = res.ejercicio; if (!E.ejercicios.includes(res.ejercicio)) E.ejercicios.push(res.ejercicio); pintarSelectorEjercicio(); }
+        irA(`facturas?ver=${tipo === 'presupuesto' ? 'presupuestos' : 'facturas'}`);
+        tostada(doc ? `${res.codigo} guardado` : tipo === 'presupuesto' ? `Presupuesto ${res.codigo} guardado` : `Factura ${res.codigo} emitida`);
+        abrirDocumento(res.id);
+      } catch (err) { caja.innerHTML = `${ico('alerta')}<p>${esc(mensajeError(err))}</p>`; caja.hidden = false; }
+    });
+  });
+  setTimeout(() => (doc ? $('[data-l=concepto]', ol) : $('#d-cli', f)).focus(), 50);
+}
+
+// Vista previa en pantalla, con el mismo contenido que el PDF
+function papel(doc) {
+  const aj = E.ajustes || {}, cli = doc.cliente || {};
+  const datosCoral = [aj.cif && `CIF ${aj.cif}`, aj.direccion, [aj.telefono, aj.email].filter(Boolean).join(' · ')].filter(Boolean);
+  const datosCli = [cli.nif && `NIF ${cli.nif}`, cli.direccion, [cli.telefono, cli.email].filter(Boolean).join(' · ')].filter(Boolean);
+  return `<article class="papel" aria-label="Vista previa del documento">
+    <header class="papel-cabecera">
+      <div class="papel-emisor"><div class="papel-logo" data-logo></div><div><p><strong>${esc(aj.nombre || '')}</strong></p>${datosCoral.map(x => `<p>${esc(x)}</p>`).join('')}</div></div>
+      <div class="papel-titulo"><p class="papel-tipo">${TIPO_DOC[doc.tipo]}</p><p><strong>Nº ${esc(doc.codigo)}</strong></p>
+        <p>Fecha: ${fecha(doc.fecha)}</p>${doc.tipo === 'presupuesto' && doc.validez_hasta ? `<p>Válido hasta: ${fecha(doc.validez_hasta)}</p>` : ''}</div>
+    </header>
+    <section class="papel-cliente"><p class="papel-etiqueta">Cliente</p><p><strong>${esc(cli.nombre || '')}</strong></p>${datosCli.map(x => `<p>${esc(x)}</p>`).join('')}</section>
+    <table class="papel-lineas"><caption class="sr">Conceptos</caption>
+      <thead><tr><th scope="col">Concepto</th><th scope="col">Cant.</th><th scope="col">Precio</th><th scope="col">Importe</th></tr></thead>
+      <tbody>${doc.lineas.map(l => `<tr><td>${esc(l.concepto)}</td><td class="num">${numCorto(l.cantidad)}</td><td class="num">${eur(l.precio)}</td>
+        <td class="num">${eur(redondear(l.cantidad * l.precio))}</td></tr>`).join('')}</tbody></table>
+    <dl class="totales"><dt>Base imponible</dt><dd class="num">${eur(doc.base)}</dd>
+      <dt>${Number(doc.iva_pct) ? `IVA ${numCorto(doc.iva_pct)} %` : 'IVA'}</dt><dd class="num">${Number(doc.iva_pct) ? eur(doc.iva_importe) : 'Exenta'}</dd>
+      <dt class="total">Total</dt><dd class="num total">${eur(doc.total)}</dd></dl>
+    ${!Number(doc.iva_pct) && doc.iva_texto ? `<p class="papel-nota">${esc(doc.iva_texto)}</p>` : ''}
+    ${doc.notas ? `<p class="papel-etiqueta">Observaciones</p><p class="papel-nota">${esc(doc.notas)}</p>` : ''}
+    ${doc.tipo !== 'presupuesto' && aj.iban ? `<p class="papel-etiqueta">Forma de pago</p><p class="papel-nota">Transferencia bancaria a la cuenta ${esc(aj.iban)}</p>` : ''}
+    ${aj.pie_documentos ? `<p class="papel-pie">${esc(aj.pie_documentos)}</p>` : ''}
+  </article>`;
+}
+
+let cacheLogo = null;
+async function logoActual() {
+  const ruta = E.ajustes?.logo_ruta;
+  if (!ruta) return null;
+  if (cacheLogo?.ruta === ruta) return cacheLogo;
+  const { signedUrl } = await q(sb.storage.from('justificantes').createSignedUrl(ruta, 600));
+  const blob = await (await fetch(signedUrl)).blob();
+  const data = await new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(blob); });
+  const img = await new Promise((ok, mal) => { const i = new Image(); i.onload = () => ok(i); i.onerror = mal; i.src = data; });
+  cacheLogo = { ruta, data, url: signedUrl, ratio: img.naturalWidth / img.naturalHeight, formato: blob.type.includes('png') ? 'PNG' : 'JPEG' };
+  return cacheLogo;
+}
+
+let moduloPdf = null;
+async function generarPdf(doc) {
+  if (!moduloPdf) moduloPdf = await import('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/+esm');
+  const JsPDF = moduloPdf.jsPDF || moduloPdf.default;
+  const aj = E.ajustes || {}, cli = doc.cliente || {};
+  const pdf = new JsPDF({ unit: 'mm', format: 'a4' });
+  const M = 18, AN = 210, AL = 297, ancho = AN - 2 * M;
+  const TINTA = [29, 29, 27], GRIS = [97, 97, 92], AZUL = [36, 64, 122], BLANCO = [255, 255, 255], LINEA = [220, 220, 214];
+  const limpio = s => String(s ?? '').replace(/[  ]/g, ' ').replace(/−/g, '-');
+  const euro = n => limpio(eur(n));
+  const txt = (t, x, y, o = {}) => {
+    pdf.setFont('helvetica', o.b ? 'bold' : 'normal'); pdf.setFontSize(o.s || 10); pdf.setTextColor(...(o.c || TINTA));
+    pdf.text(limpio(t), x, y, { align: o.a || 'left' });
+  };
+  let y = M, xDatos = M;
+  try {
+    const logo = await logoActual();
+    if (logo) { const h = 20, w = Math.min(42, h * logo.ratio); pdf.addImage(logo.data, logo.formato, M, y, w, h); xDatos = M + w + 6; }
+  } catch { /* sin logo si falla */ }
+  txt(aj.nombre || '', xDatos, y + 5, { b: true, s: 13 });
+  [aj.cif && `CIF ${aj.cif}`, aj.direccion, [aj.telefono, aj.email].filter(Boolean).join(' · ')].filter(Boolean)
+    .forEach((l, i) => txt(l, xDatos, y + 11 + i * 4.6, { s: 9, c: GRIS }));
+  txt(TIPO_DOC[doc.tipo].toUpperCase(), AN - M, y + 5, { b: true, s: 14, a: 'right', c: AZUL });
+  txt(`Nº ${doc.codigo}`, AN - M, y + 12, { b: true, a: 'right' });
+  txt(`Fecha: ${fecha(doc.fecha)}`, AN - M, y + 17, { s: 9, a: 'right' });
+  if (doc.tipo === 'presupuesto' && doc.validez_hasta) txt(`Válido hasta: ${fecha(doc.validez_hasta)}`, AN - M, y + 22, { s: 9, a: 'right' });
+  y += 32;
+
+  const datosCli = [cli.nif && `NIF ${cli.nif}`, cli.direccion, [cli.telefono, cli.email].filter(Boolean).join(' · ')].filter(Boolean);
+  const altoCli = 14 + datosCli.length * 4.6;
+  pdf.setDrawColor(...LINEA); pdf.setFillColor(246, 246, 242); pdf.roundedRect(M, y, ancho, altoCli, 2, 2, 'FD');
+  txt('CLIENTE', M + 4, y + 5.5, { s: 8, c: GRIS, b: true });
+  txt(cli.nombre || '', M + 4, y + 11, { b: true, s: 11 });
+  datosCli.forEach((l, i) => txt(l, M + 4, y + 16 + i * 4.6, { s: 9 }));
+  y += altoCli + 8;
+
+  const X = { concepto: M + 2, cant: M + ancho - 64, precio: M + ancho - 32, imp: M + ancho - 2 };
+  const cabecera = () => {
+    pdf.setFillColor(...AZUL); pdf.rect(M, y, ancho, 8, 'F');
+    txt('Concepto', X.concepto, y + 5.5, { s: 9, b: true, c: BLANCO });
+    [['Cant.', X.cant], ['Precio', X.precio], ['Importe', X.imp]].forEach(([t, x]) => txt(t, x, y + 5.5, { s: 9, b: true, c: BLANCO, a: 'right' }));
+    y += 8;
+  };
+  cabecera();
+  for (const l of doc.lineas) {
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10);
+    const partes = pdf.splitTextToSize(limpio(l.concepto), X.cant - X.concepto - 20);
+    const alto = 4 + partes.length * 4.6;
+    if (y + alto > AL - 60) { pdf.addPage(); y = M; cabecera(); }
+    partes.forEach((p, i) => txt(p, X.concepto, y + 5.5 + i * 4.6));
+    txt(numCorto(l.cantidad), X.cant, y + 5.5, { a: 'right' });
+    txt(euro(l.precio), X.precio, y + 5.5, { a: 'right' });
+    txt(euro(redondear(l.cantidad * l.precio)), X.imp, y + 5.5, { a: 'right' });
+    y += alto; pdf.setDrawColor(...LINEA); pdf.line(M, y, M + ancho, y);
+  }
+  y += 7;
+  if (y > AL - 50) { pdf.addPage(); y = M; }
+  const fila = (et, val, o = {}) => { txt(et, M + ancho - 42, y, { a: 'right', s: o.s, b: o.b }); txt(val, X.imp, y, { a: 'right', s: o.s, b: o.b }); y += o.s ? 8 : 5.5; };
+  fila('Base imponible', euro(doc.base));
+  fila(Number(doc.iva_pct) ? `IVA ${numCorto(doc.iva_pct)} %` : 'IVA', Number(doc.iva_pct) ? euro(doc.iva_importe) : 'Exenta');
+  pdf.setDrawColor(...AZUL); pdf.setLineWidth(0.4); pdf.line(M + ancho - 75, y - 2.5, M + ancho, y - 2.5); pdf.setLineWidth(0.2);
+  y += 3; fila('TOTAL', euro(doc.total), { b: true, s: 13 }); y += 2;
+
+  const parrafo = (titulo, texto) => {
+    if (!texto) return;
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9);
+    const partes = pdf.splitTextToSize(limpio(texto), ancho);
+    if (y + 8 + partes.length * 4.2 > AL - 16) { pdf.addPage(); y = M; }
+    if (titulo) { txt(titulo, M, y, { s: 8, b: true, c: GRIS }); y += 4.5; }
+    partes.forEach(p => { txt(p, M, y, { s: 9 }); y += 4.2; }); y += 3;
+  };
+  if (!Number(doc.iva_pct)) parrafo(null, doc.iva_texto);
+  parrafo('OBSERVACIONES', doc.notas);
+  if (doc.tipo !== 'presupuesto' && aj.iban) parrafo('FORMA DE PAGO', `Transferencia bancaria a la cuenta ${aj.iban}`);
+  const paginas = pdf.getNumberOfPages();
+  for (let i = 1; i <= paginas; i++) {
+    pdf.setPage(i);
+    if (aj.pie_documentos) txt(aj.pie_documentos, AN / 2, AL - 10, { s: 8, c: GRIS, a: 'center' });
+    if (paginas > 1) txt(`Página ${i} de ${paginas}`, AN - M, AL - 6, { s: 8, c: GRIS, a: 'right' });
+  }
+  return pdf.output('blob');
+}
+const nombrePdf = doc => `${doc.codigo} ${slug(doc.cliente?.nombre || '')}.pdf`;
+
+async function abrirDocumento(id) {
+  let doc, rel;
+  try {
+    doc = await q(sb.from('documentos').select('*').eq('id', id).single());
+    const ids = [doc.presupuesto_id, doc.rectifica_id].filter(Boolean);
+    rel = await q(sb.from('documentos').select('id, codigo, tipo, estado')
+      .or([`presupuesto_id.eq.${doc.id}`, `rectifica_id.eq.${doc.id}`, ...ids.map(x => `id.eq.${x}`)].join(',')));
+  } catch (e) { return tostada(mensajeError(e), { error: true }); }
+  const ed = puedeEditar();
+  const esPres = doc.tipo === 'presupuesto';
+  let cobroInfo = '';
+  if (doc.estado === 'cobrada' && doc.movimiento_id) {
+    const mov = await sb.from('movimientos').select('numero, cuenta_id, fecha').eq('id', doc.movimiento_id).maybeSingle().then(r => r.data);
+    cobroInfo = `<div class="aviso aviso-info">${ico('ok')}<p>Cobrada el ${fecha(doc.cobrada_en)}${mov ? ` en «${esc(cuenta(mov.cuenta_id)?.nombre || '')}». Es el apunte nº ${mov.numero} del libro` : ''}.</p>
+      ${mov ? `<button type="button" class="btn btn-texto acciones" data-ver-mov="${doc.movimiento_id}">Ver apunte</button>` : ''}</div>`;
+  }
+  const relacion = rel.map(r => `<button type="button" class="btn btn-texto" data-ir-doc="${r.id}">${ico(r.tipo === 'presupuesto' ? 'archivo' : 'factura', 'ico-s')}
+    ${r.tipo === 'presupuesto' ? 'Viene del presupuesto' : r.tipo === 'rectificativa' ? 'Rectificada por' : esPres ? 'Facturado en' : 'Rectifica a'} ${esc(r.codigo)}</button>`).join('');
+
+  const d = dialogo({
+    titulo: `${TIPO_DOC[doc.tipo]} ${doc.codigo}`,
+    cuerpo: `<div class="cabecera-doc">${chipEstado(doc)}
+        ${esPres && ed && doc.estado !== 'facturado' ? `<label class="sr" for="doc-estado">Estado del presupuesto</label>
+          <select id="doc-estado" class="select-compacto">${['borrador', 'enviado', 'aceptado', 'rechazado'].map(e => `<option value="${e}" ${doc.estado === e ? 'selected' : ''}>${ESTADOS_DOC[e][0]}</option>`).join('')}</select>` : ''}
+        ${relacion}</div>
+      ${cobroInfo}
+      ${doc.tipo === 'factura' && doc.estado === 'rectificada' ? `<div class="aviso aviso-aviso">${ico('alerta')}<p>Esta factura está anulada por una rectificativa. Si se había cobrado y devolvisteis el dinero, apunta la devolución como gasto en el libro.</p></div>` : ''}
+      <div class="acciones-doc">
+        <button type="button" class="btn" id="b-pdf">${ico('descargar')} Descargar PDF</button>
+        ${navigator.share ? `<button type="button" class="btn" id="b-compartir">${ico('compartir')} Compartir</button>` : ''}
+        ${ed && esPres ? `<button type="button" class="btn btn-texto" id="b-duplicar">${ico('copiar', 'ico-s')} Duplicar</button>` : ''}
+      </div>
+      <div id="doc-papel">${papel(doc)}</div>`,
+    pie: !ed ? '<button type="button" class="btn" data-cerrar>Cerrar</button>'
+      : esPres ? `${doc.estado === 'borrador' ? `<button type="button" class="btn btn-texto izquierda" id="b-borrar">${ico('papelera', 'ico-s')} Borrar</button>` : ''}
+          ${doc.estado !== 'facturado' ? `<button type="button" class="btn" id="b-editar-doc">${ico('lapiz')} Editar</button>` : ''}
+          ${!['facturado', 'rechazado'].includes(doc.estado) ? `<button type="button" class="btn btn-primario" id="b-convertir">${ico('factura')} Convertir en factura</button>` : ''}`
+      : doc.tipo === 'factura' ? `${doc.estado !== 'rectificada' ? `<button type="button" class="btn btn-texto izquierda" id="b-rectificar">Rectificar…</button>` : ''}
+          ${doc.estado === 'cobrada' ? `<button type="button" class="btn" id="b-deshacer-cobro">${ico('deshacer')} Deshacer cobro</button>` : ''}
+          ${doc.estado === 'emitida' ? `<button type="button" class="btn btn-primario" id="b-cobrar">${ico('caja')} Registrar cobro</button>` : ''}`
+      : '<button type="button" class="btn" data-cerrar>Cerrar</button>',
+  });
+  logoActual().then(l => { const c = $('[data-logo]', d); if (l && c) c.innerHTML = `<img src="${l.data}" alt="">`; }).catch(() => {});
+  const reabrir = () => { d.close(); abrirDocumento(doc.id); };
+  const refrescarTodo = () => { if (location.hash.startsWith('#facturas')) enrutar(); };
+
+  $$('[data-ir-doc]', d).forEach(b => b.addEventListener('click', () => { d.close(); abrirDocumento(b.dataset.irDoc); }));
+  $('[data-ver-mov]', d)?.addEventListener('click', e => { d.close(); abrirDetalle(e.currentTarget.dataset.verMov); });
+  $('#b-pdf', d).addEventListener('click', e => conBoton(e.currentTarget, async () => {
+    try { descargar(nombrePdf(doc), await generarPdf(doc), 'application/pdf'); }
+    catch (err) { tostada('No se pudo crear el PDF. ' + mensajeError(err), { error: true }); }
+  }));
+  $('#b-compartir', d)?.addEventListener('click', e => conBoton(e.currentTarget, async () => {
+    try {
+      const archivo = new File([await generarPdf(doc)], nombrePdf(doc), { type: 'application/pdf' });
+      if (navigator.canShare?.({ files: [archivo] })) await navigator.share({ files: [archivo], title: `${TIPO_DOC[doc.tipo]} ${doc.codigo}` });
+      else { descargar(archivo.name, archivo, 'application/pdf'); tostada('Este navegador no permite compartir archivos: se ha descargado el PDF.'); }
+    } catch (err) { if (err?.name !== 'AbortError') tostada(mensajeError(err), { error: true }); }
+  }));
+  $('#b-duplicar', d)?.addEventListener('click', () => { d.close(); formDocumento({ tipo: 'presupuesto', base: doc }); });
+  $('#b-editar-doc', d)?.addEventListener('click', () => { d.close(); formDocumento({ tipo: 'presupuesto', doc }); });
+  $('#doc-estado', d)?.addEventListener('change', async e => {
+    const antes = doc.estado, nuevo = e.target.value;
+    try {
+      await q(sb.from('documentos').update({ estado: nuevo }).eq('id', doc.id));
+      refrescarTodo(); reabrir();
+      tostada(`${doc.codigo}: ${ESTADOS_DOC[nuevo][0].toLowerCase()}`, { deshacer: async () => { await q(sb.from('documentos').update({ estado: antes }).eq('id', doc.id)); refrescarTodo(); } });
+    } catch (err) { e.target.value = antes; tostada(mensajeError(err), { error: true }); }
+  });
+  $('#b-borrar', d)?.addEventListener('click', async () => {
+    if (!await confirmar({ titulo: `¿Borrar el presupuesto ${doc.codigo}?`, texto: 'Solo se pueden borrar los presupuestos en borrador. Esta acción no se puede deshacer.', boton: 'Borrar presupuesto', peligro: true })) return;
+    try { await q(sb.from('documentos').delete().eq('id', doc.id)); d.close(); refrescarTodo(); tostada(`Presupuesto ${doc.codigo} borrado`); }
+    catch (err) { tostada(mensajeError(err), { error: true }); }
+  });
+  $('#b-convertir', d)?.addEventListener('click', () => dialogoFecha({
+    titulo: `Convertir ${doc.codigo} en factura`, boton: 'Emitir factura',
+    texto: `Se emitirá una factura a nombre de <strong>${esc(doc.cliente.nombre)}</strong> por <strong>${eur(doc.total)}</strong> con los mismos conceptos. Una vez emitida no se puede modificar.`,
+    accion: async ({ fecha: f }) => {
+      const nuevaId = await q(sb.rpc('convertir_presupuesto', { p_presupuesto: doc.id, p_fecha: f }));
+      d.close(); irA('facturas?ver=facturas'); tostada('Factura emitida'); abrirDocumento(nuevaId);
+    },
+  }));
+  $('#b-rectificar', d)?.addEventListener('click', () => dialogoFecha({
+    titulo: `Rectificar la factura ${doc.codigo}`, boton: 'Emitir rectificativa', peligro: true, motivo: 'Motivo de la rectificación',
+    texto: `Se emitirá una factura rectificativa con los importes en negativo y ${doc.codigo} quedará anulada.
+      ${doc.estado === 'cobrada' ? '<br><br>Como ya estaba cobrada, si devolvéis el dinero apunta la devolución como gasto en el libro.' : ''}
+      <br><br>Si solo había que cambiar algo, después haz una factura nueva con los datos correctos.`,
+    accion: async ({ fecha: f, motivo }) => {
+      const nuevaId = await q(sb.rpc('rectificar_factura', { p_factura: doc.id, p_fecha: f, p_motivo: motivo }));
+      d.close(); irA('facturas?ver=facturas'); tostada('Factura rectificativa emitida'); abrirDocumento(nuevaId);
+    },
+  }));
+  $('#b-cobrar', d)?.addEventListener('click', () => formCobro(doc, () => { d.close(); refrescarTodo(); abrirDocumento(doc.id); }));
+  $('#b-deshacer-cobro', d)?.addEventListener('click', async () => {
+    if (!await confirmar({ titulo: '¿Deshacer el cobro?', texto: `El ingreso del libro quedará anulado y la factura ${doc.codigo} volverá a «pendiente de cobro».`, boton: 'Deshacer cobro' })) return;
+    try { await q(sb.rpc('deshacer_cobro', { p_factura: doc.id })); refrescarTodo(); reabrir(); tostada('Cobro deshecho'); }
+    catch (err) { tostada(mensajeError(err), { error: true }); }
+  });
+}
+
+// Diálogo con fecha (y motivo opcional) para convertir o rectificar
+function dialogoFecha({ titulo, texto, boton, peligro = false, motivo = null, accion }) {
+  const d = dialogo({
+    titulo, cerrarFuera: false,
+    cuerpo: `<form class="formulario" id="f-fecha" novalidate><p>${texto}</p>
+      <div class="campo"><label for="ff-fecha">Fecha de la factura</label><input id="ff-fecha" type="date" required value="${hoy()}"></div>
+      ${motivo ? `<div class="campo"><label for="ff-motivo">${esc(motivo)}</label><textarea id="ff-motivo" maxlength="300" required aria-describedby="ff-motivo-err"></textarea><p class="error" id="ff-motivo-err" hidden></p></div>` : ''}
+      <div class="aviso aviso-error" id="ff-error" role="alert" hidden></div></form>`,
+    pie: `<button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" form="f-fecha" class="btn ${peligro ? 'btn-peligro' : 'btn-primario'}">${esc(boton)}</button>`,
+  });
+  $('#f-fecha', d).addEventListener('submit', async e => {
+    e.preventDefault();
+    const m = $('#ff-motivo', d);
+    if (m && !m.value.trim()) { mostrarError(m, 'Escribe el motivo: saldrá en la factura rectificativa.'); return m.focus(); }
+    await conBoton(d.querySelector('[type=submit]'), async () => {
+      try { await accion({ fecha: $('#ff-fecha', d).value, motivo: m?.value.trim() }); d.close(); }
+      catch (err) { const box = $('#ff-error', d); box.innerHTML = `${ico('alerta')}<p>${esc(mensajeError(err))}</p>`; box.hidden = false; }
+    });
+  });
+}
+
+function formCobro(doc, alTerminar) {
+  const activas = E.cuentas.filter(c => c.activa);
+  const cats = E.categorias.filter(c => c.tipo === 'ingreso' && c.activa);
+  const catDef = (cats.find(c => /boda/i.test(c.nombre) && /boda/i.test(JSON.stringify(doc.lineas) + (doc.notas || '')))
+    || cats.find(c => /actuaci/i.test(c.nombre)) || cats[0])?.id;
+  const d = dialogo({
+    titulo: `Registrar cobro de ${doc.codigo}`, cerrarFuera: false,
+    cuerpo: `<form class="formulario" id="f-cobro" novalidate>
+      <p>Se apuntará en el libro un ingreso de <strong class="num">${eur(doc.total)}</strong> de ${esc(doc.cliente.nombre)}.</p>
+      <div class="fila-campos">
+        <div class="campo"><label for="c-fecha">Fecha del cobro</label><input id="c-fecha" type="date" required value="${hoy()}"></div>
+        <div class="campo"><label for="c-cuenta">Cobrado en</label><select id="c-cuenta">${activas.map(c => `<option value="${c.id}" ${c.tipo === 'banco' ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></div>
+      </div>
+      <div class="campo"><label for="c-cat">Categoría</label><select id="c-cat">${cats.map(c => `<option value="${c.id}" ${c.id === catDef ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></div>
+      <div class="aviso aviso-error" id="c-error" role="alert" hidden></div></form>`,
+    pie: `<button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" form="f-cobro" class="btn btn-primario">Registrar cobro</button>`,
+  });
+  $('#f-cobro', d).addEventListener('submit', async e => {
+    e.preventDefault();
+    await conBoton(d.querySelector('[type=submit]'), async () => {
+      try {
+        const movId = await q(sb.rpc('cobrar_factura', { p_factura: doc.id, p_cuenta: $('#c-cuenta', d).value, p_fecha: $('#c-fecha', d).value, p_categoria: $('#c-cat', d).value }));
+        const mov = await sb.from('movimientos').select('numero').eq('id', movId).maybeSingle().then(r => r.data);
+        d.close(); alTerminar?.();
+        tostada(`Cobro registrado${mov ? `: apunte nº ${mov.numero} del libro` : ''}`, { deshacer: async () => { await q(sb.rpc('deshacer_cobro', { p_factura: doc.id })); if (location.hash.startsWith('#facturas')) enrutar(); } });
+      } catch (err) { const box = $('#c-error', d); box.innerHTML = `${ico('alerta')}<p>${esc(mensajeError(err))}</p>`; box.hidden = false; }
+    });
+  });
+}
+
+// Modo de pruebas: borrar todo y empezar limpio (solo administrador)
+function seccionModoPruebas(a) {
+  if (!a.modo_pruebas) return `<section class="seccion tarjeta" aria-labelledby="t-pruebas"><h2 id="t-pruebas">Puesta en marcha</h2>
+    <p class="muted">La contabilidad está en uso real desde el ${fecha(a.en_uso_desde)}. Los apuntes y facturas ya no se pueden borrar: solo anular o rectificar.</p></section>`;
+  return `<section class="seccion tarjeta zona-pruebas" aria-labelledby="t-pruebas"><h2 id="t-pruebas">Pruebas y puesta en marcha</h2>
+    <p style="max-width:70ch">Ahora estáis en <strong>modo de pruebas</strong>. Podéis apuntar, hacer facturas y practicar todo lo que queráis, y después borrarlo.</p>
+    <p class="muted pequeno" style="margin:var(--space-2) 0 var(--space-4);max-width:70ch">Se borran apuntes, justificantes, cuadres, presupuestos, facturas, clientes e historial, y la numeración vuelve a empezar.
+      Se conservan las personas con acceso, las cuentas, las categorías, el logo y los datos de la coral.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:var(--space-2)">
+      <button type="button" class="btn" data-borrar-pruebas="borrar">${ico('papelera')} Borrar los datos de prueba</button>
+      <button type="button" class="btn btn-peligro" data-borrar-pruebas="empezar">${ico('ok')} Empezar de verdad</button>
+    </div>
+    <p class="muted pequeno" style="margin-top:var(--space-3);max-width:70ch">«Empezar de verdad» borra los datos de prueba y desactiva este modo para siempre. Hazlo el 1 de enero, y antes revisa en Tesorería el saldo inicial de cada cuenta.</p>
+  </section>`;
+}
+
+function borrarDatosPrueba(empezar) {
+  const d = dialogo({
+    titulo: empezar ? '¿Empezar de verdad?' : '¿Borrar los datos de prueba?', cerrarFuera: false,
+    cuerpo: `<form class="formulario" id="f-borrar" novalidate>
+      <p>${empezar ? 'Se borrarán todos los datos de prueba y la contabilidad pasará a <strong>uso real</strong>. Desde ese momento no se podrá volver a borrar nada.'
+        : 'Se borrarán todos los apuntes, justificantes, presupuestos, facturas, clientes e historial. Las cuentas, categorías y personas con acceso se conservan.'}</p>
+      <div class="aviso aviso-aviso">${ico('alerta')}<p>Esto no se puede deshacer.</p></div>
+      <div class="campo"><label for="br-texto">Para confirmar, escribe BORRAR</label>
+        <input id="br-texto" autocomplete="off" autocapitalize="characters" aria-describedby="br-texto-err"><p class="error" id="br-texto-err" hidden></p></div>
+      <div class="aviso aviso-error" id="br-error" role="alert" hidden></div></form>`,
+    pie: `<button type="button" class="btn" data-cerrar>Cancelar</button>
+      <button type="submit" form="f-borrar" class="btn btn-peligro">${empezar ? 'Borrar y empezar de verdad' : 'Borrar los datos de prueba'}</button>`,
+  });
+  const inp = $('#br-texto', d);
+  $('#f-borrar', d).addEventListener('submit', async e => {
+    e.preventDefault();
+    if (inp.value.trim().toUpperCase() !== 'BORRAR') { mostrarError(inp, 'Escribe BORRAR, en mayúsculas o minúsculas.'); return inp.focus(); }
+    await conBoton(d.querySelector('[type=submit]'), async () => {
+      try {
+        const rutas = await q(sb.rpc('borrar_datos_prueba', { p_empezar: empezar }));
+        for (let i = 0; i < rutas.length; i += 100) await sb.storage.from('justificantes').remove(rutas.slice(i, i + 100));
+        d.close();
+        E.ejercicio = new Date().getFullYear();
+        await cargarMaestros(); vistaAjustes();
+        tostada(empezar ? 'Listo: la contabilidad está en uso real' : 'Datos de prueba borrados. Podéis seguir practicando.');
+      } catch (err) { const box = $('#br-error', d); box.innerHTML = `${ico('alerta')}<p>${esc(mensajeError(err))}</p>`; box.hidden = false; }
+    });
+  });
+  inp.focus();
+}
+
+// Ajustes de presupuestos y facturas
+function seccionAjustesFacturas(a, ed) {
+  const ro = ed ? '' : 'readonly';
+  return `<form class="seccion tarjeta formulario" id="f-fact" novalidate aria-labelledby="t-fact">
+    <h2 id="t-fact">Presupuestos y facturas</h2>
+    <div class="campo"><span class="etiqueta-campo">Logo</span>
+      <div class="logo-ajustes"><div class="logo-prev" id="aj-logo-prev">${a.logo_ruta ? '<div class="esqueleto esq-campo"></div>' : '<span class="muted pequeno">Sin logo</span>'}</div>
+        ${ed ? `<label class="btn" for="aj-logo">${ico('camara')} ${a.logo_ruta ? 'Cambiar logo' : 'Subir logo'}</label>
+          <input type="file" id="aj-logo" accept="image/png,image/jpeg,image/webp" class="sr">
+          ${a.logo_ruta ? '<button type="button" class="btn btn-texto" id="aj-logo-quitar">Quitar logo</button>' : ''}` : ''}</div></div>
+    <div class="rejilla rejilla-2">
+      <div class="campo"><label for="aj-iva">IVA por defecto</label><select id="aj-iva" ${ed ? '' : 'disabled'}>
+        ${IVAS.map(([v, t]) => `<option value="${v}" ${Number(a.iva_pct) === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+      <div class="campo"><label for="aj-validez">Validez de los presupuestos (días)</label>
+        <input id="aj-validez" type="number" inputmode="numeric" min="1" max="365" value="${a.validez_dias || 30}" ${ro}></div>
+    </div>
+    <div class="campo"><label for="aj-ivatexto">Texto legal cuando no lleva IVA</label>
+      <textarea id="aj-ivatexto" maxlength="400" ${ro} aria-describedby="aj-ivatexto-ayuda">${esc(a.iva_texto || '')}</textarea>
+      <p class="ayuda" id="aj-ivatexto-ayuda">Confirmad con la gestoría qué artículo de exención corresponde a la coral y escribidlo aquí.</p></div>
+    <div class="campo"><label for="aj-conceptos">Conceptos frecuentes</label>
+      <textarea id="aj-conceptos" rows="4" maxlength="2000" ${ro} aria-describedby="aj-conceptos-ayuda">${esc(a.conceptos_frecuentes || '')}</textarea>
+      <p class="ayuda" id="aj-conceptos-ayuda">Uno por línea. Salen como sugerencias al escribir un concepto.</p></div>
+    <div class="campo"><label for="aj-pie">Pie de página</label><input id="aj-pie" maxlength="200" value="${esc(a.pie_documentos || '')}" ${ro} aria-describedby="aj-pie-ayuda">
+      <p class="ayuda" id="aj-pie-ayuda">Opcional. Por ejemplo, el número de inscripción en el registro de asociaciones.</p></div>
+    ${ed ? '<div><button type="submit" class="btn btn-primario">Guardar ajustes de facturas</button></div>' : ''}
+  </form>`;
+}
+
+function conectarAjustesFacturas(a) {
+  if (a.logo_ruta) logoActual().then(l => { const p = $('#aj-logo-prev'); if (p && l) p.innerHTML = `<img src="${l.data}" alt="Logo actual de la coral">`; })
+    .catch(() => { const p = $('#aj-logo-prev'); if (p) p.innerHTML = '<span class="muted pequeno">No se pudo cargar el logo</span>'; });
+  $('#aj-logo')?.addEventListener('change', async e => {
+    const archivo = e.target.files[0]; e.target.value = '';
+    if (!archivo) return;
+    try {
+      const bmp = await createImageBitmap(archivo).catch(() => { throw new ErrorHumano('No se puede leer esa imagen. Usa un PNG o JPG.'); });
+      const escala = Math.min(1, 600 / Math.max(bmp.width, bmp.height));
+      const lienzo = Object.assign(document.createElement('canvas'), { width: Math.round(bmp.width * escala), height: Math.round(bmp.height * escala) });
+      lienzo.getContext('2d').drawImage(bmp, 0, 0, lienzo.width, lienzo.height);
+      const blob = await new Promise(ok => lienzo.toBlob(ok, 'image/png'));
+      const ruta = `ajustes/logo-${crypto.randomUUID().slice(0, 8)}.png`;
+      await q(sb.storage.from('justificantes').upload(ruta, blob, { contentType: 'image/png' }));
+      await q(sb.from('ajustes').update({ logo_ruta: ruta }).eq('id', 1));
+      if (a.logo_ruta) sb.storage.from('justificantes').remove([a.logo_ruta]);
+      tostada('Logo guardado'); vistaAjustes();
+    } catch (err) { tostada(mensajeError(err), { error: true }); }
+  });
+  $('#aj-logo-quitar')?.addEventListener('click', async () => {
+    if (!await confirmar({ titulo: '¿Quitar el logo?', texto: 'Los documentos saldrán sin logo. Puedes subir otro cuando quieras.', boton: 'Quitar logo' })) return;
+    try { await q(sb.from('ajustes').update({ logo_ruta: null }).eq('id', 1)); sb.storage.from('justificantes').remove([a.logo_ruta]); tostada('Logo quitado'); vistaAjustes(); }
+    catch (err) { tostada(mensajeError(err), { error: true }); }
+  });
+  $('#f-fact')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const dias = Number($('#aj-validez').value);
+    if (!(dias >= 1 && dias <= 365)) { tostada('La validez debe ser entre 1 y 365 días.', { error: true }); return $('#aj-validez').focus(); }
+    const datos = { iva_pct: Number($('#aj-iva').value), validez_dias: dias, iva_texto: $('#aj-ivatexto').value.trim() || null,
+      conceptos_frecuentes: $('#aj-conceptos').value.trim() || null, pie_documentos: $('#aj-pie').value.trim() || null };
+    await conBoton(e.submitter, async () => {
+      try { await q(sb.from('ajustes').update(datos).eq('id', 1)); Object.assign(E.ajustes, datos); tostada('Ajustes de facturas guardados'); }
+      catch (err) { tostada(mensajeError(err), { error: true }); }
+    });
+  });
+}
+
 async function arrancar() {
   if (!configurado) return pantallaSinConfigurar();
   const { data: { session } } = await sb.auth.getSession();
