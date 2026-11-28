@@ -8,7 +8,7 @@ const ORIGEN = __dirname;
 const DESTINO = path.join(os.tmpdir(), 'coral-cuentas-publicar');
 const ENV = { ...process.env, GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never' };
 const sh = (c, cwd = DESTINO) => execSync(c, { cwd, encoding: 'utf8', env: ENV, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-const NO_PUBLICAR = new Set(['publicar.js', 'LEEME.md']);
+const NO_PUBLICAR = new Set(['publicar.js', 'LEEME.md', '.gitignore', '.temp']);
 
 let existe = true;
 try { sh(`gh repo view ${REPO} --json name`, ORIGEN); } catch { existe = false; }
@@ -21,7 +21,7 @@ else { fs.mkdirSync(DESTINO); sh('git init -b main'); }
 for (const f of fs.readdirSync(DESTINO)) if (f !== '.git') fs.rmSync(path.join(DESTINO, f), { recursive: true, force: true });
 const copiar = (de, a) => {
   for (const f of fs.readdirSync(de)) {
-    if (de === ORIGEN && NO_PUBLICAR.has(f)) continue;
+    if ((de === ORIGEN || f === '.temp') && NO_PUBLICAR.has(f)) continue;
     const o = path.join(de, f), d = path.join(a, f);
     if (fs.statSync(o).isDirectory()) { fs.mkdirSync(d, { recursive: true }); copiar(o, d); } else fs.copyFileSync(o, d);
   }
